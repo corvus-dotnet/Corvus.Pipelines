@@ -174,10 +174,10 @@ A terminating pipeline operates in essentially the same way as a non-terminating
 
 ```mermaid
 flowchart LR
-    i1([inputState])-->terminate0{{terminate?}}
+    i1([inputState])-->t0{{terminate?}}
     subgraph terminatingPipeline
-        terminate0-.(true).->t0o([inputState])
-        terminate0-.(false).->step1
+        t0-.(true).->t0o([inputState])
+        t0-.(false).->step1
         step1-->o1([output1])
         o1-->terminate1{{terminate?}}
         terminate1-.(true).->t1o([output1])
@@ -329,7 +329,7 @@ decimal output = await pipeline(1000m).ConfigureAwait(false);
 
 The step produced by `Choose()` selects and executes the low discount step because `1000` is `<=1000`. It executes that step with the current state, to produce `800`.
 
-Once it has completed that, we are back on the main flow of the pipeline, and it continues with the next step which is `ApplySalesTax`. 
+Once it has completed that, we are back on the main flow of the pipeline, and it continues with the next step which is `ApplySalesTax`.
 
 This takes that value and produces `(800 * 1.2) = 960`.
 
@@ -346,7 +346,7 @@ decimal output = await pipeline(2000m).ConfigureAwait(false);
 
 The step produced by `Choose()` selects and executes the *high* discount step because `2000` is `<=1000`. It executes that step with the current state, to produce `1400`.
 
-Once it has completed that, we are back on the main flow of the pipeline, and it continues with the next step which is `ApplySalesTax`. 
+Once it has completed that, we are back on the main flow of the pipeline, and it continues with the next step which is `ApplySalesTax`.
 
 This takes that value and produces `(1400 * 1.2) = 1680`.
 
@@ -390,7 +390,7 @@ We'll look at `Choose()` again in a moment, but first let's look at one of the s
 
 There are several versions of `Bind()` available in the library, but the simplest one takes two steps and produces a step that _binds_ them together.
 
-The step it creates 
+The step it creates
 - executes the first step with its input
 - executes the second step with the output of the first step
 - returns the output of the second step as its result
