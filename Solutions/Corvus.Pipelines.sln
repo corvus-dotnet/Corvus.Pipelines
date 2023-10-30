@@ -1,0 +1,80 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34212.112
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corvus.Pipelines", "Corvus.Pipelines\Corvus.Pipelines.csproj", "{8721BD51-E24C-4D8B-B418-78F8CA42D95A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox", "Sandbox\Sandbox.csproj", "{09C63F33-28CF-4E76-ADAD-482714E6B3AC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corvus.YarpPipelines", "Corvus.YarpPipelines\Corvus.YarpPipelines.csproj", "{3D4E462C-50E2-4715-AD19-E95427C79F10}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corvus.Pipelines.Benchmarks", "Corvus.Pipelines.Benchmarks\Corvus.Pipelines.Benchmarks.csproj", "{FA5CECBC-A14A-4DB4-90EA-6AF71EE3C1B0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Specs", "Specs", "{5188B92C-70E7-4BEB-A166-B17263486451}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Benchmarks", "Benchmarks", "{4EB04422-4E49-43BB-942D-6961E5B5B848}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corvus.Pipelines.Specs", "Corvus.Pipelines.Specs\Corvus.Pipelines.Specs.csproj", "{5F5281A5-565C-4D83-B182-20666D698322}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{B0CBED1D-40AA-4AED-AC47-E9F344B0FA08}"
+	ProjectSection(SolutionItems) = preProject
+		..\LICENSE = ..\LICENSE
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{671F93B8-4C35-4BD1-86D1-EE0B723DAC5E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvoiceExample", "InvoiceExample\InvoiceExample.csproj", "{CA8BD536-2B56-4CB1-825E-7D22E913C619}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{74B8BE49-3144-4FAD-81D1-7B02262B2ACA}"
+	ProjectSection(SolutionItems) = preProject
+		..\azure-pipelines.release.yml = ..\azure-pipelines.release.yml
+		..\azure-pipelines.yml = ..\azure-pipelines.yml
+		..\build.ps1 = ..\build.ps1
+		..\GitVersion.yml = ..\GitVersion.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8721BD51-E24C-4D8B-B418-78F8CA42D95A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8721BD51-E24C-4D8B-B418-78F8CA42D95A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8721BD51-E24C-4D8B-B418-78F8CA42D95A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8721BD51-E24C-4D8B-B418-78F8CA42D95A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09C63F33-28CF-4E76-ADAD-482714E6B3AC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09C63F33-28CF-4E76-ADAD-482714E6B3AC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09C63F33-28CF-4E76-ADAD-482714E6B3AC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09C63F33-28CF-4E76-ADAD-482714E6B3AC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D4E462C-50E2-4715-AD19-E95427C79F10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D4E462C-50E2-4715-AD19-E95427C79F10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D4E462C-50E2-4715-AD19-E95427C79F10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D4E462C-50E2-4715-AD19-E95427C79F10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA5CECBC-A14A-4DB4-90EA-6AF71EE3C1B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA5CECBC-A14A-4DB4-90EA-6AF71EE3C1B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA5CECBC-A14A-4DB4-90EA-6AF71EE3C1B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA5CECBC-A14A-4DB4-90EA-6AF71EE3C1B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F5281A5-565C-4D83-B182-20666D698322}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F5281A5-565C-4D83-B182-20666D698322}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F5281A5-565C-4D83-B182-20666D698322}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F5281A5-565C-4D83-B182-20666D698322}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FA5CECBC-A14A-4DB4-90EA-6AF71EE3C1B0} = {4EB04422-4E49-43BB-942D-6961E5B5B848}
+		{5F5281A5-565C-4D83-B182-20666D698322} = {5188B92C-70E7-4BEB-A166-B17263486451}
+		{CA8BD536-2B56-4CB1-825E-7D22E913C619} = {671F93B8-4C35-4BD1-86D1-EE0B723DAC5E}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {20E4D4B8-9D17-4F66-8DD0-23AA0C4E16D5}
+	EndGlobalSection
+EndGlobal

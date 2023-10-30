@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Include="..\Corvus.Pipelines.Benchmarks\ExampleYarpPipeline.cs" Link="ExampleYarpPipeline.cs" />
+	  <Compile Include="..\Corvus.Pipelines.Benchmarks\ExampleYarpPipelineWithLogging.cs" Link="ExampleYarpPipelineWithLogging.cs" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Corvus.Pipelines\Corvus.Pipelines.csproj" />
+    <ProjectReference Include="..\Corvus.YarpPipelines\Corvus.YarpPipelines.csproj" />
+  </ItemGroup>
+
+</Project>
