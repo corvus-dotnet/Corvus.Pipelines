@@ -176,16 +176,16 @@ A terminating pipeline operates in essentially the same way as a non-terminating
 flowchart LR
     i1([inputState])-->t0{{terminate?}}
     subgraph terminatingPipeline
-        t0-.(true).->t0o([inputState])
-        t0-.(false).->step1
+        t0-.true.->t0o([inputState])
+        t0-.false.->step1
         step1-->o1([output1])
         o1-->terminate1{{terminate?}}
-        terminate1-.(true).->t1o([output1])
-        terminate1-.(false).->step2
+        terminate1-.true.->t1o([output1])
+        terminate1-.false.->step2
         step2-->o2([output2])
         o2-->terminate2{{terminate?}}
-        terminate2-.(true).->t2o([output2])
-        terminate2-.(false).->step3
+        terminate2-.true.->t2o([output2])
+        terminate2-.false.->step3
         step3==>o([etc])
     end
     t0o-->output([outputState])
