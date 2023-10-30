@@ -52,13 +52,13 @@ style unwrap stroke-dasharray: 5 5
 
 ```
 
-## Capabilities
+## Capability
 
 A _capability_ is a well-known pattern or semantic model implemented by some [state](#state), which an [operator](#operator) can rely on in its implementation.
 
 In **Corvus.Pipelines**, capabilities are defined by interfaces implemented by state types.
 
-Commonly implementated capabilities include `ILoggable`, `ICancellable`, and `ICanFail`..
+Commonly implemented capabilities include `ILoggable`, `ICancellable`, and `ICanFail`..
 
 ## Non-terminating pipeline
 

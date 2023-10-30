@@ -35,7 +35,7 @@ We use **Corvus.Pipelines** to implement a version of the [Chain of Responsibili
 This is so useful, we include it in the **Corvus.Pipelines** library itself.
 
 ### ASP.NET Core
-**Corvus.Piplines** is particularly useful when coupled with, for example, [ASP.NET Core Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview), or even directly through `HttpContext`, to build equally lightweight pipelines for request processing from common building blocks.
+**Corvus.Pipelines** is particularly useful when coupled with, for example, [ASP.NET Core Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview), or even directly through `HttpContext`, to build equally lightweight pipelines for request processing from common building blocks.
 
 We are using Corvus.Pipelines in code-generation scenarios for HTTP API handlers, where it is simpler to emit the code that builds pipelines than all of the code that they embody.
 
@@ -153,7 +153,7 @@ PipelineStep<int> pipeline = Pipeline.Build<int>(
 
 ## Termination
 
-Piplelines can be _terminating_, or _non-terminating_.
+Pipelines can be _terminating_, or _non-terminating_.
 
 We have already seen examples of non-terminating pipelines (they just run each step in turn, from the first to the last).
 
