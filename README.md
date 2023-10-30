@@ -176,21 +176,21 @@ A terminating pipeline operates in essentially the same way as a non-terminating
 flowchart LR
     i1([inputState])-->t0{{terminate?}}
     subgraph terminatingPipeline
-        t0-.true.->t0o([inputState])
+        t0-.true.->t0out([inputState])
         t0-.false.->step1
         step1-->o1([output1])
         o1-->terminate1{{terminate?}}
-        terminate1-.true.->t1o([output1])
+        terminate1-.true.->t1out([output1])
         terminate1-.false.->step2
         step2-->o2([output2])
         o2-->terminate2{{terminate?}}
-        terminate2-.true.->t2o([output2])
+        terminate2-.true.->t2out([output2])
         terminate2-.false.->step3
         step3==>o([etc])
     end
-    t0o-->output([outputState])
-    t1o-->output
-    t2o-->output
+    t0out-->output([outputState])
+    t1out-->output
+    t2out-->output
 ```
 
 > Note that it tests the predicate *before* executing the first step, and terminates if the state already meets the condition, and it *does not* test the predicate after the last step - it just runs to completion.
