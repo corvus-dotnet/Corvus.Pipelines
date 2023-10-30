@@ -176,21 +176,21 @@ A terminating pipeline operates in essentially the same way as a non-terminating
 flowchart LR
     i1([inputState])-->t0{{terminate?}}
     subgraph terminatingPipeline
-        t0-.(true).->t0o([inputState])
-        t0-.(false).->step1
+        t0-.true.->t0out([inputState])
+        t0-.false.->step1
         step1-->o1([output1])
         o1-->terminate1{{terminate?}}
-        terminate1-.(true).->t1o([output1])
-        terminate1-.(false).->step2
+        terminate1-.true.->t1out([output1])
+        terminate1-.false.->step2
         step2-->o2([output2])
         o2-->terminate2{{terminate?}}
-        terminate2-.(true).->t2o([output2])
-        terminate2-.(false).->step3
+        terminate2-.true.->t2out([output2])
+        terminate2-.false.->step3
         step3==>o([etc])
     end
-    t0o-->output([outputState])
-    t1o-->output
-    t2o-->output
+    t0out-->output([outputState])
+    t1out-->output
+    t2out-->output
 ```
 
 > Note that it tests the predicate *before* executing the first step, and terminates if the state already meets the condition, and it *does not* test the predicate after the last step - it just runs to completion.
@@ -449,9 +449,9 @@ Most of the rest of this document will look at using other operators to compose 
 
 ### Revisiting Choose()
 
-Now that we know how operators work, we should be able to figure out what `Choose()` actually does.
+Now that we know how operators work, we can take another look at `Choose()`.
 
-It produces a step that conditionally executes some other step based on its selector.
+`Choose()` is an operator that produces a step that conditionally executes some other step chosen by executing its selector function.
 
 ```mermaid
 flowchart LR
@@ -471,6 +471,20 @@ flowchart LR
     end
         selectedStep[selectedStep]-->output([output])
 ```
+
+Internally, its implementation is conceptually like this:
+
+```csharp
+public static PipelineStep<TState> Choose<TState>(this PipelineStep<TState> step, Func<TState, PipelineStep<TState>> selector)
+    where TState : struct
+{
+    return step.Bind(state => selector(state)(state));
+}
+```
+
+It binds the input `step` to a step which calls the `selector` with the `state`, then calls the step produced by the selector with that state, returning the result.
+
+> In fact, this is exactly how it is implemented at the time of writing.
 
 ## The current state
 
@@ -504,11 +518,11 @@ Or maybe the step needs its input state to support different capabilities such a
 
 > We will learn more about [capabilities](./docs/ubiquitous-language.md#capability) later.
 
-We will need to be able to convert from our existing step's `TState` to some `TInnerState` used by our bound step.
+In any of these cases, we will need to be able to convert an instance of our existing step's `TState` to an instance of some `TInnerState` as used by the step to which we wish to bind.
 
 There are overloads of `Bind()` that do exactly that.
 
-In a addition to the usual _bound step_, they take two mapping functions: `wrap()` and `unwrap()`, and produce a step like this:
+In a addition to the usual steps, they take two mapping functions: `wrap()` and `unwrap()`, and produce a step like this:
 
 ```mermaid
 flowchart
