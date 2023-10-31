@@ -254,6 +254,21 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
+    /// An operator that binds the output of one <see cref="PipelineStep{TState}"/> to another <see cref="PipelineStep{TState}"/>
+    /// provided by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step whose output is bound to the selected <see cref="PipelineStep{TState}"/>.</param>
+    /// <param name="selector">The selector which takes the output of the <paramref name="step"/> and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
+    /// and execute it using the result.</returns>
+    public static SyncPipelineStep<TState> Choose<TState>(this SyncPipelineStep<TState> step, Func<TState, SyncPipelineStep<TState>> selector)
+        where TState : struct
+    {
+        return step.Bind(state => selector(state)(state));
+    }
+
+    /// <summary>
     /// Convert a synchronous pipeline step to an asynchronous one.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>

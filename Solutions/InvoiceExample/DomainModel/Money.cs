@@ -1,4 +1,4 @@
-﻿namespace InvoiceExample;
+﻿namespace InvoiceExample.DomainModel;
 
 public static class Money
 {

@@ -19,6 +19,12 @@ public static class YarpPipeline
     public static PipelineStep<YarpPipelineState> Current { get; } = Pipeline.Current<YarpPipelineState>();
 
     /// <summary>
+    /// Gets the an instance of a <see cref="PipelineStep{YarpPipelineState}"/> that returns
+    /// the current pipeline state (the Identity operator).
+    /// </summary>
+    public static SyncPipelineStep<YarpPipelineState> CurrentSync { get; } = Pipeline.CurrentSync<YarpPipelineState>();
+
+    /// <summary>
     /// Create a named step.
     /// </summary>
     /// <param name="name">The name of the step.</param>

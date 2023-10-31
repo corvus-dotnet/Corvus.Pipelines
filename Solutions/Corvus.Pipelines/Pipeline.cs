@@ -54,6 +54,17 @@ public static class Pipeline
     }
 
     /// <summary>
+    /// The identity operator. An operator that provides current value of the state.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <returns>A pipeline step which, when executed, provides the current version of the state.</returns>
+    public static SyncPipelineStep<TState> CurrentSync<TState>()
+        where TState : struct
+    {
+        return static state => state;
+    }
+
+    /// <summary>
     /// An operator that provides a <see cref="PipelineStep{TState}"/> which executes a series of steps in order.
     /// </summary>
     /// <typeparam name="TState">The type of the state for the pipeline.</typeparam>
