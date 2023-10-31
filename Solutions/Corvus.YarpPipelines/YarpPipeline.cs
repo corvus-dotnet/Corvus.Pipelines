@@ -57,7 +57,7 @@ public static class YarpPipeline
     /// </summary>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that executes the pipeline.</returns>
-    public static PipelineStep<YarpPipelineState> Build(params SyncPipelineStep<YarpPipelineState>[] steps)
+    public static SyncPipelineStep<YarpPipelineState> Build(params SyncPipelineStep<YarpPipelineState>[] steps)
     {
         return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,

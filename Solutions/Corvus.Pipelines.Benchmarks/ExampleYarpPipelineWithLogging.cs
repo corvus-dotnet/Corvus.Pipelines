@@ -54,7 +54,7 @@ public static class ExampleYarpPipelineWithLogging
                         }
                         else
                         {
-                            return state.TerminateWith(new(400));
+                            return state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400));
                         }
                     }
 
@@ -63,7 +63,7 @@ public static class ExampleYarpPipelineWithLogging
 
     private static readonly Func<YarpPipelineState, PipelineStep<YarpPipelineState>> ChooseMessageContextHandler =
             static state => state.RequestTransformContext.Query.QueryString.HasValue
-                                ? state => ValueTask.FromResult(state.TerminateWith(new(400)))
+                                ? state => ValueTask.FromResult(state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400)))
                                 : AddMessageToHttpContext;
 
     private static readonly Func<YarpPipelineState, Exception, YarpPipelineState> CatchPipelineException =
@@ -100,7 +100,7 @@ public static class ExampleYarpPipelineWithLogging
             YarpPipeline.Step("ChooseMessageContextHandler", YarpPipeline.Current.Choose(ChooseMessageContextHandler)), // But we prefer this style where we hide away the state
             YarpPipeline.Step("HandleMessageContextResult", static state => ValueTask.FromResult(state.RequestTransformContext.HttpContext.Items["Message"] is string message
                         ? state.Continue()
-                        : state.TerminateWith(new(404)))))
+                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404)))))
         .Catch(CatchPipelineException)
         .Retry(
             static state => state.ExecutionStatus == PipelineStepStatus.TransientFailure && state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
@@ -114,7 +114,7 @@ public static class ExampleYarpPipelineWithLogging
                 await Task.Delay(0).ConfigureAwait(false); // You could do a back off using state.FailureCount, or whatever!
                 return state;
             })
-        .OnError(state => state.TerminateWith(new(500)));
+        .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 
     /// <summary>
     /// Gets an instance of an example yarp pipeline handler.
@@ -134,7 +134,7 @@ public static class ExampleYarpPipelineWithLogging
             YarpPipeline.Step("ChooseMessageContextHandler", YarpPipeline.Current.Choose(ChooseMessageContextHandler)), // But we prefer this style where we hide away the state
             YarpPipeline.Step("HandleMessageContextResult", static state => ValueTask.FromResult(state.RequestTransformContext.HttpContext.Items["Message"] is string message
                         ? state.Continue()
-                        : state.TerminateWith(new(404)))))
+                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404)))))
         .Catch(CatchPipelineException)
         .Retry(
             static state => state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
@@ -148,5 +148,5 @@ public static class ExampleYarpPipelineWithLogging
                 await Task.Delay(0).ConfigureAwait(false); // You could do a back off using state.FailureCount, or whatever!
                 return state;
             })
-        .OnError(state => state.TerminateWith(new(500)));
+        .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 }

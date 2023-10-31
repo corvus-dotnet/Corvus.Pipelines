@@ -88,7 +88,7 @@ public readonly struct HandlerState<TInput, TResult> : ILoggable
     /// </summary>
     /// <param name="result">The value produced by the handler.</param>
     /// <returns><see langword="true"/> if the input value has been handled, otherwise <see langword="false"/>.</returns>
-    public bool WasHandled([MaybeNullWhen(false)] out TResult? result)
+    public bool WasHandled([MaybeNullWhen(false)] out TResult result)
     {
         result = this.result;
         return this.handled;

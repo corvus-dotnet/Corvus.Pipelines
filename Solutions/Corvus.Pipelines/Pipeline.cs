@@ -177,7 +177,7 @@ public static class Pipeline
     /// returns <see langword="true"/>. At this point the pipeline will be terminated, and the resulting state returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, params SyncPipelineStep<TState>[] steps)
+    public static SyncPipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, params SyncPipelineStep<TState>[] steps)
         where TState : struct
     {
         return state =>
@@ -193,7 +193,7 @@ public static class Pipeline
                 currentResult = step(currentResult);
             }
 
-            return ValueTask.FromResult(currentResult);
+            return currentResult;
         };
     }
 

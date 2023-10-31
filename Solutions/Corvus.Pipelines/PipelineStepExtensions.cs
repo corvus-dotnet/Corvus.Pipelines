@@ -846,6 +846,35 @@ public static class PipelineStepExtensions
         };
     }
 
+    /// <summary>
+    /// An operator that binds a <see cref="PipelineStep{TInnerState}"/> to a <see cref="PipelineStep{TState}"/>
+    /// by returning a <see cref="PipelineStep{TState}"/> that maps the input instance of <typeparamref name="TState"/>
+    /// to an instance of the required <typeparamref name="TInnerState"/>, executing the <paramref name="step"/>,
+    /// and unwrapping the result to produce an instance of <typeparamref name="TState"/>.
+    /// </summary>
+    /// <typeparam name="TInnerState">The type of the state of the <paramref name="step"/> to execute.</typeparam>
+    /// <typeparam name="TState">The type of the input state.</typeparam>
+    /// <param name="step">The <see cref="PipelineStep{TInnerState}"/> to execute.</param>
+    /// <param name="wrap">A function that maps from an instance of the <typeparamref name="TState"/> to an instance of
+    /// the <typeparamref name="TInnerState"/>.</param>
+    /// <param name="unwrap">A function that maps from an instance of the <typeparamref name="TState"/> to an instance of
+    /// the <typeparamref name="TInnerState"/>. It is also provided with the original <typeparamref name="TState"/> instance.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which wraps the state, calls the <paramref name="step"/> with the wrapped
+    /// value, and unwraps the resulting state value.</returns>
+    public static SyncPipelineStep<TState> Bind<TInnerState, TState>(
+        this SyncPipelineStep<TInnerState> step,
+        Func<TState, TInnerState> wrap,
+        Func<TState, TInnerState, TState> unwrap)
+        where TInnerState : struct
+        where TState : struct
+    {
+        return state =>
+        {
+            TInnerState internalState = step(wrap(state));
+            return unwrap(state, internalState);
+        };
+    }
+
     private static TValue GetValueOrDefault<TState, TValue>(TState state, Func<TState, TValue>? defaultValueProvider)
         where TState : struct
         where TValue : struct

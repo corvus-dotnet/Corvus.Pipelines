@@ -92,7 +92,7 @@ public static class HandlerPipeline
     /// On termination, you can inspect the resulting value using <see cref="HandlerState{TInput, TResult}.WasHandled(out TResult)"/>.
     /// </para>
     /// </remarks>
-    public static PipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(params SyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
+    public static SyncPipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(params SyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
     {
         return Pipeline.Build(
             ctx => ctx.ShouldTerminate(),
