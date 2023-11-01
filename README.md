@@ -550,13 +550,13 @@ style unwrap stroke-dasharray: 5 5
 
 > We've used a dashed rectangle to indicate a function that is neither a step, nor a predictate/conditional.
 
-The first function (`wrap`) takes the value return by the initial step, and returns an instance of the type required by the bound step.
+The first function (`wrap`) takes the value return by `step1` (an instance of `TState`), and returns an instance of the type required by `step2` (`TInnerState`).
 
 ```csharp
 Func<TState, TInnerState> wrap
 ```
 
-The second function (`unwrap`) takes the _both_ the value returned by the initial step, _and_ the value returned by the bound step, and maps it to an instance of the type required by the initial step.
+The second function (`unwrap`) takes the _both_ the value returned by `step1` (an instance of `TState`), _and_ the value returned by `step2` (an instance of `TInnerState`), and maps it to an instance of `TState` to be returned as part of the original pipeline.
 
 ```csharp
 Func<TState, TInnerState, TState> unwrap
@@ -569,6 +569,144 @@ So, when the step produced by the `Bind()` operator is executed, it:
 - It then executes the bound step with the result from `wrap()`.
 - The result of that is passed to the `unwrap()` function.
 - The result of that is returned from the step.
+
+### When to use Bind()?
+
+Bind (with or without wrapping and unwrapping) is a very powerful technique, and you can get a long way using it without writing a completely "custom" operator (or a lot of steps).
+
+But don't be afraid of writing a completely custom bind-like operator.
+
+Remember, `Bind()` is conceptually as simple as...
+
+```csharp
+return state =>
+{
+    var result = Wrap(state);
+    var stepResult = step(result.somethingSuitable);
+    return Unwrap(stepResult);
+}
+```
+
+If you have semantics which are better expressed by writing your own custom operator like this, then do so. Don't turn your code inside out to fit the _wrap, bind, unwrap_ model.
+
+On the other hand, if your code *doesn't* match this pattern, take a look at it and try to understand why, as it sometimes indicates that the code doesn't fully match the pipeline pattern.
+
+That's all quite heavy on the explanation - we could probably do with an example. Before we do that, we're going to introduce a new concept - the `HandlerPipeline`.
+
+## Using a HandlerPipeline
+
+Most people are familiar with the [Chain of Responsibility](https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern) pattern, in which some state is passed from one potential handler to the next until someone decides that they can handle it and produces a result, rather than calling the next handler in the chain.
+
+We implement a version of this in the `Corvus.Pipelines.Handlers` namespace, in which the `TState` of our `PipelineStep` is an instance of a `HandlerState<TInput, TOutput>`, and pipelines of this type are built using the `HandlerPipeline.Build()` methods.
+
+As with all pipelines, the input state is passed to each handler step in turn.
+
+When a step does not handle the result it returns
+
+```csharp
+(TInput state) => state.NotHandled()
+```
+
+When it does it returns
+
+```csharp
+(TInput state) => state.Handled(returnValue);
+```
+
+The pipeline itself terminates with the first step that returns a `Handled()` result.
+
+The client calls the step with a suitable input value:
+
+```csharp
+var result = pipeline(HandlerState<string, decimal>.For(someInputValue))
+```
+
+and then determines whether the input was handled and retrieves the result:
+
+```csharp
+if (result.WasHandled(out TOutput output))
+{
+    // work with the output
+}
+```
+
+Let's look at an example of that.
+
+Imagine we had a couple of pricing catalogs that take a product ID and return us the price of that product. We can wrap access to those catalogs in a step.
+
+> In this example we are just using sync steps and a switch statement. In real life these would likely be async steps and call out to a catalog API of some kind.
+
+Notice that the steps return `state.Handled()` with the output price for any product ID they recognize, and `state.NotHandled()` for the catalog ids they don't recognize.
+
+```csharp
+static class PricingCatalogs
+{
+    public static SyncPipelineStep<HandlerState<string, decimal>>
+        PricingCatalog1 =
+            state =>
+            {
+                return state.Input switch
+                {
+                    "Catalog1_Product1" => state.Handled(99.99m),
+                    "Catalog1_Product2" => state.Handled(20.99m),
+                    _ => state.NotHandled(),
+                };
+            };
+
+    public static SyncPipelineStep<HandlerState<string, decimal>>
+        PricingCatalog2 =
+            state =>
+            {
+                return state.Input switch
+                {
+                    "Catalog2_Product1" => state.Handled(1.99m),
+                    "Catalog2_Product2" => state.Handled(3.99m),
+                    _ => state.NotHandled(),
+                };
+            };
+}
+```
+
+We can then build a `HandlerPipeline` step that will pass the product ID to each handler step in turn, trying to find one that can handle it.
+
+```csharp
+static class PricingCatalogs
+{
+    // ... the catalog steps ...
+
+    public static SyncPipelineStep<HandlerState<string, decimal>>
+        PricingHandler =
+            HandlerPipeline.Build(
+                PricingCatalog1,
+                PricingCatalog2);
+}
+```
+
+We can then use the pipeline to produce a price for a catalog item:
+
+```csharp
+string productId = "Catalog2_Product2";
+
+HandlerState<string, decimal> pricingResult =
+    PricingCatalogs.PricingHandler(
+        HandlerState<string, decimal>.For(productId));
+
+Console.Write(productId);
+Console.Write(" ");
+
+if (pricingResult.WasHandled(out decimal price))
+{
+    Console.WriteLine(price);
+}
+else
+{
+    Console.WriteLine("was not priced");
+}
+```
+
+## Binding to a handler pipeline
+
+
 
 # Concepts
 
