@@ -476,7 +476,7 @@ public static class PipelineStepExtensions
                     tasks[i] = valueTasks[i].AsTask();
                 }
 
-                Task<TState> result = await Task.WhenAny(tasks.Take(attempts.Length)).ConfigureAwait(false);
+                Task<TState> result = await Task.WhenAny(tasks[..attempts.Length]).ConfigureAwait(false);
                 return result.Result;
             }
             finally
@@ -648,7 +648,7 @@ public static class PipelineStepExtensions
     {
         return stepWith.Bind(
             async (TState state) => (state, await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState))),
-            (TState _, (TState State, TValue1 Value1) result) => ValueTask.FromResult(result.State));
+            (TState _, (TState State, TValue1 Value1) result) => result.State);
     }
 
     /// <summary>
@@ -710,7 +710,7 @@ public static class PipelineStepExtensions
                 (state,
                  await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
                  await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState))),
-            (TState _, (TState State, TValue1 Value1, TValue2 Value2) result) => ValueTask.FromResult(result.State));
+            (TState _, (TState State, TValue1 Value1, TValue2 Value2) result) => result.State);
     }
 
     /// <summary>
@@ -786,7 +786,7 @@ public static class PipelineStepExtensions
                  await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
                  await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)),
                  await value3ProviderStep(GetValueOrDefault(state, initialValue3FromState))),
-            (TState _, (TState State, TValue1 Value1, TValue2 Value2, TValue3 Value3) result) => ValueTask.FromResult(result.State));
+            (TState _, (TState State, TValue1 Value1, TValue2 Value2, TValue3 Value3) result) => result.State);
     }
 
     /// <summary>
