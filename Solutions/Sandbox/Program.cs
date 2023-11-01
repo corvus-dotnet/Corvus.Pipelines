@@ -4,6 +4,7 @@ using Corvus.YarpPipelines;
 using Yarp.ReverseProxy.Transforms;
 using PipelineExamples;
 using Corvus.Pipelines;
+using Corvus.Pipelines.Handlers;
 
 string[] paths = ["/foo", "/bar", "/fizz", "/buzz", "/", "/baz"];
 
@@ -20,18 +21,21 @@ using ILoggerFactory loggerFactory =
 
 ILogger logger = loggerFactory.CreateLogger("Yarp pipeline logging");
 
-PipelineStep<decimal> pipeline = Pipeline.Build(    
-    Pipeline.Current<decimal>().Choose(
-        selector: state => state > 1000m
-            ? InvoiceSteps.ApplyHighDiscount 
-            : InvoiceSteps.ApplyLowDiscount),
-    InvoiceSteps.ApplySalesTax.ToAsync()
-);
+string productId = "Catalog2_Product2";
 
-decimal output = await pipeline(1000m).ConfigureAwait(false);
+HandlerState<string, decimal> pricingResult = PricingCatalogs.PricingHandler(HandlerState<string, decimal>.For(productId));
 
-Console.WriteLine(output);
-Console.WriteLine();
+Console.Write(productId);
+Console.Write(" ");
+
+if (pricingResult.WasHandled(out decimal price))
+{
+    Console.WriteLine(price);
+}
+else
+{
+    Console.WriteLine("was not priced");
+}
 
 foreach (string path in paths)
 {
@@ -57,5 +61,41 @@ static class InvoiceSteps
     public static SyncPipelineStep<decimal> ApplyLowDiscount = state => Math.Ceiling(state * 100 * 0.8m) / 100;
     public static SyncPipelineStep<decimal> ApplyHighDiscount = state => Math.Ceiling(state * 100 * 0.7m) / 100;
     public static SyncPipelineStep<decimal> ApplySalesTax = state => Math.Ceiling(state * 100 * 1.2m) / 100;
+}
+
+static class PricingEngine
+{
+}
+
+
+static class PricingCatalogs
+{
+    public static SyncPipelineStep<HandlerState<string, decimal>> PricingCatalog1 =
+        state =>
+        {
+            return state.Input switch
+            {
+                "Catalog1_Product1" => state.Handled(99.99m),
+                "Catalog1_Product2" => state.Handled(20.99m),
+                _ => state.NotHandled(),
+            };
+        };
+
+    public static SyncPipelineStep<HandlerState<string, decimal>> PricingCatalog2 =
+        state =>
+        {
+            return state.Input switch
+            {
+                "Catalog2_Product1" => state.Handled(1.99m),
+                "Catalog2_Product2" => state.Handled(3.99m),
+                _ => state.NotHandled(),
+            };
+        };
+
+    public static SyncPipelineStep<HandlerState<string, decimal>> PricingHandler =
+        HandlerPipeline.Build(
+            PricingCatalog1,
+            PricingCatalog2);
+
 }
 

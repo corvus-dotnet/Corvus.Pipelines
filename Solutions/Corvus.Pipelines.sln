@@ -25,7 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{B0CBED1D-4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{671F93B8-4C35-4BD1-86D1-EE0B723DAC5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvoiceExample", "InvoiceExample\InvoiceExample.csproj", "{CA8BD536-2B56-4CB1-825E-7D22E913C619}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InvoiceExample", "InvoiceExample\InvoiceExample.csproj", "{CA8BD536-2B56-4CB1-825E-7D22E913C619}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{74B8BE49-3144-4FAD-81D1-7B02262B2ACA}"
 	ProjectSection(SolutionItems) = preProject
@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{74B8BE
 		..\build.ps1 = ..\build.ps1
 		..\GitVersion.yml = ..\GitVersion.yml
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corvus.Pipelines.AspNetCore", "Corvus.Pipelines.AspNetCore\Corvus.Pipelines.AspNetCore.csproj", "{68E354B5-8586-486E-8045-BEC80091FDA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,6 +67,10 @@ Global
 		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA8BD536-2B56-4CB1-825E-7D22E913C619}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68E354B5-8586-486E-8045-BEC80091FDA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68E354B5-8586-486E-8045-BEC80091FDA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68E354B5-8586-486E-8045-BEC80091FDA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68E354B5-8586-486E-8045-BEC80091FDA4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

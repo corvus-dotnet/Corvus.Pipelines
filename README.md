@@ -35,9 +35,11 @@ We use **Corvus.Pipelines** to implement a version of the [Chain of Responsibili
 This is so useful, we include it in the **Corvus.Pipelines** library itself.
 
 ### ASP.NET Core
-**Corvus.Pipelines** is particularly useful when coupled with, for example, [ASP.NET Core Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview), or even directly through `HttpContext`, to build equally lightweight pipelines for request processing from common building blocks.
+**Corvus.Pipelines** is particularly useful when coupled with, for example, [ASP.NET Core Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview), or (especially) directly through `HttpContext`, to build lightweight pipelines for request processing from common building blocks.
 
 We are using Corvus.Pipelines in code-generation scenarios for HTTP API handlers, where it is simpler to emit the code that builds pipelines than all of the code that they embody.
+
+We also provide an `HttpContextPipeline` in `Corvus.Pipelines.AspNetCore` that directly supports `HttpContext` request processing.
 
 ## Corvus.Pipelines vs. LINQ to objects
 
@@ -508,92 +510,7 @@ This operator is special because it doesn't take an existing step, but it still 
 
 This, in fact, gives you the "something" on which an operator can operate, if you do not otherwise have some specific step. We've already seen how this effectively threads the current state through the pipeline when it is executed.
 
-## More ways to Bind()
-
-Sometimes you will have reusable steps that operate on some part of your state, rather than the state as a whole.
-
-Or the step requires some different state which includes information which can be derived from your existing state, or can be augmented with information from elsewhere in your execution environment (such as by calling another API with parameters provided from your state).
-
-Or maybe the step needs its input state to support different capabilities such as error reporting or cancellation, that your state doesn't.
-
-> We will learn more about [capabilities](./docs/ubiquitous-language.md#capability) later.
-
-In any of these cases, we will need to be able to convert an instance of our existing step's `TState` to an instance of some `TInnerState` as used by the step to which we wish to bind.
-
-There are overloads of `Bind()` that do exactly that.
-
-In a addition to the usual steps, they take two mapping functions: `wrap()` and `unwrap()`, and produce a step like this:
-
-```mermaid
-flowchart
-s[step1]-->bind
-bs[step2]-->bind
-w[wrap]-->bind
-u[unwrap]-->bind
-bind[[Bind]]-->adapterStep
-subgraph adapterStep[boundStep]
-    s0([inputState :TState])-->sA[step1]-->s1
-    s1([stepOutput :TState])-->wrap
-    wrap-->inner1([innerState :TInnerState])
-    inner1-->step2
-    step2-->inner2([innerResult :TInnerState])
-    inner2-->unwrap
-    unwrap-->s2([outputState :TState])
-end
-
-style w stroke-dasharray: 5 5
-style u stroke-dasharray: 5 5
-style wrap stroke-dasharray: 5 5
-style unwrap stroke-dasharray: 5 5
-
-```
-
-> We've used a dashed rectangle to indicate a function that is neither a step, nor a predictate/conditional.
-
-The first function (`wrap`) takes the value return by `step1` (an instance of `TState`), and returns an instance of the type required by `step2` (`TInnerState`).
-
-```csharp
-Func<TState, TInnerState> wrap
-```
-
-The second function (`unwrap`) takes the _both_ the value returned by `step1` (an instance of `TState`), _and_ the value returned by `step2` (an instance of `TInnerState`), and maps it to an instance of `TState` to be returned as part of the original pipeline.
-
-```csharp
-Func<TState, TInnerState, TState> unwrap
-```
-
-So, when the step produced by the `Bind()` operator is executed, it:
-
-- Executes the initial step
-- Calls `wrap()`, passing it the result of the initial step.
-- It then executes the bound step with the result from `wrap()`.
-- The result of that is passed to the `unwrap()` function.
-- The result of that is returned from the step.
-
-### When to use Bind()?
-
-Bind (with or without wrapping and unwrapping) is a very powerful technique, and you can get a long way using it without writing a completely "custom" operator (or a lot of steps).
-
-But don't be afraid of writing a completely custom bind-like operator.
-
-Remember, `Bind()` is conceptually as simple as...
-
-```csharp
-return state =>
-{
-    var result = Wrap(state);
-    var stepResult = step(result.somethingSuitable);
-    return Unwrap(stepResult);
-}
-```
-
-If you have semantics which are better expressed by writing your own custom operator like this, then do so. Don't turn your code inside out to fit the _wrap, bind, unwrap_ model.
-
-On the other hand, if your code *doesn't* match this pattern, take a look at it and try to understand why, as it sometimes indicates that the code doesn't fully match the pipeline pattern.
-
-That's all quite heavy on the explanation - we could probably do with an example. Before we do that, we're going to introduce a new concept - the `HandlerPipeline`.
-
-## Using a HandlerPipeline
+## Pipelines and Handlers
 
 Most people are familiar with the [Chain of Responsibility](https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern) pattern, in which some state is passed from one potential handler to the next until someone decides that they can handle it and produces a result, rather than calling the next handler in the chain.
 
@@ -614,6 +531,19 @@ When it does it returns
 ```
 
 The pipeline itself terminates with the first step that returns a `Handled()` result.
+
+```mermaid
+flowchart LR
+    input([input: HandlerState])-->s1[handler1]
+    subgraph handlerPipeline
+        s1--NotHandled-->s2[handler2]
+        s2--NotHandled-->s3[handler3]
+    end
+    s1--Handled-->output([WasHandled])
+    s2--Handled-->output([WasHandled])
+    s3--Handled-->output([WasHandled])
+    s3--NotHandled-->output2([NotHandled])
+```
 
 The client calls the step with a suitable input value:
 
@@ -704,9 +634,92 @@ else
 }
 ```
 
-## Binding to a handler pipeline
+## More ways to Bind()
 
+Sometimes you will have reusable steps that operate on some part of your state, rather than the state as a whole.
 
+Or the step requires some different state which includes information which can be derived from your existing state, or can be augmented with information from elsewhere in your execution environment (such as by calling another API with parameters provided from your state).
+
+Or maybe the step needs its input state to support different capabilities such as error reporting or cancellation, that your state doesn't.
+
+> We will learn more about [capabilities](./docs/ubiquitous-language.md#capability) later.
+
+In any of these cases, we will need to be able to convert an instance of our existing step's `TState` to an instance of some `TInnerState` as used by the step to which we wish to bind.
+
+There are overloads of `Bind()` that do exactly that.
+
+In a addition to the usual steps, they take two mapping functions: `wrap()` and `unwrap()`, and produce a step like this:
+
+```mermaid
+flowchart
+s[step1]-->bind
+bs[step2]-->bind
+w[wrap]-->bind
+u[unwrap]-->bind
+bind[[Bind]]-->adapterStep
+subgraph adapterStep[boundStep]
+    s0([inputState :TState])-->sA[step1]-->s1
+    s1([stepOutput :TState])-->wrap
+    wrap-->inner1([innerState :TInnerState])
+    inner1-->step2
+    step2-->inner2([innerResult :TInnerState])
+    inner2-->unwrap
+    unwrap-->s2([outputState :TState])
+end
+
+style w stroke-dasharray: 5 5
+style u stroke-dasharray: 5 5
+style wrap stroke-dasharray: 5 5
+style unwrap stroke-dasharray: 5 5
+
+```
+
+> We've used a dashed rectangle to indicate a function that is neither a step, nor a predictate/conditional.
+
+The first function (`wrap`) takes the value return by `step1` (an instance of `TState`), and returns an instance of the type required by `step2` (`TInnerState`).
+
+```csharp
+Func<TState, TInnerState> wrap
+```
+
+The second function (`unwrap`) takes the _both_ the value returned by `step1` (an instance of `TState`), _and_ the value returned by `step2` (an instance of `TInnerState`), and maps it to an instance of `TState` to be returned as part of the original pipeline.
+
+```csharp
+Func<TState, TInnerState, TState> unwrap
+```
+
+So, when the step produced by the `Bind()` operator is executed, it:
+
+- Executes the initial step
+- Calls `wrap()`, passing it the result of the initial step.
+- It then executes the bound step with the result from `wrap()`.
+- The result of that is passed to the `unwrap()` function.
+- The result of that is returned from the step.
+
+### Example: binding to a handler pipeline
+
+A common use for this type of binding is when you are connnecting a handler pipeline into an overall pipeline.
+
+### When to use Bind()?
+
+Bind (with or without wrapping and unwrapping) is a very powerful technique, and you can get a long way using it without writing a completely "custom" operator (or a lot of steps).
+
+But don't be afraid of writing a completely custom bind-like operator.
+
+Remember, `Bind()` is conceptually as simple as...
+
+```csharp
+return state =>
+{
+    var result = Wrap(state);
+    var stepResult = step(result.somethingSuitable);
+    return Unwrap(stepResult);
+}
+```
+
+If you have semantics which are better expressed by writing your own custom operator like this, then do so.
+
+Don't turn your code inside out to fit the _wrap, bind, unwrap_ model. Instead, try to create "semantically complete" packages of code - functions that express a well-bounded unit of value.
 
 # Concepts
 

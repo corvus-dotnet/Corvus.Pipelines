@@ -4,6 +4,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Corvus.Pipelines;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Yarp.ReverseProxy.Transforms;
@@ -78,9 +79,13 @@ public readonly struct YarpPipelineState :
     /// initialize the <see cref="YarpPipelineState"/>.</param>
     /// <param name="logger">The logger to use for the context.</param>
     /// <returns>The initialized instance.</returns>
+    /// <remarks>
+    /// You can explicitly provide a logger; if you don't it will be resolved from the service provider. If
+    /// no logger is available in the service provider, it will fall back to the <see cref="NullLogger{YarpPipelineState}"/>.
+    /// </remarks>
     public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null)
     {
-        return new(requestTransformContext, default, TransformState.Continue, default, default, 0, logger ?? NullLogger<YarpPipelineState>.Instance, default);
+        return new(requestTransformContext, default, TransformState.Continue, default, default, 0, logger ?? requestTransformContext.HttpContext.RequestServices.GetService<ILogger<YarpPipelineState>>() ?? NullLogger<YarpPipelineState>.Instance, default);
     }
 
     /// <summary>
