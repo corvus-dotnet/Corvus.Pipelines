@@ -154,7 +154,7 @@ public static class HandlerPipeline
     /// On termination, you can inspect the resulting value using <see cref="HandlerState{TInput, TResult}.WasHandled(out TResult)"/>.
     /// </para>
     /// </remarks>
-    public static PipelineStep<HandlerState<TInput, TResult>> BuildWithStepLogging<TInput, TResult>(string scopeName, LogLevel level, params NamedSyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
+    public static SyncPipelineStep<HandlerState<TInput, TResult>> BuildWithStepLogging<TInput, TResult>(string scopeName, LogLevel level, params NamedSyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
     {
         return Pipeline.BuildWithStepLogging(
             ctx => ctx.ShouldTerminate(),

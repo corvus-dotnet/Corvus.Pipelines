@@ -345,10 +345,9 @@ public static class Pipeline
     /// returns <see langword="true"/>. At this point the pipeline will be terminated, and the resulting state returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> BuildWithStepLogging<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params NamedSyncPipelineStep<TState>[] steps)
+    public static SyncPipelineStep<TState> BuildWithStepLogging<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params NamedSyncPipelineStep<TState>[] steps)
         where TState : struct, ILoggable
     {
-#pragma warning disable RCS1229 // Use async/await when necessary. This is not necessary because we are wrapping a sync result in a value task.
         return state =>
         {
             using IDisposable? scope = state.Logger.BeginScope(scopeName);
@@ -370,9 +369,8 @@ public static class Pipeline
                 LogExit(level, state);
             }
 
-            return ValueTask.FromResult(currentResult);
+            return currentResult;
         };
-#pragma warning restore RCS1229 // Use async/await when necessary.
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

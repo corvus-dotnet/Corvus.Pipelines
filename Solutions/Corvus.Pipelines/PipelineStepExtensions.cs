@@ -136,6 +136,37 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
+    /// An operator which provides a step that catches an exception thrown by a step, and passes it to a handler.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TException">The type of the exception.</typeparam>
+    /// <param name="step">The step to wrap with exception handling.</param>
+    /// <param name="exceptionHandler">The exception handler, which takes the input state and exception, and returns a resulting state instance.</param>
+    /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
+    /// <remarks>
+    /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
+    /// <see cref="ICanFail{TState, TError}"/> step with permanent or transient failure handling via
+    /// operators like <see cref="Retry{TState, TError}(SyncPipelineStep{TState}, Predicate{TState}, SyncPipelineStep{TState}?)"/> and
+    /// <see cref="OnError{TState, TError}(SyncPipelineStep{TState}, SyncPipelineStep{TState})"/>.
+    /// </remarks>
+    public static SyncPipelineStep<TState> Catch<TState, TException>(this SyncPipelineStep<TState> step, Func<TState, TException, TState> exceptionHandler)
+        where TState : struct
+        where TException : Exception
+    {
+        return state =>
+        {
+            try
+            {
+                return step(state);
+            }
+            catch (TException ex)
+            {
+                return exceptionHandler(state, ex);
+            }
+        };
+    }
+
+    /// <summary>
     /// An operator which provides the ability to retry a step which might fail.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
@@ -165,6 +196,42 @@ public static class PipelineStepExtensions
                 if (beforeRetry is not null)
                 {
                     currentState = await beforeRetry(currentState).ConfigureAwait(false);
+                    currentState = currentState.PrepareToRetry();
+                }
+            }
+        };
+    }
+
+    /// <summary>
+    /// An operator which provides the ability to retry a step which might fail.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TError">The type of the error details.</typeparam>
+    /// <param name="step">The step to execute.</param>
+    /// <param name="shouldRetry">A predicate which determines if the step should be retried.</param>
+    /// <param name="beforeRetry">An step to carry out before retrying. This is commonly an asynchronous delay, but can be used to return
+    /// an updated version of the state before retyring the action (e.g. incrementing an execution count.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
+    /// and execute it using the result.</returns>
+    public static SyncPipelineStep<TState> Retry<TState, TError>(this SyncPipelineStep<TState> step, Predicate<TState> shouldRetry, SyncPipelineStep<TState>? beforeRetry = null)
+        where TState : struct, ICanFail<TState, TError>
+        where TError : struct
+    {
+        return state =>
+        {
+            TState currentState = state.ResetFailureState();
+
+            while (true)
+            {
+                currentState = step(currentState);
+                if (currentState.ExecutionStatus == PipelineStepStatus.Success || !shouldRetry(currentState))
+                {
+                    return currentState;
+                }
+
+                if (beforeRetry is not null)
+                {
+                    currentState = beforeRetry(currentState);
                     currentState = currentState.PrepareToRetry();
                 }
             }
@@ -224,6 +291,32 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
+    /// An operator which provides the ability to choose a step to run if the bound step fails.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TError">The type of the error details.</typeparam>
+    /// <param name="step">The step to execute.</param>
+    /// <param name="onError">The step to execute if the step fails.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, and, if an error occurs,
+    /// execute the error step before returning the final result.</returns>
+    public static SyncPipelineStep<TState> OnError<TState, TError>(
+        this SyncPipelineStep<TState> step,
+        SyncPipelineStep<TState> onError)
+        where TState : struct, ICanFail<TState, TError>
+        where TError : struct
+    {
+        return step.Bind(state =>
+        {
+            if (state.ExecutionStatus != PipelineStepStatus.Success)
+            {
+                return onError(state);
+            }
+
+            return state;
+        });
+    }
+
+    /// <summary>
     /// An operator that binds the output of one <see cref="PipelineStep{TState}"/> to another <see cref="PipelineStep{TState}"/>
     /// provided by a <paramref name="selector"/> function.
     /// </summary>
@@ -278,6 +371,18 @@ public static class PipelineStepExtensions
         where TState : struct
     {
         return state => ValueTask.FromResult(step(state));
+    }
+
+    /// <summary>
+    /// Convert a synchronous named pipeline step to an asynchronous one.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step to be converted to an async step.</param>
+    /// <returns>An async version of the synchronous step.</returns>
+    public static NamedPipelineStep<TState> ToAsync<TState>(this NamedSyncPipelineStep<TState> step)
+        where TState : struct
+    {
+        return new NamedPipelineStep<TState>(step.Name, state => ValueTask.FromResult(step.Step(state)));
     }
 
     /// <summary>

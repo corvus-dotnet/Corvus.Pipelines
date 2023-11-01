@@ -68,13 +68,13 @@ public static class ExampleYarpPipeline
     public static PipelineStep<YarpPipelineState> Instance { get; } =
         YarpPipeline.Build(
             static state => state.RequestTransformContext.Path == "/" // You can write in this style where we execute steps directly
-                ? ValueTask.FromResult(state.TerminateAndForward())
-                : ValueTask.FromResult(InnerPipelineInstance(state)),
-            YarpPipeline.Current.Choose(ChooseMessageContextHandler), // But we prefer this style where we hide away the state
-            static state => ValueTask.FromResult(state.RequestTransformContext.HttpContext.Items["Message"] is string message
+                ? state.TerminateAndForward()
+                : InnerPipelineInstance(state),
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler), // But we prefer this style where we hide away the state
+            static state => state.RequestTransformContext.HttpContext.Items["Message"] is string message
                         ? state.Continue()
-                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404))))
-        .Catch(CatchPipelineException)
+                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404)))
+        .Catch(CatchPipelineException).ToAsync()
         .Retry(
             static state => state.ExecutionStatus == PipelineStepStatus.TransientFailure && state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
             async state =>
