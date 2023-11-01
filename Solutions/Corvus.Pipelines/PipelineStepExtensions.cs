@@ -476,7 +476,7 @@ public static class PipelineStepExtensions
                     tasks[i] = valueTasks[i].AsTask();
                 }
 
-                Task<TState> result = await Task.WhenAny(tasks[..attempts.Length]).ConfigureAwait(false);
+                Task<TState> result = await Task.WhenAny(new ArraySegment<Task<TState>>(tasks, 0, attempts.Length)).ConfigureAwait(false);
                 return result.Result;
             }
             finally
@@ -604,6 +604,192 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
+    /// An operator that binds a <see cref="SyncPipelineStep{Tuple}"/> of a tuple of the
+    /// <typeparamref name="TState"/>, and a <typeparamref name="TValue1"/>, producing
+    /// a <see cref="SyncPipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
+    /// with a tuple of the current state and the value provided by executing the <paramref name="value1ProviderStep"/>
+    /// step. The value accessor operates on the default value of <typeparamref name="TValue1"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TValue1">The type of the value.</typeparam>
+    /// <param name="stepWith">The step to bind.</param>
+    /// <param name="value1ProviderStep">A <see cref="SyncPipelineStep{TValue1}"/> which provides the value to bind.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which executes the <paramref name="stepWith"/> with the state and the value,
+    /// and returns the updated state.</returns>
+    public static SyncPipelineStep<TState> BindWith<TState, TValue1>(
+        this SyncPipelineStep<(TState State, TValue1 Value1)> stepWith,
+        SyncPipelineStep<TValue1> value1ProviderStep)
+        where TState : struct
+        where TValue1 : struct
+        => BindWith(stepWith, null, value1ProviderStep);
+
+    /// <summary>
+    /// An operator that binds a <see cref="SyncPipelineStep{Tuple}"/> of a tuple of the
+    /// <typeparamref name="TState"/>, and a <typeparamref name="TValue1"/>, producing
+    /// a <see cref="SyncPipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
+    /// with a tuple of the current state and the value provided by executing the <paramref name="value1ProviderStep"/>
+    /// step. The value accessor operates on the value provided by the <paramref name="initialValue1FromState"/>
+    /// function. This wraps the input state instance to return the appropriate input state for the accessor step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TValue1">The type of the value.</typeparam>
+    /// <param name="stepWith">The step to bind.</param>
+    /// <param name="initialValue1FromState">A function which returns the initial value for executing the
+    /// <paramref name="value1ProviderStep"/>. It has access to the state to do this.</param>
+    /// <param name="value1ProviderStep">A <see cref="SyncPipelineStep{TValue1}"/> which provides the value to bind.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which executes the <paramref name="stepWith"/> with the state and the value,
+    /// and returns the updated state.</returns>
+    public static SyncPipelineStep<TState> BindWith<TState, TValue1>(
+        this SyncPipelineStep<(TState State, TValue1 Value1)> stepWith,
+        Func<TState, TValue1>? initialValue1FromState,
+        SyncPipelineStep<TValue1> value1ProviderStep)
+        where TState : struct
+        where TValue1 : struct
+    {
+        return stepWith.Bind(
+            (TState state) => (state, value1ProviderStep(GetValueOrDefault(state, initialValue1FromState))),
+            (TState _, (TState State, TValue1 Value1) result) => result.State);
+    }
+
+    /// <summary>
+    /// An operator that binds a <see cref="SyncPipelineStep{Tuple}"/> of a tuple of the
+    /// <typeparamref name="TState"/>, and additional values of type <typeparamref name="TValue1"/> and <typeparamref name="TValue1"/>, producing
+    /// a <see cref="SyncPipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
+    /// with a tuple of the current state and the values provided by executing the <paramref name="value1ProviderStep"/>, and <paramref name="value2ProviderStep"/>
+    /// steps. The value accessors operate on the default values for <typeparamref name="TValue1"/> and <typeparamref name="TValue1"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TValue1">The type of the first value.</typeparam>
+    /// <typeparam name="TValue2">The type of the second value.</typeparam>
+    /// <param name="stepWith">The step to bind.</param>
+    /// <param name="value1ProviderStep">A <see cref="SyncPipelineStep{TValue1}"/> which provides the first value to bind.</param>
+    /// <param name="value2ProviderStep">A <see cref="SyncPipelineStep{TValue2}"/> which provides the second value to bind.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which executes the <paramref name="stepWith"/> with the state and the value,
+    /// and returns the updated state.</returns>
+    public static SyncPipelineStep<TState> BindWith<TState, TValue1, TValue2>(
+        this SyncPipelineStep<(TState State, TValue1 Value1, TValue2 Value2)> stepWith,
+        SyncPipelineStep<TValue1> value1ProviderStep,
+        SyncPipelineStep<TValue2> value2ProviderStep)
+        where TState : struct
+        where TValue1 : struct
+        where TValue2 : struct
+        => BindWith(stepWith, null, value1ProviderStep, null, value2ProviderStep);
+
+    /// <summary>
+    /// An operator that binds a <see cref="SyncPipelineStep{Tuple}"/> of a tuple of the
+    /// <typeparamref name="TState"/>, and additional values of type <typeparamref name="TValue1"/> and <typeparamref name="TValue1"/>, producing
+    /// a <see cref="SyncPipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
+    /// with a tuple of the current state and the values provided by executing the <paramref name="value1ProviderStep"/>, and <paramref name="value2ProviderStep"/>
+    /// steps. The value accessors operate on the values provided by the <paramref name="initialValue1FromState"/>, and <paramref name="initialValue2FromState"/>
+    /// functions (respectively). These wrap the input state instance to return the appropriate input state for each accessor step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TValue1">The type of the first value.</typeparam>
+    /// <typeparam name="TValue2">The type of the second value.</typeparam>
+    /// <param name="stepWith">The step to bind.</param>
+    /// <param name="initialValue1FromState">A function which returns the initial value for executing the
+    /// <paramref name="value1ProviderStep"/>. It has access to the state to do this.</param>
+    /// <param name="value1ProviderStep">A <see cref="SyncPipelineStep{TValue1}"/> which provides the first value to bind.</param>
+    /// <param name="initialValue2FromState">A function which returns the initial value for executing the
+    /// <paramref name="value2ProviderStep"/>. It has access to the state to do this.</param>
+    /// <param name="value2ProviderStep">A <see cref="SyncPipelineStep{TValue2}"/> which provides the second value to bind.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which executes the <paramref name="stepWith"/> with the state and the value,
+    /// and returns the updated state.</returns>
+    public static SyncPipelineStep<TState> BindWith<TState, TValue1, TValue2>(
+        this SyncPipelineStep<(TState State, TValue1 Value1, TValue2 Value2)> stepWith,
+        Func<TState, TValue1>? initialValue1FromState,
+        SyncPipelineStep<TValue1> value1ProviderStep,
+        Func<TState, TValue2>? initialValue2FromState,
+        SyncPipelineStep<TValue2> value2ProviderStep)
+        where TState : struct
+        where TValue1 : struct
+        where TValue2 : struct
+    {
+        return stepWith.Bind(
+            (TState state) =>
+                (state,
+                 value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
+                 value2ProviderStep(GetValueOrDefault(state, initialValue2FromState))),
+            (TState _, (TState State, TValue1 Value1, TValue2 Value2) result) => result.State);
+    }
+
+    /// <summary>
+    /// An operator that binds a <see cref="SyncPipelineStep{Tuple}"/> of a tuple of the
+    /// <typeparamref name="TState"/>, and additional values of type <typeparamref name="TValue1"/>, <typeparamref name="TValue2"/>, and
+    /// <typeparamref name="TValue3"/>, producing a <see cref="SyncPipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
+    /// with a tuple of the current state and the values provided by executing the <paramref name="value1ProviderStep"/>, <paramref name="value2ProviderStep"/>,
+    /// and <paramref name="value3ProviderStep"/> steps. The value accessors operate on the default values of <typeparamref name="TValue1"/>, <typeparamref name="TValue2"/>, and
+    /// <typeparamref name="TValue3"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TValue1">The type of the first value.</typeparam>
+    /// <typeparam name="TValue2">The type of the second value.</typeparam>
+    /// <typeparam name="TValue3">The type of the third value.</typeparam>
+    /// <param name="stepWith">The step to bind.</param>
+    /// <param name="value1ProviderStep">A <see cref="SyncPipelineStep{TValue1}"/> which provides the first value to bind.</param>
+    /// <param name="value2ProviderStep">A <see cref="SyncPipelineStep{TValue2}"/> which provides the second value to bind.</param>
+    /// <param name="value3ProviderStep">A <see cref="SyncPipelineStep{TValue3}"/> which provides third second value to bind.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which executes the <paramref name="stepWith"/> with the state and the value,
+    /// and returns the updated state.</returns>
+    public static SyncPipelineStep<TState> BindWith<TState, TValue1, TValue2, TValue3>(
+        this SyncPipelineStep<(TState State, TValue1 Value1, TValue2 Value2, TValue3 Value3)> stepWith,
+        SyncPipelineStep<TValue1> value1ProviderStep,
+        SyncPipelineStep<TValue2> value2ProviderStep,
+        SyncPipelineStep<TValue3> value3ProviderStep)
+        where TState : struct
+        where TValue1 : struct
+        where TValue2 : struct
+        where TValue3 : struct
+    => BindWith(stepWith, null, value1ProviderStep, null, value2ProviderStep, null, value3ProviderStep);
+
+    /// <summary>
+    /// An operator that binds a <see cref="SyncPipelineStep{Tuple}"/> of a tuple of the
+    /// <typeparamref name="TState"/>, and additional values of type <typeparamref name="TValue1"/>, <typeparamref name="TValue2"/>, and
+    /// <typeparamref name="TValue3"/>, producing a <see cref="SyncPipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
+    /// with a tuple of the current state and the values provided by executing the <paramref name="value1ProviderStep"/>, <paramref name="value2ProviderStep"/>,
+    /// and <paramref name="value3ProviderStep"/> steps. The value accessors operate on values provided by the <paramref name="initialValue1FromState"/>,
+    /// <paramref name="initialValue2FromState"/>, and <paramref name="initialValue3FromState"/> functions (respectively). These wrap the input state to
+    /// return the appropriate input state for each value accessor step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TValue1">The type of the first value.</typeparam>
+    /// <typeparam name="TValue2">The type of the second value.</typeparam>
+    /// <typeparam name="TValue3">The type of the third value.</typeparam>
+    /// <param name="stepWith">The step to bind.</param>
+    /// <param name="initialValue1FromState">A function which returns the initial value for executing the
+    /// <paramref name="value1ProviderStep"/>. It has access to the state to do this.</param>
+    /// <param name="value1ProviderStep">A <see cref="SyncPipelineStep{TValue1}"/> which provides the first value to bind.</param>
+    /// <param name="initialValue2FromState">A function which returns the initial value for executing the
+    /// <paramref name="value2ProviderStep"/>. It has access to the state to do this.</param>
+    /// <param name="value2ProviderStep">A <see cref="SyncPipelineStep{TValue2}"/> which provides the second value to bind.</param>
+    /// <param name="initialValue3FromState">A function which returns the initial value for executing the
+    /// <paramref name="value3ProviderStep"/>. It has access to the state to do this.</param>
+    /// <param name="value3ProviderStep">A <see cref="SyncPipelineStep{TValue3}"/> which provides third second value to bind.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which executes the <paramref name="stepWith"/> with the state and the value,
+    /// and returns the updated state.</returns>
+    public static SyncPipelineStep<TState> BindWith<TState, TValue1, TValue2, TValue3>(
+        this SyncPipelineStep<(TState State, TValue1 Value1, TValue2 Value2, TValue3 Value3)> stepWith,
+        Func<TState, TValue1>? initialValue1FromState,
+        SyncPipelineStep<TValue1> value1ProviderStep,
+        Func<TState, TValue2>? initialValue2FromState,
+        SyncPipelineStep<TValue2> value2ProviderStep,
+        Func<TState, TValue3>? initialValue3FromState,
+        SyncPipelineStep<TValue3> value3ProviderStep)
+        where TState : struct
+        where TValue1 : struct
+        where TValue2 : struct
+        where TValue3 : struct
+    {
+        return stepWith.Bind(
+            (TState state) =>
+                (state,
+                 value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
+                 value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)),
+                 value3ProviderStep(GetValueOrDefault(state, initialValue3FromState))),
+            (TState _, (TState State, TValue1 Value1, TValue2 Value2, TValue3 Value3) result) => result.State);
+    }
+
+    /// <summary>
     /// An operator that binds a <see cref="PipelineStep{Tuple}"/> of a tuple of the
     /// <typeparamref name="TState"/>, and a <typeparamref name="TValue1"/>, producing
     /// a <see cref="PipelineStep{TState}"/> that will execute the <paramref name="stepWith"/> step
@@ -647,7 +833,7 @@ public static class PipelineStepExtensions
         where TValue1 : struct
     {
         return stepWith.Bind(
-            async (TState state) => (state, await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState))),
+            async (TState state) => (state, await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false)),
             (TState _, (TState State, TValue1 Value1) result) => result.State);
     }
 
@@ -708,8 +894,8 @@ public static class PipelineStepExtensions
         return stepWith.Bind(
             async (TState state) =>
                 (state,
-                 await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
-                 await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState))),
+                 await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false),
+                 await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)).ConfigureAwait(false)),
             (TState _, (TState State, TValue1 Value1, TValue2 Value2) result) => result.State);
     }
 
@@ -783,9 +969,9 @@ public static class PipelineStepExtensions
         return stepWith.Bind(
             async (TState state) =>
                 (state,
-                 await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
-                 await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)),
-                 await value3ProviderStep(GetValueOrDefault(state, initialValue3FromState))),
+                 await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false),
+                 await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)).ConfigureAwait(false),
+                 await value3ProviderStep(GetValueOrDefault(state, initialValue3FromState)).ConfigureAwait(false)),
             (TState _, (TState State, TValue1 Value1, TValue2 Value2, TValue3 Value3) result) => result.State);
     }
 

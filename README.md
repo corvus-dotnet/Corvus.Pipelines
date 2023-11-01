@@ -51,6 +51,33 @@ The idea of **Corvus.Pipelines** is to _constrain_ what you can do to make the p
 
 At the end of the day, it is just built on top of dotnet delegates/`Func<,>`, and you can bring in as much LINQ to objects as you like, around that! There's no special magic going on.
 
+## How does it perform?
+
+We have a suite of benchmarks that verify we have a low-overhead, low-allocation solution.
+
+These are typical results for a YARP HTTP transform processing pipeline. It uses async steps, with and without logging.
+
+| Method                 | Mean     | Error     | StdDev    | Ratio | Allocated | Alloc Ratio |
+|----------------------- |---------:|----------:|----------:|------:|----------:|------------:|
+| RunPipeline            | 6.317 μs | 0.0452 μs | 0.0377 μs |  1.00 |         - |          NA |
+| RunPipelineWithLogging | 6.960 μs | 0.0395 μs | 0.0308 μs |  1.10 |         - |          NA |
+
+
+Here's another example that compares the railway-oriented approach for error handling, with an exception-based process:
+
+| Method                   | Mean         | Error       | StdDev      | Ratio  | RatioSD | Gen0   | Allocated | Alloc Ratio |
+|------------------------- |-------------:|------------:|------------:|-------:|--------:|-------:|----------:|------------:|
+| RunPipelineWithError     |     253.7 ns |     2.02 ns |     1.58 ns |   1.00 |    0.00 |      - |         - |          NA |
+| RunPipelineWithException | 135,239.0 ns | 1,443.82 ns | 1,279.91 ns | 534.02 |    6.00 | 2.6855 |   11960 B |          NA |
+
+# Concepts
+
+A lot of the language used in this project is heavily overloaded with meaning in other domains, so it is useful to familiarize ourselves with some common terms, and what we take them to mean in this domain.
+
+There is a separate document in this repository called [ubiquitous-language.md](./docs/ubiquitous-language.md) which includes these definitions in alphabetized form for easy reference.
+
+We will introduce them as we come across them in the [getting started](#getting-started) section, but it is useful to have a quick reference to hand.
+
 # Getting started
 
 ## What are steps?
@@ -79,7 +106,7 @@ If we execute the step with some given initial state (in this case the integer `
 int result = addOne(1);
 ```
 
-## Composing steps in a pipeline
+## Composing steps into a pipeline
 We can compose one or more of these steps into a [pipeline](./docs/ubiquitous-language.md#pipeline).
 
 In a pipeline, each step operates on the output of the previous step, to produce the final result.
@@ -155,7 +182,7 @@ PipelineStep<int> pipeline = Pipeline.Build<int>(
 
 ## Termination
 
-Pipelines can be _terminating_, or _non-terminating_.
+Pipelines can be [terminating](./docs/ubiquitous-language.md#terminating-pipeline), or [non-terminating](./docs/ubiquitous-language.md#non-terminating-pipeline).
 
 We have already seen examples of non-terminating pipelines (they just run each step in turn, from the first to the last).
 
@@ -170,7 +197,7 @@ flowchart
     p1-.->false([false])
 ```
 
-> In fact, we will use a lozenge for any decision/choice entity, not just a boolean predicate.
+> In fact, we will use a lozenge for any decision/choice function, not just a boolean predicate.
 
 A terminating pipeline operates in essentially the same way as a non-terminating pipeline, passing the output of each step as the input to the next one. However, after each step, it executes the predicate to determine if it should stop. If so, it terminates and returns the state at that point - executing no further steps.
 
@@ -700,6 +727,8 @@ So, when the step produced by the `Bind()` operator is executed, it:
 
 A common use for this type of binding is when you are connnecting a handler pipeline into an overall pipeline.
 
+> TODO: We're here!
+
 ### When to use Bind()?
 
 Bind (with or without wrapping and unwrapping) is a very powerful technique, and you can get a long way using it without writing a completely "custom" operator (or a lot of steps).
@@ -720,9 +749,3 @@ return state =>
 If you have semantics which are better expressed by writing your own custom operator like this, then do so.
 
 Don't turn your code inside out to fit the _wrap, bind, unwrap_ model. Instead, try to create "semantically complete" packages of code - functions that express a well-bounded unit of value.
-
-# Concepts
-
-A lot of the language used in this project is heavily overloaded with meaning in other domains, so it is useful to familiarize ourselves with some common terms, and what we take them to mean in this domain.
-
-There is a separate document in this repository called [ubiquitous-language.md](./docs/ubiquitous-language.md) which includes these definitions in alphabetized form for easy reference.
