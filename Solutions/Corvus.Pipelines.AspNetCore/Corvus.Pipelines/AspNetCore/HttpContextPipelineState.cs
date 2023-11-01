@@ -79,7 +79,7 @@ public readonly struct HttpContextPipelineState :
     /// </remarks>
     public static HttpContextPipelineState For(HttpContext httpContext, ILogger? logger = null)
     {
-        return new(httpContext, RequestState.Continue, default, default, 0, logger ?? httpContext.RequestServices.GetService<ILogger<HttpContextPipelineState>>() ?? NullLogger<HttpContextPipelineState>.Instance, default);
+        return new(httpContext, RequestState.Continue, default, default, 0, logger ?? httpContext.RequestServices?.GetService<ILogger<HttpContextPipelineState>>() ?? NullLogger<HttpContextPipelineState>.Instance, default);
     }
 
     /// <summary>

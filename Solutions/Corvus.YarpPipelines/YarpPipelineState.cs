@@ -85,7 +85,7 @@ public readonly struct YarpPipelineState :
     /// </remarks>
     public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null)
     {
-        return new(requestTransformContext, default, TransformState.Continue, default, default, 0, logger ?? requestTransformContext.HttpContext.RequestServices.GetService<ILogger<YarpPipelineState>>() ?? NullLogger<YarpPipelineState>.Instance, default);
+        return new(requestTransformContext, default, TransformState.Continue, default, default, 0, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger<YarpPipelineState>>() ?? NullLogger<YarpPipelineState>.Instance, default);
     }
 
     /// <summary>
