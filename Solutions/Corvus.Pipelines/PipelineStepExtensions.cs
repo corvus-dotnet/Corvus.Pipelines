@@ -503,7 +503,7 @@ public static class PipelineStepExtensions
     /// <param name="step1">The first input step.</param>
     /// <param name="step2">The second input step.</param>
     /// <returns>A <see cref="PipelineStep{Tuple}"/> which returns a tuple of the results of the input steps.</returns>
-    /// <remarks>This executes the steps in parallel. See <see cref="CombineSteps{TState1, TState2}"/> for the sequential case.</remarks>
+    /// <remarks>This executes the steps in parallel. See <see cref="CombineSteps{TState1, TState2}(PipelineStep{TState1}, PipelineStep{TState2})"/> for the sequential case.</remarks>
     public static PipelineStep<(TState1 State1, TState2 State2)> ParallelCombineSteps<TState1, TState2>(
         this PipelineStep<TState1> step1,
         PipelineStep<TState2> step2)
@@ -531,7 +531,7 @@ public static class PipelineStepExtensions
     /// <param name="step2">The second input step.</param>
     /// <param name="step3">The third input step.</param>
     /// <returns>A <see cref="PipelineStep{Tuple}"/> which returns a tuple of the results of the input steps.</returns>
-    /// <remarks>This executes the steps in parallel. See <see cref="CombineSteps{TState1, TState2, TState3}"/> for the sequential case.</remarks>
+    /// <remarks>This executes the steps in parallel. See <see cref="CombineSteps{TState1, TState2, TState3}(PipelineStep{TState1}, PipelineStep{TState2}, PipelineStep{TState3})"/> for the sequential case.</remarks>
     public static PipelineStep<(TState1 State1, TState2 State2, TState3 State3)> ParallelCombineSteps<TState1, TState2, TState3>(
         this PipelineStep<TState1> step1,
         PipelineStep<TState2> step2,
@@ -599,6 +599,59 @@ public static class PipelineStepExtensions
             TState1 value1 = await step1(input.State1).ConfigureAwait(false);
             TState2 value2 = await step2(input.State2).ConfigureAwait(false);
             TState3 value3 = await step3(input.State3).ConfigureAwait(false);
+            return (value1, value2, value3);
+        };
+    }
+
+    /// <summary>
+    /// An operator that combines two steps to produce a step which takes a tuple of the
+    /// state types of the input steps, and processes each value in the tuple with the
+    /// appropriate step, returning a tuple of the results.
+    /// </summary>
+    /// <typeparam name="TState1">The type of the state of the first step.</typeparam>
+    /// <typeparam name="TState2">The type of the state of the second step.</typeparam>
+    /// <param name="step1">The first input step.</param>
+    /// <param name="step2">The second input step.</param>
+    /// <returns>A <see cref="SyncPipelineStep{Tuple}"/> which returns a tuple of the results of the input steps.</returns>
+    public static SyncPipelineStep<(TState1 State1, TState2 State2)> CombineSteps<TState1, TState2>(
+        this SyncPipelineStep<TState1> step1,
+        SyncPipelineStep<TState2> step2)
+        where TState1 : struct
+        where TState2 : struct
+    {
+        return ((TState1 State1, TState2 State2) input) =>
+        {
+            TState1 value1 = step1(input.State1);
+            TState2 value2 = step2(input.State2);
+            return (value1, value2);
+        };
+    }
+
+    /// <summary>
+    /// An operator that combines three steps to produce a step which takes a tuple of the
+    /// state types of the input steps, and processes each value in the tuple with the
+    /// appropriate step, returning a tuple of the results.
+    /// </summary>
+    /// <typeparam name="TState1">The type of the state of the first step.</typeparam>
+    /// <typeparam name="TState2">The type of the state of the second step.</typeparam>
+    /// <typeparam name="TState3">The type of the state of the third step.</typeparam>
+    /// <param name="step1">The first input step.</param>
+    /// <param name="step2">The second input step.</param>
+    /// <param name="step3">The third input step.</param>
+    /// <returns>A <see cref="SyncPipelineStep{Tuple}"/> which returns a tuple of the results of the input steps.</returns>
+    public static SyncPipelineStep<(TState1 State1, TState2 State2, TState3 State3)> CombineSteps<TState1, TState2, TState3>(
+        this SyncPipelineStep<TState1> step1,
+        SyncPipelineStep<TState2> step2,
+        SyncPipelineStep<TState3> step3)
+        where TState1 : struct
+        where TState2 : struct
+        where TState3 : struct
+    {
+        return ((TState1 State1, TState2 State2, TState3 State3) input) =>
+        {
+            TState1 value1 = step1(input.State1);
+            TState2 value2 = step2(input.State2);
+            TState3 value3 = step3(input.State3);
             return (value1, value2, value3);
         };
     }
