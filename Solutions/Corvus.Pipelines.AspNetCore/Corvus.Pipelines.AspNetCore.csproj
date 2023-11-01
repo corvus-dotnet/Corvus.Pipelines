@@ -9,7 +9,7 @@
 
 	<PropertyGroup>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-		<Description>A low-allocation, extensible pipeline composition library, for building YARP transform pipelines.</Description>
+		<Description>A low-allocation, extensible pipeline composition library, for building HttpContext request handling pipelines.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
