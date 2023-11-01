@@ -21,6 +21,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{B0CBED1D-4
 	ProjectSection(SolutionItems) = preProject
 		..\LICENSE = ..\LICENSE
 		..\README.md = ..\README.md
+		..\docs\ubiquitous-language.md = ..\docs\ubiquitous-language.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{671F93B8-4C35-4BD1-86D1-EE0B723DAC5E}"
@@ -35,7 +36,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{74B8BE
 		..\GitVersion.yml = ..\GitVersion.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Corvus.Pipelines.AspNetCore", "Corvus.Pipelines.AspNetCore\Corvus.Pipelines.AspNetCore.csproj", "{68E354B5-8586-486E-8045-BEC80091FDA4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corvus.Pipelines.AspNetCore", "Corvus.Pipelines.AspNetCore\Corvus.Pipelines.AspNetCore.csproj", "{68E354B5-8586-486E-8045-BEC80091FDA4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
