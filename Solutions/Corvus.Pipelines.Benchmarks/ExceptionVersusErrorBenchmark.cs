@@ -4,7 +4,6 @@
 
 #pragma warning disable CA1822 // Mark members as static - not helpful in benchmarks
 
-using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
 
 namespace Corvus.Pipelines.Benchmarks;
@@ -17,14 +16,14 @@ public class ExceptionVersusErrorBenchmark
 {
     private static readonly PipelineStep<ErrorState> PipelineWithError =
         Pipeline.Build<ErrorState>(
-            static state => state.TransientFailure(new("There has been an issue")))
-        .Retry<ErrorState, Error>(state => state.FailureCount < 5);
+            static state => state.TransientFailure())
+        .Retry<ErrorState>(state => state.FailureCount < 5);
 
     private static readonly PipelineStep<ErrorState> PipelineWithException =
     Pipeline.Build(
          Pipeline.Current<ErrorState>().Bind(static _ => throw new InvalidOperationException("Some exception is thrown")))
-        .Catch<ErrorState, InvalidOperationException>(static (state, ex) => state.TransientFailure(new("There has been an issue", ex)))
-        .Retry<ErrorState, Error>(state => state.FailureCount < 5);
+        .Catch<ErrorState, InvalidOperationException>(static (state, _) => state.TransientFailure())
+        .Retry(state => state.FailureCount < 5);
 
     /// <summary>
     /// Extract parameters from a URI template using the Corvus implementation of the Tavis API.
@@ -36,7 +35,7 @@ public class ExceptionVersusErrorBenchmark
     public async Task<bool> RunPipelineWithError()
     {
         ErrorState result = await PipelineWithError(default);
-        return result.TryGetErrorDetails(out Error _);
+        return result.ExecutionStatus == PipelineStepStatus.Success;
     }
 
     /// <summary>
@@ -49,61 +48,31 @@ public class ExceptionVersusErrorBenchmark
     public async Task<bool> RunPipelineWithException()
     {
         ErrorState result = await PipelineWithException(default);
-        return result.TryGetErrorDetails(out Error _);
+        return result.ExecutionStatus == PipelineStepStatus.Success;
     }
 
-    private readonly struct ErrorState : ICanFail<ErrorState, Error>
+    private readonly struct ErrorState : ICanFail
     {
-        private readonly Error? errorDetails;
-
-        private ErrorState(PipelineStepStatus executionStatus, int failureCount, Error? errorDetails)
+        private ErrorState(PipelineStepStatus executionStatus)
         {
             this.ExecutionStatus = executionStatus;
-            this.FailureCount = failureCount;
-            this.errorDetails = errorDetails;
         }
 
         public PipelineStepStatus ExecutionStatus { get; }
 
-        public int FailureCount { get; }
-
-        public ErrorState PermanentFailure(Error errorDetails)
+        public ErrorState PermanentFailure()
         {
-            return new(PipelineStepStatus.PermanentFailure, this.FailureCount, errorDetails);
-        }
-
-        public ErrorState PrepareToRetry()
-        {
-            return new(PipelineStepStatus.Success, this.FailureCount + 1, this.errorDetails);
-        }
-
-        public ErrorState ResetFailureState()
-        {
-            return new(PipelineStepStatus.Success, 0, null);
+            return new(PipelineStepStatus.PermanentFailure);
         }
 
         public ErrorState Success()
         {
-            return new(PipelineStepStatus.Success, 0, null);
+            return new(PipelineStepStatus.Success);
         }
 
-        public ErrorState TransientFailure(Error errorDetails)
+        public ErrorState TransientFailure()
         {
-            return new(PipelineStepStatus.TransientFailure, this.FailureCount + 1, errorDetails);
-        }
-
-        public bool TryGetErrorDetails([NotNullWhen(true)] out Error errorDetails)
-        {
-            if (this.errorDetails is Error error)
-            {
-                errorDetails = error;
-                return true;
-            }
-
-            errorDetails = default;
-            return false;
+            return new(PipelineStepStatus.TransientFailure);
         }
     }
-
-    private readonly record struct Error(string Message, Exception? InnerException = null);
 }

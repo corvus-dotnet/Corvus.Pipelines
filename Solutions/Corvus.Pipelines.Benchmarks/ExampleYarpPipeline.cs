@@ -76,12 +76,8 @@ public static class ExampleYarpPipeline
                         : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404)))
         .Catch(CatchPipelineException).ToAsync()
         .Retry(
-            static state => state.ExecutionStatus == PipelineStepStatus.TransientFailure && state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
-            async state =>
-            {
-                await Task.Delay(0).ConfigureAwait(false); // You could do a back off using state.FailureCount, or whatever!
-                return state;
-            })
+            YarpRetry.TransientWithCountPolicy(5),
+            YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 
     /// <summary>
@@ -103,11 +99,7 @@ public static class ExampleYarpPipeline
                         : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404))))
         .Catch(CatchPipelineException)
         .Retry(
-            static state => state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
-            async state =>
-            {
-                await Task.Delay(0).ConfigureAwait(false); // You could do a back off using state.FailureCount, or whatever!
-                return state;
-            })
+            YarpRetry.TransientWithCountPolicy(5),
+            YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 }

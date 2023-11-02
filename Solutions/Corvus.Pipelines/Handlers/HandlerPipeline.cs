@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace Corvus.Pipelines.Handlers;
@@ -28,20 +29,20 @@ public static class HandlerPipeline
     /// </summary>
     /// <typeparam name="TInput">The type of the input to the handler pipeline.</typeparam>
     /// <typeparam name="TResult">The type of the result of handling the input.</typeparam>
-    /// <param name="name">The name of the step.</param>
     /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedSyncPipelineStep<HandlerState<TInput, TResult>> Step<TInput, TResult>(string name, SyncPipelineStep<HandlerState<TInput, TResult>> step) => new(name, step);
+    public static NamedSyncPipelineStep<HandlerState<TInput, TResult>> Name<TInput, TResult>(this SyncPipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
 
     /// <summary>
     /// Create a named step.
     /// </summary>
     /// <typeparam name="TInput">The type of the input to the handler pipeline.</typeparam>
     /// <typeparam name="TResult">The type of the result of handling the input.</typeparam>
-    /// <param name="name">The name of the step.</param>
     /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedPipelineStep<HandlerState<TInput, TResult>> Step<TInput, TResult>(string name, PipelineStep<HandlerState<TInput, TResult>> step) => new(name, step);
+    public static NamedPipelineStep<HandlerState<TInput, TResult>> Name<TInput, TResult>(this PipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
 
     /// <summary>
     /// Builds a handler pipeline from an ordered array of handlers.
@@ -122,9 +123,9 @@ public static class HandlerPipeline
     /// On termination, you can inspect the resulting value using <see cref="HandlerState{TInput, TResult}.WasHandled(out TResult)"/>.
     /// </para>
     /// </remarks>
-    public static PipelineStep<HandlerState<TInput, TResult>> BuildWithStepLogging<TInput, TResult>(string scopeName, LogLevel level, params NamedPipelineStep<HandlerState<TInput, TResult>>[] steps)
+    public static PipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(string scopeName, LogLevel level, params NamedPipelineStep<HandlerState<TInput, TResult>>[] steps)
     {
-        return Pipeline.BuildWithStepLogging(
+        return Pipeline.Build(
             ctx => ctx.ShouldTerminate(),
             scopeName,
             level,
@@ -154,9 +155,9 @@ public static class HandlerPipeline
     /// On termination, you can inspect the resulting value using <see cref="HandlerState{TInput, TResult}.WasHandled(out TResult)"/>.
     /// </para>
     /// </remarks>
-    public static SyncPipelineStep<HandlerState<TInput, TResult>> BuildWithStepLogging<TInput, TResult>(string scopeName, LogLevel level, params NamedSyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
+    public static SyncPipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(string scopeName, LogLevel level, params NamedSyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
     {
-        return Pipeline.BuildWithStepLogging(
+        return Pipeline.Build(
             ctx => ctx.ShouldTerminate(),
             scopeName,
             level,

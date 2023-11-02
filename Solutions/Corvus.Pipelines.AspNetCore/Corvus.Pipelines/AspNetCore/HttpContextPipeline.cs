@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace Corvus.Pipelines.AspNetCore;
@@ -26,18 +27,18 @@ public static class HttpContextPipeline
     /// <summary>
     /// Create a named step.
     /// </summary>
-    /// <param name="name">The name of the step.</param>
     /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedSyncPipelineStep<HttpContextPipelineState> Step(string name, SyncPipelineStep<HttpContextPipelineState> step) => new(name, step);
+    public static NamedSyncPipelineStep<HttpContextPipelineState> Name(this SyncPipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
 
     /// <summary>
     /// Create a named step.
     /// </summary>
-    /// <param name="name">The name of the step.</param>
     /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedPipelineStep<HttpContextPipelineState> Step(string name, PipelineStep<HttpContextPipelineState> step) => new(name, step);
+    public static NamedPipelineStep<HttpContextPipelineState> Name(this PipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
 
     /// <summary>
     /// Builds an asynchronous pipeline of <see cref="PipelineStep{HttpContextPipelineState}"/>.
@@ -70,9 +71,9 @@ public static class HttpContextPipeline
     /// <param name="level">The level at which to surface step entry/exit logging.</param>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that executes the pipeline.</returns>
-    public static PipelineStep<HttpContextPipelineState> BuildWithStepLogging(string scopeName, LogLevel level, params NamedPipelineStep<HttpContextPipelineState>[] steps)
+    public static PipelineStep<HttpContextPipelineState> Build(string scopeName, LogLevel level, params NamedPipelineStep<HttpContextPipelineState>[] steps)
     {
-        return Pipeline.BuildWithStepLogging(
+        return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,
             scopeName,
             level,
@@ -86,9 +87,9 @@ public static class HttpContextPipeline
     /// <param name="level">The level at which to surface step entry/exit logging.</param>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that executes the pipeline.</returns>
-    public static SyncPipelineStep<HttpContextPipelineState> BuildWithStepLogging(string scopeName, LogLevel level, params NamedSyncPipelineStep<HttpContextPipelineState>[] steps)
+    public static SyncPipelineStep<HttpContextPipelineState> Build(string scopeName, LogLevel level, params NamedSyncPipelineStep<HttpContextPipelineState>[] steps)
     {
-        return Pipeline.BuildWithStepLogging(
+        return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,
             scopeName,
             level,

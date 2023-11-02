@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace Corvus.Pipelines;
 
@@ -11,6 +12,28 @@ namespace Corvus.Pipelines;
 /// </summary>
 public static class PipelineStepExtensions
 {
+    /// <summary>
+    /// Create a named step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
+    /// <returns>A named step.</returns>
+    public static NamedSyncPipelineStep<TState> Name<TState>(this SyncPipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
+        where TState : struct
+        => new(name!, step);
+
+    /// <summary>
+    /// Create a named step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
+    /// <returns>A named step.</returns>
+    public static NamedPipelineStep<TState> Name<TState>(this PipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
+        where TState : struct
+        => new(name!, step);
+
     /// <summary>
     /// An operator which returns a step which logs on entry to and exit from the input step.
     /// </summary>
@@ -83,8 +106,8 @@ public static class PipelineStepExtensions
     /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
-    /// <see cref="ICanFail{TState, TError}"/> step with permanent or transient failure handling via
-    /// operators like <see cref="Retry{TState, TError}(PipelineStep{TState}, Predicate{TState}, PipelineStep{TState}?)"/> and
+    /// <see cref="ICanFail"/> step with permanent or transient failure handling via
+    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
     /// <see cref="OnError{TState, TError}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
     public static PipelineStep<TState> Catch<TState, TException>(this PipelineStep<TState> step, Func<TState, TException, ValueTask<TState>> exceptionHandler)
@@ -114,8 +137,8 @@ public static class PipelineStepExtensions
     /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
-    /// <see cref="ICanFail{TState, TError}"/> step with permanent or transient failure handling via
-    /// operators like <see cref="Retry{TState, TError}(PipelineStep{TState}, Predicate{TState}, PipelineStep{TState}?)"/> and
+    /// <see cref="ICanFail"/> step with permanent or transient failure handling via
+    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
     /// <see cref="OnError{TState, TError}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
     public static PipelineStep<TState> Catch<TState, TException>(this PipelineStep<TState> step, Func<TState, TException, TState> exceptionHandler)
@@ -145,9 +168,9 @@ public static class PipelineStepExtensions
     /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
-    /// <see cref="ICanFail{TState, TError}"/> step with permanent or transient failure handling via
-    /// operators like <see cref="Retry{TState, TError}(SyncPipelineStep{TState}, Predicate{TState}, SyncPipelineStep{TState}?)"/> and
-    /// <see cref="OnError{TState, TError}(SyncPipelineStep{TState}, SyncPipelineStep{TState})"/>.
+    /// <see cref="ICanFail"/> step with permanent or transient failure handling via
+    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
+    /// <see cref="OnError{TState}(SyncPipelineStep{TState}, SyncPipelineStep{TState})"/>.
     /// </remarks>
     public static SyncPipelineStep<TState> Catch<TState, TException>(this SyncPipelineStep<TState> step, Func<TState, TException, TState> exceptionHandler)
         where TState : struct
@@ -170,34 +193,43 @@ public static class PipelineStepExtensions
     /// An operator which provides the ability to retry a step which might fail.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <typeparam name="TError">The type of the error details.</typeparam>
     /// <param name="step">The step to execute.</param>
     /// <param name="shouldRetry">A predicate which determines if the step should be retried.</param>
     /// <param name="beforeRetry">An step to carry out before retrying. This is commonly an asynchronous delay, but can be used to return
     /// an updated version of the state before retyring the action (e.g. incrementing an execution count.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
     /// and execute it using the result.</returns>
-    public static PipelineStep<TState> Retry<TState, TError>(this PipelineStep<TState> step, Predicate<TState> shouldRetry, PipelineStep<TState>? beforeRetry = null)
-        where TState : struct, ICanFail<TState, TError>
-        where TError : struct
+    public static PipelineStep<TState> Retry<TState>(this PipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, PipelineStep<RetryContext<TState>>? beforeRetry = null)
+        where TState : struct, ICanFail
     {
         return async state =>
         {
-            TState currentState = state.ResetFailureState();
+            TState currentState = state;
+            DateTimeOffset initialTime = DateTimeOffset.UtcNow;
+
+            int tryCount = 1;
 
             while (true)
             {
                 currentState = await step(currentState).ConfigureAwait(false);
-                if (currentState.ExecutionStatus == PipelineStepStatus.Success || !shouldRetry(currentState))
+                if (currentState.ExecutionStatus == PipelineStepStatus.Success)
+                {
+                    return currentState;
+                }
+
+                RetryContext<TState> retryContext = new(currentState, DateTimeOffset.UtcNow - initialTime, tryCount);
+
+                if (!shouldRetry(retryContext))
                 {
                     return currentState;
                 }
 
                 if (beforeRetry is not null)
                 {
-                    currentState = await beforeRetry(currentState).ConfigureAwait(false);
-                    currentState = currentState.PrepareToRetry();
+                    (currentState, TimeSpan _, int _) = await beforeRetry(retryContext).ConfigureAwait(false);
                 }
+
+                tryCount++;
             }
         };
     }
@@ -206,34 +238,43 @@ public static class PipelineStepExtensions
     /// An operator which provides the ability to retry a step which might fail.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <typeparam name="TError">The type of the error details.</typeparam>
     /// <param name="step">The step to execute.</param>
     /// <param name="shouldRetry">A predicate which determines if the step should be retried.</param>
     /// <param name="beforeRetry">An step to carry out before retrying. This is commonly an asynchronous delay, but can be used to return
     /// an updated version of the state before retyring the action (e.g. incrementing an execution count.</param>
     /// <returns>A <see cref="SyncPipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
     /// and execute it using the result.</returns>
-    public static SyncPipelineStep<TState> Retry<TState, TError>(this SyncPipelineStep<TState> step, Predicate<TState> shouldRetry, SyncPipelineStep<TState>? beforeRetry = null)
-        where TState : struct, ICanFail<TState, TError>
-        where TError : struct
+    public static SyncPipelineStep<TState> Retry<TState>(this SyncPipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, SyncPipelineStep<RetryContext<TState>>? beforeRetry = null)
+        where TState : struct, ICanFail
     {
         return state =>
         {
-            TState currentState = state.ResetFailureState();
+            TState currentState = state;
+            DateTimeOffset initialTime = DateTimeOffset.UtcNow;
+
+            int tryCount = 1;
 
             while (true)
             {
                 currentState = step(currentState);
-                if (currentState.ExecutionStatus == PipelineStepStatus.Success || !shouldRetry(currentState))
+                if (currentState.ExecutionStatus == PipelineStepStatus.Success)
+                {
+                    return currentState;
+                }
+
+                RetryContext<TState> retryContext = new(currentState, DateTimeOffset.UtcNow - initialTime, tryCount);
+
+                if (!shouldRetry(retryContext))
                 {
                     return currentState;
                 }
 
                 if (beforeRetry is not null)
                 {
-                    currentState = beforeRetry(currentState);
-                    currentState = currentState.PrepareToRetry();
+                    (currentState, TimeSpan _, int _) = beforeRetry(retryContext);
                 }
+
+                tryCount++;
             }
         };
     }
@@ -250,7 +291,7 @@ public static class PipelineStepExtensions
     public static PipelineStep<TState> OnError<TState, TError>(
         this PipelineStep<TState> step,
         PipelineStep<TState> onError)
-        where TState : struct, ICanFail<TState, TError>
+        where TState : struct, ICanFail
         where TError : struct
     {
         return step.Bind(async state =>
@@ -268,16 +309,14 @@ public static class PipelineStepExtensions
     /// An operator which provides the ability to choose a step to run if the bound step fails.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <typeparam name="TError">The type of the error details.</typeparam>
     /// <param name="step">The step to execute.</param>
     /// <param name="onError">The step to execute if the step fails.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, and, if an error occurs,
     /// execute the error step before returning the final result.</returns>
-    public static PipelineStep<TState> OnError<TState, TError>(
+    public static PipelineStep<TState> OnError<TState>(
         this PipelineStep<TState> step,
         SyncPipelineStep<TState> onError)
-        where TState : struct, ICanFail<TState, TError>
-        where TError : struct
+        where TState : struct, ICanFail
     {
         return step.Bind(state =>
         {
@@ -294,16 +333,14 @@ public static class PipelineStepExtensions
     /// An operator which provides the ability to choose a step to run if the bound step fails.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <typeparam name="TError">The type of the error details.</typeparam>
     /// <param name="step">The step to execute.</param>
     /// <param name="onError">The step to execute if the step fails.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, and, if an error occurs,
     /// execute the error step before returning the final result.</returns>
-    public static SyncPipelineStep<TState> OnError<TState, TError>(
+    public static SyncPipelineStep<TState> OnError<TState>(
         this SyncPipelineStep<TState> step,
         SyncPipelineStep<TState> onError)
-        where TState : struct, ICanFail<TState, TError>
-        where TError : struct
+        where TState : struct, ICanFail
     {
         return step.Bind(state =>
         {
@@ -361,6 +398,8 @@ public static class PipelineStepExtensions
         return step.Bind(state => selector(state)(state));
     }
 
+#pragma warning disable RCS1047 // Non-asynchronous method name should not end with 'Async'. These methods convert to async.
+
     /// <summary>
     /// Convert a synchronous pipeline step to an asynchronous one.
     /// </summary>
@@ -384,6 +423,7 @@ public static class PipelineStepExtensions
     {
         return new NamedPipelineStep<TState>(step.Name, state => ValueTask.FromResult(step.Step(state)));
     }
+#pragma warning restore RCS1047 // Non-asynchronous method name should not end with 'Async'.
 
     /// <summary>
     /// An operator that produces a step which executes two steps in parallel, and returns the result of the first step

@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Runtime.CompilerServices;
 using Corvus.Pipelines;
 using Microsoft.Extensions.Logging;
 
@@ -27,18 +28,18 @@ public static class YarpPipeline
     /// <summary>
     /// Create a named step.
     /// </summary>
-    /// <param name="name">The name of the step.</param>
     /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedSyncPipelineStep<YarpPipelineState> Step(string name, SyncPipelineStep<YarpPipelineState> step) => new(name, step);
+    public static NamedSyncPipelineStep<YarpPipelineState> Name(this SyncPipelineStep<YarpPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
 
     /// <summary>
     /// Create a named step.
     /// </summary>
-    /// <param name="name">The name of the step.</param>
     /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedPipelineStep<YarpPipelineState> Step(string name, PipelineStep<YarpPipelineState> step) => new(name, step);
+    public static NamedPipelineStep<YarpPipelineState> Name(this PipelineStep<YarpPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
 
     /// <summary>
     /// Builds an asynchronous pipeline of <see cref="PipelineStep{YarpPipelineState}"/>.
@@ -71,9 +72,9 @@ public static class YarpPipeline
     /// <param name="level">The level at which to surface step entry/exit logging.</param>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that executes the pipeline.</returns>
-    public static PipelineStep<YarpPipelineState> BuildWithStepLogging(string scopeName, LogLevel level, params NamedPipelineStep<YarpPipelineState>[] steps)
+    public static PipelineStep<YarpPipelineState> Build(string scopeName, LogLevel level, params NamedPipelineStep<YarpPipelineState>[] steps)
     {
-        return Pipeline.BuildWithStepLogging(
+        return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,
             scopeName,
             level,
@@ -87,9 +88,9 @@ public static class YarpPipeline
     /// <param name="level">The level at which to surface step entry/exit logging.</param>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that executes the pipeline.</returns>
-    public static SyncPipelineStep<YarpPipelineState> BuildWithStepLogging(string scopeName, LogLevel level, params NamedSyncPipelineStep<YarpPipelineState>[] steps)
+    public static SyncPipelineStep<YarpPipelineState> Build(string scopeName, LogLevel level, params NamedSyncPipelineStep<YarpPipelineState>[] steps)
     {
-        return Pipeline.BuildWithStepLogging(
+        return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,
             scopeName,
             level,

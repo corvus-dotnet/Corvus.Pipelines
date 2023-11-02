@@ -15,7 +15,7 @@ using ILoggerFactory loggerFactory =
         builder.AddSimpleConsole(options =>
         {
             options.IncludeScopes = true;
-            options.SingleLine = false;
+            options.SingleLine = true;
         });
     });
 

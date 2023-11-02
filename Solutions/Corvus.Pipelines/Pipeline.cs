@@ -213,7 +213,7 @@ public static class Pipeline
     /// passed to the next step, and so on, until the final resulting state is returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> BuildWithStepLogging<TState>(string scopeName, LogLevel level, params NamedPipelineStep<TState>[] steps)
+    public static PipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params NamedPipelineStep<TState>[] steps)
         where TState : struct, ILoggable
     {
         return async state =>
@@ -252,7 +252,7 @@ public static class Pipeline
     /// passed to the next step, and so on, until the final resulting state is returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> BuildWithStepLogging<TState>(string scopeName, LogLevel level, params NamedSyncPipelineStep<TState>[] steps)
+    public static PipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params NamedSyncPipelineStep<TState>[] steps)
         where TState : struct, ILoggable
     {
 #pragma warning disable RCS1229 // Use async/await when necessary. This is not necessary because we are wrapping a sync result in a value task.
@@ -297,7 +297,7 @@ public static class Pipeline
     /// returns <see langword="true"/>. At this point the pipeline will be terminated, and the resulting state returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> BuildWithStepLogging<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params NamedPipelineStep<TState>[] steps)
+    public static PipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params NamedPipelineStep<TState>[] steps)
         where TState : struct, ILoggable
     {
         return async state =>
@@ -345,7 +345,7 @@ public static class Pipeline
     /// returns <see langword="true"/>. At this point the pipeline will be terminated, and the resulting state returned.
     /// </para>
     /// </remarks>
-    public static SyncPipelineStep<TState> BuildWithStepLogging<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params NamedSyncPipelineStep<TState>[] steps)
+    public static SyncPipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params NamedSyncPipelineStep<TState>[] steps)
         where TState : struct, ILoggable
     {
         return state =>

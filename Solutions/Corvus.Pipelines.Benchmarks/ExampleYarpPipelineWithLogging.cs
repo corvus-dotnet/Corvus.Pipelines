@@ -17,27 +17,39 @@ public static class ExampleYarpPipelineWithLogging
 {
     private static readonly LogLevel LogLevel = LogLevel.Information;
 
-    private static readonly SyncPipelineStep<YarpPipelineState> InnerPipelineInstance =
-    YarpPipeline.BuildWithStepLogging(
-        "InnerPipeline",
-        LogLevel,
-        YarpPipeline.Step("HandleFizz", state => state.RequestTransformContext.Path == "/fizz"
+    private static readonly SyncPipelineStep<YarpPipelineState> HandleFizz =
+        static state => state.RequestTransformContext.Path == "/fizz"
                     ? state.TerminateAndForward()
-                    : state.Continue()),
-        YarpPipeline.Step("HandleBuzz", state => state.RequestTransformContext.Path == "/buzz"
+                    : state.Continue();
+
+    private static readonly SyncPipelineStep<YarpPipelineState> HandleBuzz =
+        static state => state.RequestTransformContext.Path == "/buzz"
                     ? throw new InvalidOperationException("Something's gone wrong!")
-                    : state.Continue()));
+                    : state.Continue();
+
+    private static readonly SyncPipelineStep<YarpPipelineState> InnerPipelineInstance =
+        YarpPipeline.Build(
+            "InnerPipeline",
+            LogLevel,
+            HandleFizz.Name(),
+            HandleBuzz.Name());
+
+    private static readonly SyncPipelineStep<HandlerState<PathString, string?>> HandleFoo =
+        static state => state.Input == "/foo"
+                            ? state.Handled("We're looking at a foo")
+                            : state.NotHandled();
+
+    private static readonly SyncPipelineStep<HandlerState<PathString, string?>> HandleBar =
+        static state => state.Input == "/bar"
+                    ? state.Handled(null)
+                    : state.NotHandled();
 
     private static readonly SyncPipelineStep<HandlerState<PathString, string?>> MessageHandlerPipelineInstance =
-        HandlerPipeline.BuildWithStepLogging(
+        HandlerPipeline.Build(
             "MessageHandlerPipeline",
             LogLevel,
-            HandlerPipeline.Step<PathString, string?>("HandleFoo", static state => state.Input == "/foo"
-                    ? state.Handled("We're looking at a foo")
-                    : state.NotHandled()),
-            HandlerPipeline.Step<PathString, string?>("HandleBar", static state => state.Input == "/bar"
-                    ? state.Handled(null)
-                    : state.NotHandled()));
+            HandleFoo.Name(),
+            HandleBar.Name());
 
     private static readonly SyncPipelineStep<YarpPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
@@ -87,69 +99,53 @@ public static class ExampleYarpPipelineWithLogging
             return state.TransientFailure(new("Unable to execute the pipeline.", exception));
         };
 
+    private static readonly SyncPipelineStep<YarpPipelineState> HandleRoot =
+        static state => state.RequestTransformContext.Path == "/" // You can write in this style where we execute steps directly
+                ? state.TerminateAndForward()
+                : InnerPipelineInstance(state);
+
+    private static readonly SyncPipelineStep<YarpPipelineState> HandleMessageContextResult =
+        static state => state.RequestTransformContext.HttpContext.Items["Message"] is string message
+                        ? state.Continue()
+                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404));
+
+    private static readonly PipelineStep<YarpPipelineState> AsyncDelay =
+        static async state =>
+        {
+            await Task.Delay(0).ConfigureAwait(false);
+            return state.Continue();
+        };
+
     /// <summary>
     /// Gets an instance of an example yarp pipeline handler.
     /// </summary>
     public static PipelineStep<YarpPipelineState> Instance { get; } =
-        YarpPipeline.BuildWithStepLogging(
+        YarpPipeline.Build(
             "MainPipeline",
             LogLevel,
-            YarpPipeline.Step("HandleRoot", static state => state.RequestTransformContext.Path == "/" // You can write in this style where we execute steps directly
-                ? state.TerminateAndForward()
-                : InnerPipelineInstance(state)),
-            YarpPipeline.Step("ChooseMessageContextHandler", YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler)), // But we prefer this style where we hide away the state
-            YarpPipeline.Step("HandleMessageContextResult", static state => state.RequestTransformContext.HttpContext.Items["Message"] is string message
-                        ? state.Continue()
-                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404))))
+            HandleRoot.Name(),
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).Name(),
+            HandleMessageContextResult.Name())
         .Catch(CatchPipelineException).ToAsync()
         .Retry(
-            static state => state.ExecutionStatus == PipelineStepStatus.TransientFailure && state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
-            async state =>
-            {
-                if (state.Logger.IsEnabled(LogLevel.Information))
-                {
-                    state.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount}", state.FailureCount);
-                }
-
-                await Task.Delay(0).ConfigureAwait(false); // You could do a back off using state.FailureCount, or whatever!
-                return state;
-            })
+            YarpRetry.TransientWithCountPolicy(5),
+            YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 
     /// <summary>
     /// Gets an instance of an example yarp pipeline handler.
     /// </summary>
     public static PipelineStep<YarpPipelineState> ForceAsyncInstance { get; } =
-        YarpPipeline.BuildWithStepLogging(
+        YarpPipeline.Build(
             "MainAsyncPipeline",
             LogLevel,
-            YarpPipeline.Step(
-                "HandleRoot",
-                static state =>
-                    state.RequestTransformContext.Path == "/" // You can write in this style where we execute steps directly
-                        ? state.TerminateAndForward()
-                        : InnerPipelineInstance(state)).ToAsync(),
-            YarpPipeline.Step("AsyncDelay", async state =>
-            {
-                await Task.Delay(0).ConfigureAwait(false);
-                return state.Continue();
-            }),
-            YarpPipeline.Step("ChooseMessageContextHandler", YarpPipeline.Current.Choose(ChooseMessageContextHandler)), // But we prefer this style where we hide away the state
-            YarpPipeline.Step("HandleMessageContextResult", static state => ValueTask.FromResult(state.RequestTransformContext.HttpContext.Items["Message"] is string message
-                        ? state.Continue()
-                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404)))))
+            HandleRoot.Name().ToAsync(), // You can make the named item async
+            AsyncDelay.Name(),
+            YarpPipeline.Current.Choose(ChooseMessageContextHandler).Name(), // we prefer this style where we hide away the state
+            HandleMessageContextResult.ToAsync().Name()) // Or you can Name() the Async() item
         .Catch(CatchPipelineException)
         .Retry(
-            static state => state.FailureCount < 5, // This is doing a simple count, but you could layer policy based on state.TryGetErrorDetails()
-            async state =>
-            {
-                if (state.Logger.IsEnabled(LogLevel.Information))
-                {
-                    state.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount}", state.FailureCount);
-                }
-
-                await Task.Delay(0).ConfigureAwait(false); // You could do a back off using state.FailureCount, or whatever!
-                return state;
-            })
+            YarpRetry.TransientWithCountPolicy(5),
+            YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 }

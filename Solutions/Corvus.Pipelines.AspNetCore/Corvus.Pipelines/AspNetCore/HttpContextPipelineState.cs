@@ -18,20 +18,19 @@ namespace Corvus.Pipelines.AspNetCore;
 /// then choose to either <see cref="Continue()"/> processing, or <see cref="Complete()"/> the request.
 /// </remarks>
 public readonly struct HttpContextPipelineState :
-    ICanFail<HttpContextPipelineState, HttpContextPipelineError>,
+    ICanFail,
     ICancellable<HttpContextPipelineState>,
     ILoggable
 {
     private readonly RequestState pipelineState;
     private readonly HttpContextPipelineError errorDetails;
 
-    private HttpContextPipelineState(HttpContext httpContext, RequestState pipelineState, PipelineStepStatus executionStatus, HttpContextPipelineError errorDetails, int failureCount, ILogger logger, CancellationToken cancellationToken)
+    private HttpContextPipelineState(HttpContext httpContext, RequestState pipelineState, PipelineStepStatus executionStatus, HttpContextPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
         this.HttpContext = httpContext;
         this.pipelineState = pipelineState;
         this.errorDetails = errorDetails;
         this.ExecutionStatus = executionStatus;
-        this.FailureCount = failureCount;
         this.Logger = logger;
         this.CancellationToken = cancellationToken;
     }
@@ -49,9 +48,6 @@ public readonly struct HttpContextPipelineState :
 
     /// <inheritdoc/>
     public PipelineStepStatus ExecutionStatus { get; }
-
-    /// <inheritdoc/>
-    public int FailureCount { get; }
 
     /// <inheritdoc/>
     public CancellationToken CancellationToken { get; }
@@ -75,11 +71,11 @@ public readonly struct HttpContextPipelineState :
     /// <returns>The initialized instance.</returns>
     /// <remarks>
     /// You can explicitly provide a logger; if you don't it will be resolved from the service provider. If
-    /// no logger is available in the service provider, it will fall back to the <see cref="NullLogger{HttpContextPipelineState}"/>.
+    /// no logger is available in the service provider, it will fall back to the <see cref="NullLogger"/>.
     /// </remarks>
     public static HttpContextPipelineState For(HttpContext httpContext, ILogger? logger = null)
     {
-        return new(httpContext, RequestState.Continue, default, default, 0, logger ?? httpContext.RequestServices?.GetService<ILogger<HttpContextPipelineState>>() ?? NullLogger<HttpContextPipelineState>.Instance, default);
+        return new(httpContext, RequestState.Continue, default, default, logger ?? httpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, default);
     }
 
     /// <summary>
@@ -89,7 +85,7 @@ public readonly struct HttpContextPipelineState :
     public HttpContextPipelineState Complete()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "complete");
-        return new(this.HttpContext, RequestState.Terminate, this.ExecutionStatus, this.errorDetails, this.FailureCount, this.Logger, this.CancellationToken);
+        return new(this.HttpContext, RequestState.Terminate, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
     }
 
     /// <summary>
@@ -99,17 +95,25 @@ public readonly struct HttpContextPipelineState :
     public HttpContextPipelineState Continue()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "continue");
-        return new(this.HttpContext, RequestState.Continue, this.ExecutionStatus, this.errorDetails, this.FailureCount, this.Logger, this.CancellationToken);
+        return new(this.HttpContext, RequestState.Continue, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Try to get the error details for the current state.
+    /// </summary>
+    /// <param name="errorDetails">The error details, if any.</param>
+    /// <returns><see langword="true"/> if error details were available, otherwise false.</returns>
     public bool TryGetErrorDetails([NotNullWhen(true)] out HttpContextPipelineError errorDetails)
     {
         errorDetails = this.errorDetails;
         return this.ExecutionStatus != PipelineStepStatus.Success;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Update the state with a permanent failure.
+    /// </summary>
+    /// <param name="errorDetails">The error details associated with the failure.</param>
+    /// <returns>The updated state.</returns>
     public HttpContextPipelineState PermanentFailure(HttpContextPipelineError errorDetails)
     {
         return new HttpContextPipelineState(
@@ -117,12 +121,15 @@ public readonly struct HttpContextPipelineState :
             this.pipelineState,
             PipelineStepStatus.PermanentFailure,
             errorDetails,
-            this.FailureCount + 1,
             this.Logger,
             this.CancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Update the state with a transient failure.
+    /// </summary>
+    /// <param name="errorDetails">The error details associated with the failure.</param>
+    /// <returns>The updated state.</returns>
     public HttpContextPipelineState TransientFailure(HttpContextPipelineError errorDetails)
     {
         return new HttpContextPipelineState(
@@ -130,12 +137,14 @@ public readonly struct HttpContextPipelineState :
             this.pipelineState,
             PipelineStepStatus.TransientFailure,
             errorDetails,
-            this.FailureCount + 1,
             this.Logger,
             this.CancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Update the state for a successful execution.
+    /// </summary>
+    /// <returns>The updated state.</returns>
     public HttpContextPipelineState Success()
     {
         return new HttpContextPipelineState(
@@ -143,33 +152,6 @@ public readonly struct HttpContextPipelineState :
             this.pipelineState,
             PipelineStepStatus.Success,
             default,
-            this.FailureCount,
-            this.Logger,
-            this.CancellationToken);
-    }
-
-    /// <inheritdoc/>
-    public HttpContextPipelineState ResetFailureState()
-    {
-        return new HttpContextPipelineState(
-            this.HttpContext,
-            this.pipelineState,
-            PipelineStepStatus.Success,
-            default,
-            0,
-            this.Logger,
-            this.CancellationToken);
-    }
-
-    /// <inheritdoc/>
-    public HttpContextPipelineState PrepareToRetry()
-    {
-        return new HttpContextPipelineState(
-            this.HttpContext,
-            this.pipelineState,
-            PipelineStepStatus.Success,
-            default,
-            this.FailureCount,
             this.Logger,
             this.CancellationToken);
     }
@@ -182,7 +164,6 @@ public readonly struct HttpContextPipelineState :
             this.pipelineState,
             this.ExecutionStatus,
             this.errorDetails,
-            this.FailureCount,
             this.Logger,
             cancellationToken);
     }

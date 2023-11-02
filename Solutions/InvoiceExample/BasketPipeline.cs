@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Corvus.Pipelines;
+﻿using Corvus.Pipelines;
 
 namespace InvoiceExample;
 
