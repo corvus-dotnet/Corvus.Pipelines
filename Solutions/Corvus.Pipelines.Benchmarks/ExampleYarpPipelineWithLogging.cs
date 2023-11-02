@@ -141,8 +141,8 @@ public static class ExampleYarpPipelineWithLogging
             LogLevel,
             HandleRoot.Name().ToAsync(), // You can make the named item async
             AsyncDelay.Name(),
-            YarpPipeline.Current.Choose(ChooseMessageContextHandler).Name(), // we prefer this style where we hide away the state
-            HandleMessageContextResult.ToAsync().Name()) // Or you can Name() the Async() item
+            YarpPipeline.Current.Choose(ChooseMessageContextHandler).Name(),
+            HandleMessageContextResult.ToAsync().Name()) // You can Name() the Async() item
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5),
