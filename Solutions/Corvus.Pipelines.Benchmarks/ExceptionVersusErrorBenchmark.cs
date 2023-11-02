@@ -17,11 +17,11 @@ public class ExceptionVersusErrorBenchmark
     private static readonly PipelineStep<ErrorState> PipelineWithError =
         Pipeline.Build<ErrorState>(
             static state => state.TransientFailure())
-        .Retry<ErrorState>(state => state.FailureCount < 5);
+        .Retry(state => state.FailureCount < 5);
 
     private static readonly PipelineStep<ErrorState> PipelineWithException =
     Pipeline.Build(
-         Pipeline.Current<ErrorState>().Bind(static _ => throw new InvalidOperationException("Some exception is thrown")))
+         Pipeline.CurrentSync<ErrorState>().Bind(static _ => throw new InvalidOperationException("Some exception is thrown")))
         .Catch<ErrorState, InvalidOperationException>(static (state, _) => state.TransientFailure())
         .Retry(state => state.FailureCount < 5);
 
