@@ -59,7 +59,7 @@ public readonly struct HttpContextPipelineState :
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
     /// terminate predicate for the <see cref="HttpContextPipeline"/>.
     /// </summary>
-    internal bool ShouldTerminatePipeline => this.pipelineState != RequestState.Continue;
+    internal bool ShouldTerminatePipeline => this.pipelineState != RequestState.Continue || this.CancellationToken.IsCancellationRequested;
 
     /// <summary>
     /// Gets an instance of the <see cref="HttpContextPipelineState"/> for a particular
@@ -68,14 +68,15 @@ public readonly struct HttpContextPipelineState :
     /// <param name="httpContext">The <see cref="HttpContext"/> with which to
     /// initialize the <see cref="HttpContextPipelineState"/>.</param>
     /// <param name="logger">The logger to use for the context.</param>
+    /// <param name="cancellationToken">The cancellation token to use for the context.</param>
     /// <returns>The initialized instance.</returns>
     /// <remarks>
     /// You can explicitly provide a logger; if you don't it will be resolved from the service provider. If
     /// no logger is available in the service provider, it will fall back to the <see cref="NullLogger"/>.
     /// </remarks>
-    public static HttpContextPipelineState For(HttpContext httpContext, ILogger? logger = null)
+    public static HttpContextPipelineState For(HttpContext httpContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        return new(httpContext, RequestState.Continue, default, default, logger ?? httpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, default);
+        return new(httpContext, RequestState.Continue, default, default, logger ?? httpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, cancellationToken);
     }
 
     /// <summary>

@@ -65,7 +65,7 @@ public readonly struct YarpPipelineState :
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
     /// terminate predicate for the <see cref="YarpPipeline"/>.
     /// </summary>
-    internal bool ShouldTerminatePipeline => this.pipelineState != TransformState.Continue;
+    internal bool ShouldTerminatePipeline => this.pipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
 
     /// <summary>
     /// Gets an instance of the <see cref="YarpPipelineState"/> for a particular
@@ -74,14 +74,15 @@ public readonly struct YarpPipelineState :
     /// <param name="requestTransformContext">The <see cref="RequestTransformContext"/> with which to
     /// initialize the <see cref="YarpPipelineState"/>.</param>
     /// <param name="logger">The logger to use for the context.</param>
+    /// <param name="cancellationToken">The cancellation token to use for the context.</param>
     /// <returns>The initialized instance.</returns>
     /// <remarks>
     /// You can explicitly provide a logger; if you don't it will be resolved from the service provider. If
     /// no logger is available in the service provider, it will fall back to the <see cref="NullLogger"/>.
     /// </remarks>
-    public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null)
+    public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        return new(requestTransformContext, default, TransformState.Continue, default, default, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, default);
+        return new(requestTransformContext, default, TransformState.Continue, default, default, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, cancellationToken);
     }
 
     /// <summary>
