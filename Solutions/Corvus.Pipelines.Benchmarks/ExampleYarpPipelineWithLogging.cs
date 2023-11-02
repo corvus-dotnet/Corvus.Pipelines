@@ -86,7 +86,7 @@ public static class ExampleYarpPipelineWithLogging
                 // If we are logging warnings, we want to tell people about this.
                 if (state.Logger.IsEnabled(LogLevel.Debug))
                 {
-                    // If we have debug level diagnostics, include the exception
+                    // We have debug level diagnostics, so include the exception
                     state.Logger.LogWarning(Pipeline.EventIds.TransientFailure, exception, "Exception during processing produced transient failure.");
                 }
                 else
@@ -119,17 +119,16 @@ public static class ExampleYarpPipelineWithLogging
     /// <summary>
     /// Gets an instance of an example yarp pipeline handler.
     /// </summary>
-    public static PipelineStep<YarpPipelineState> Instance { get; } =
+    public static SyncPipelineStep<YarpPipelineState> Instance { get; } =
         YarpPipeline.Build(
             "MainPipeline",
             LogLevel,
             HandleRoot.Name(),
             YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).Name(),
             HandleMessageContextResult.Name())
-        .Catch(CatchPipelineException).ToAsync()
+        .Catch(CatchPipelineException)
         .Retry(
-            YarpRetry.TransientWithCountPolicy(5),
-            YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
+            YarpRetry.TransientWithCountPolicy(5)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
 
     /// <summary>

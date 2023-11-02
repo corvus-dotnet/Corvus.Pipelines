@@ -28,18 +28,18 @@ public class AllSortsBenchmark
         ];
 
     /// <summary>
-    /// Extract parameters from a URI template using the Corvus implementation of the Tavis API.
+    /// Run a pipeline.
     /// </summary>
     /// <returns>
     /// A result, to ensure that the code under test does not get optimized out of existence.
     /// </returns>
     [Benchmark(Baseline = true)]
-    public async Task<bool> RunPipeline()
+    public bool RunPipeline()
     {
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = await ExampleYarpPipeline.Instance(YarpPipelineState.For(context)).ConfigureAwait(false);
+            YarpPipelineState result = ExampleYarpPipeline.Instance(YarpPipelineState.For(context));
             shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
         }
 
@@ -47,18 +47,56 @@ public class AllSortsBenchmark
     }
 
     /// <summary>
-    /// Extract parameters from a URI template using the Corvus implementation of the Tavis API.
+    /// Run a pipeline.
     /// </summary>
     /// <returns>
     /// A result, to ensure that the code under test does not get optimized out of existence.
     /// </returns>
     [Benchmark]
-    public async Task<bool> RunPipelineWithLogging()
+    public bool RunPipelineWithLogging()
     {
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = await ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(context)).ConfigureAwait(false);
+            YarpPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(context));
+            shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+        }
+
+        return shouldForward;
+    }
+
+    /// <summary>
+    /// Run a pipeline.
+    /// </summary>
+    /// <returns>
+    /// A result, to ensure that the code under test does not get optimized out of existence.
+    /// </returns>
+    [Benchmark]
+    public async Task<bool> RunPipelineAsync()
+    {
+        bool shouldForward = true;
+        foreach (RequestTransformContext context in Contexts)
+        {
+            YarpPipelineState result = await ExampleYarpPipeline.ForceAsyncInstance(YarpPipelineState.For(context)).ConfigureAwait(false);
+            shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+        }
+
+        return shouldForward;
+    }
+
+    /// <summary>
+    /// Run a pipeline.
+    /// </summary>
+    /// <returns>
+    /// A result, to ensure that the code under test does not get optimized out of existence.
+    /// </returns>
+    [Benchmark]
+    public async Task<bool> RunPipelineWithLoggingAsync()
+    {
+        bool shouldForward = true;
+        foreach (RequestTransformContext context in Contexts)
+        {
+            YarpPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpPipelineState.For(context)).ConfigureAwait(false);
             shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
         }
 

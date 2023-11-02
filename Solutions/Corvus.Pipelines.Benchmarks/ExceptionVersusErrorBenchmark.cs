@@ -14,40 +14,77 @@ namespace Corvus.Pipelines.Benchmarks;
 [MemoryDiagnoser]
 public class ExceptionVersusErrorBenchmark
 {
-    private static readonly PipelineStep<ErrorState> PipelineWithError =
+    private static readonly SyncPipelineStep<ErrorState> PipelineWithError =
         Pipeline.Build<ErrorState>(
             static state => state.TransientFailure())
         .Retry(state => state.FailureCount < 5);
 
-    private static readonly PipelineStep<ErrorState> PipelineWithException =
+    private static readonly SyncPipelineStep<ErrorState> PipelineWithException =
     Pipeline.Build(
          Pipeline.CurrentSync<ErrorState>().Bind(static _ => throw new InvalidOperationException("Some exception is thrown")))
         .Catch<ErrorState, InvalidOperationException>(static (state, _) => state.TransientFailure())
         .Retry(state => state.FailureCount < 5);
 
+    private static readonly PipelineStep<ErrorState> PipelineWithErrorAsync =
+    Pipeline.Build<ErrorState>(
+        static state => ValueTask.FromResult(state.TransientFailure()))
+    .Retry(state => state.FailureCount < 5);
+
+    private static readonly PipelineStep<ErrorState> PipelineWithExceptionAsync =
+    Pipeline.Build(
+         Pipeline.Current<ErrorState>().Bind(static _ => throw new InvalidOperationException("Some exception is thrown")))
+        .Catch<ErrorState, InvalidOperationException>(static (state, _) => state.TransientFailure())
+        .Retry(state => state.FailureCount < 5);
+
     /// <summary>
-    /// Extract parameters from a URI template using the Corvus implementation of the Tavis API.
+    /// Run a pipeline.
     /// </summary>
     /// <returns>
     /// A result, to ensure that the code under test does not get optimized out of existence.
     /// </returns>
     [Benchmark(Baseline = true)]
-    public async Task<bool> RunPipelineWithError()
+    public bool RunPipelineWithError()
     {
-        ErrorState result = await PipelineWithError(default);
+        ErrorState result = PipelineWithError(default);
         return result.ExecutionStatus == PipelineStepStatus.Success;
     }
 
     /// <summary>
-    /// Extract parameters from a URI template using the Corvus implementation of the Tavis API.
+    /// Run a pipeline.
     /// </summary>
     /// <returns>
     /// A result, to ensure that the code under test does not get optimized out of existence.
     /// </returns>
     [Benchmark]
-    public async Task<bool> RunPipelineWithException()
+    public async Task<bool> RunPipelineWithErrorAsync()
     {
-        ErrorState result = await PipelineWithException(default);
+        ErrorState result = await PipelineWithErrorAsync(default).ConfigureAwait(false);
+        return result.ExecutionStatus == PipelineStepStatus.Success;
+    }
+
+    /// <summary>
+    /// Run a pipeline.
+    /// </summary>
+    /// <returns>
+    /// A result, to ensure that the code under test does not get optimized out of existence.
+    /// </returns>
+    [Benchmark]
+    public bool RunPipelineWithException()
+    {
+        ErrorState result = PipelineWithException(default);
+        return result.ExecutionStatus == PipelineStepStatus.Success;
+    }
+
+    /// <summary>
+    /// Run a pipeline.
+    /// </summary>
+    /// <returns>
+    /// A result, to ensure that the code under test does not get optimized out of existence.
+    /// </returns>
+    [Benchmark]
+    public async Task<bool> RunPipelineWithExceptionAsync()
+    {
+        ErrorState result = await PipelineWithExceptionAsync(default).ConfigureAwait(false);
         return result.ExecutionStatus == PipelineStepStatus.Success;
     }
 

@@ -25,35 +25,29 @@ string productId = "Catalog2_Product2";
 
 HandlerState<string, decimal> pricingResult = PricingCatalogs.PricingHandler(HandlerState<string, decimal>.For(productId));
 
-Console.Write(productId);
-Console.Write(" ");
-
 if (pricingResult.WasHandled(out decimal price))
 {
-    Console.WriteLine(price);
+    logger.LogInformation("{productId}: {price}", productId, price);
 }
 else
 {
-    Console.WriteLine("was not priced");
+    logger.LogInformation("{productId} not priced", productId);
 }
 
 foreach (string path in paths)
 {
     RequestTransformContext ctx = new() { HttpContext = new DefaultHttpContext() { Request = { Path = path } }, Path = path };
 
-    YarpPipelineState result = await ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(ctx, logger)).ConfigureAwait(false);
+    YarpPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(ctx, logger));
 
     if (result.ShouldForward(out NonForwardedResponseDetails responseDetails))
     {
-        Console.WriteLine($"Forwarding, message is: {ctx.HttpContext.Items["Message"] ?? "not set"}");
+        logger.LogInformation("Forwarding, message is: {message}", ctx.HttpContext.Items["Message"] ?? "not set");
     }
     else
     {
-        Console.WriteLine($"Not forwarding: Status Code {responseDetails.StatusCode}");
+        logger.LogInformation("Not forwarding: Status Code  {statusCode}", responseDetails.StatusCode);
     }
-
-    Console.WriteLine();
-    Console.WriteLine();
 }
 
 static class InvoiceSteps

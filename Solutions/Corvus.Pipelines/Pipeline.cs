@@ -107,7 +107,7 @@ public static class Pipeline
     /// passed to the next step, and so on, until the final resulting state is returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> Build<TState>(params SyncPipelineStep<TState>[] steps)
+    public static SyncPipelineStep<TState> Build<TState>(params SyncPipelineStep<TState>[] steps)
         where TState : struct
     {
         return state =>
@@ -118,7 +118,7 @@ public static class Pipeline
                 currentResult = step(currentResult);
             }
 
-            return ValueTask.FromResult(currentResult);
+            return currentResult;
         };
     }
 
