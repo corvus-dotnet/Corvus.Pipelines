@@ -1295,6 +1295,214 @@ public static class PipelineStepExtensions
         };
     }
 
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static SyncPipelineStep<TState> BindServices<TState, TService1>(this Func<TState, TService1, TState> step, TService1 service1)
+        where TState : struct
+        where TService1 : notnull
+    {
+        return state => step(state, service1);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static SyncPipelineStep<TState> BindServices<TState, TService1, TService2>(this Func<TState, TService1, TService2, TState> step, TService1 service1, TService2 service2)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+    {
+        return state => step(state, service1, service2);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <typeparam name="TService3">The type of the third service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <param name="service3">The third service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static SyncPipelineStep<TState> BindServices<TState, TService1, TService2, TService3>(this Func<TState, TService1, TService2, TService3, TState> step, TService1 service1, TService2 service2, TService3 service3)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+        where TService3 : notnull
+    {
+        return state => step(state, service1, service2, service3);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <typeparam name="TService3">The type of the third service to bind.</typeparam>
+    /// <typeparam name="TService4">The type of the fourth service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <param name="service3">The third service instance to bind.</param>
+    /// <param name="service4">The fourth service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static SyncPipelineStep<TState> BindServices<TState, TService1, TService2, TService3, TService4>(this Func<TState, TService1, TService2, TService3, TService4, TState> step, TService1 service1, TService2 service2, TService3 service3, TService4 service4)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+        where TService3 : notnull
+        where TService4 : notnull
+    {
+        return state => step(state, service1, service2, service3, service4);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <typeparam name="TService3">The type of the third service to bind.</typeparam>
+    /// <typeparam name="TService4">The type of the fourth service to bind.</typeparam>
+    /// <typeparam name="TService5">The type of the fifth service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <param name="service3">The third service instance to bind.</param>
+    /// <param name="service4">The fourth service instance to bind.</param>
+    /// <param name="service5">The fifth service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static SyncPipelineStep<TState> BindServices<TState, TService1, TService2, TService3, TService4, TService5>(this Func<TState, TService1, TService2, TService3, TService4, TService5, TState> step, TService1 service1, TService2 service2, TService3 service3, TService4 service4, TService5 service5)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+        where TService3 : notnull
+        where TService4 : notnull
+    {
+        return state => step(state, service1, service2, service3, service4, service5);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static PipelineStep<TState> BindServices<TState, TService1>(this Func<TState, TService1, ValueTask<TState>> step, TService1 service1)
+        where TState : struct
+        where TService1 : notnull
+    {
+        return state => step(state, service1);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static PipelineStep<TState> BindServices<TState, TService1, TService2>(this Func<TState, TService1, TService2, ValueTask<TState>> step, TService1 service1, TService2 service2)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+    {
+        return state => step(state, service1, service2);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <typeparam name="TService3">The type of the third service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <param name="service3">The third service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static PipelineStep<TState> BindServices<TState, TService1, TService2, TService3>(this Func<TState, TService1, TService2, TService3, ValueTask<TState>> step, TService1 service1, TService2 service2, TService3 service3)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+        where TService3 : notnull
+    {
+        return state => step(state, service1, service2, service3);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <typeparam name="TService3">The type of the third service to bind.</typeparam>
+    /// <typeparam name="TService4">The type of the fourth service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <param name="service3">The third service instance to bind.</param>
+    /// <param name="service4">The fourth service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static PipelineStep<TState> BindServices<TState, TService1, TService2, TService3, TService4>(this Func<TState, TService1, TService2, TService3, TService4, ValueTask<TState>> step, TService1 service1, TService2 service2, TService3 service3, TService4 service4)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+        where TService3 : notnull
+        where TService4 : notnull
+    {
+        return state => step(state, service1, service2, service3, service4);
+    }
+
+    /// <summary>
+    /// Bind the given services to the function to produce a pipeline step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <typeparam name="TService1">The type of the service to bind.</typeparam>
+    /// <typeparam name="TService2">The type of the second service to bind.</typeparam>
+    /// <typeparam name="TService3">The type of the third service to bind.</typeparam>
+    /// <typeparam name="TService4">The type of the fourth service to bind.</typeparam>
+    /// <typeparam name="TService5">The type of the fifth service to bind.</typeparam>
+    /// <param name="step">The step to bind.</param>
+    /// <param name="service1">The service instance to bind.</param>
+    /// <param name="service2">The second service instance to bind.</param>
+    /// <param name="service3">The third service instance to bind.</param>
+    /// <param name="service4">The fourth service instance to bind.</param>
+    /// <param name="service5">The fifth service instance to bind.</param>
+    /// <returns>An instance of a pipeline step with the services bound to it.</returns>
+    public static PipelineStep<TState> BindServices<TState, TService1, TService2, TService3, TService4, TService5>(this Func<TState, TService1, TService2, TService3, TService4, TService5, ValueTask<TState>> step, TService1 service1, TService2 service2, TService3 service3, TService4 service4, TService5 service5)
+        where TState : struct
+        where TService1 : notnull
+        where TService2 : notnull
+        where TService3 : notnull
+        where TService4 : notnull
+    {
+        return state => step(state, service1, service2, service3, service4, service5);
+    }
+
     private static TValue GetValueOrDefault<TState, TValue>(TState state, Func<TState, TValue>? defaultValueProvider)
         where TState : struct
         where TValue : struct
