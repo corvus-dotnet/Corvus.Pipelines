@@ -30,7 +30,7 @@ public static class HttpContextPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static SyncPipelineStepProvider<HttpContextPipelineState> Name(this SyncPipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
+    public static SyncPipelineStepProvider<HttpContextPipelineState> WithName(this SyncPipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.WithName(step, name);
 
     /// <summary>
     /// Create a named step.
@@ -38,7 +38,7 @@ public static class HttpContextPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static PipelineStepProvider<HttpContextPipelineState> Name(this PipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
+    public static PipelineStepProvider<HttpContextPipelineState> WithName(this PipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.WithName(step, name);
 
     /// <summary>
     /// Builds an asynchronous pipeline of <see cref="PipelineStep{HttpContextPipelineState}"/>.

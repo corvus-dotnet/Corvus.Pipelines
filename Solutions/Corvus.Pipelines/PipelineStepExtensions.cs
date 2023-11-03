@@ -21,7 +21,7 @@ public static class PipelineStepExtensions
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static SyncPipelineStepProvider<TState> Name<TState>(this SyncPipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
+    public static SyncPipelineStepProvider<TState> WithName<TState>(this SyncPipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
         where TState : struct
         => new SyncPipelineStepProvider<TState>(step).AddFeature(NameFeature, name!);
 
@@ -49,7 +49,7 @@ public static class PipelineStepExtensions
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static PipelineStepProvider<TState> Name<TState>(this PipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
+    public static PipelineStepProvider<TState> WithName<TState>(this PipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
         where TState : struct
         => new PipelineStepProvider<TState>(step).AddFeature(NameFeature, name!);
 

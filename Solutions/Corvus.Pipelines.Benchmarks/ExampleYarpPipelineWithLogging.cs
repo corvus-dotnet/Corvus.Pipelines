@@ -31,8 +31,8 @@ public static class ExampleYarpPipelineWithLogging
         YarpPipeline.Build(
             "InnerPipeline",
             LogLevel,
-            HandleFizz.Name(),
-            HandleBuzz.Name());
+            HandleFizz.WithName(),
+            HandleBuzz.WithName());
 
     private static readonly SyncPipelineStep<HandlerState<PathString, string?>> HandleFoo =
         static state => state.Input == "/foo"
@@ -48,8 +48,8 @@ public static class ExampleYarpPipelineWithLogging
         HandlerPipeline.Build(
             "MessageHandlerPipeline",
             LogLevel,
-            HandleFoo.Name(),
-            HandleBar.Name());
+            HandleFoo.WithName(),
+            HandleBar.WithName());
 
     private static readonly SyncPipelineStep<YarpPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
@@ -123,9 +123,9 @@ public static class ExampleYarpPipelineWithLogging
         YarpPipeline.Build(
             "MainPipeline",
             LogLevel,
-            HandleRoot.Name(),
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).Name(),
-            HandleMessageContextResult.Name())
+            HandleRoot.WithName(),
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).WithName(),
+            HandleMessageContextResult.WithName())
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5)) // YarpRetry automatically logs
@@ -138,10 +138,10 @@ public static class ExampleYarpPipelineWithLogging
         YarpPipeline.Build(
             "MainAsyncPipeline",
             LogLevel,
-            HandleRoot.Name().ToAsync(), // You can make the named item async
-            AsyncDelay.Name(),
-            YarpPipeline.Current.Choose(ChooseMessageContextHandler).Name(),
-            HandleMessageContextResult.ToAsync().Name()) // You can Name() the Async() item
+            HandleRoot.WithName().ToAsync(), // You can make the named item async
+            AsyncDelay.WithName(),
+            YarpPipeline.Current.Choose(ChooseMessageContextHandler).WithName(),
+            HandleMessageContextResult.ToAsync().WithName()) // You can Name() the Async() item
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5),

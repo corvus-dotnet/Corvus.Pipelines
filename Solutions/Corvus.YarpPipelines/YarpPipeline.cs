@@ -31,7 +31,7 @@ public static class YarpPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static SyncPipelineStepProvider<YarpPipelineState> Name(this SyncPipelineStep<YarpPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
+    public static SyncPipelineStepProvider<YarpPipelineState> WithName(this SyncPipelineStep<YarpPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.WithName(step, name);
 
     /// <summary>
     /// Create a named step.
@@ -39,7 +39,7 @@ public static class YarpPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static PipelineStepProvider<YarpPipelineState> Name(this PipelineStep<YarpPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
+    public static PipelineStepProvider<YarpPipelineState> WithName(this PipelineStep<YarpPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.WithName(step, name);
 
     /// <summary>
     /// Builds an asynchronous pipeline of <see cref="PipelineStep{YarpPipelineState}"/>.

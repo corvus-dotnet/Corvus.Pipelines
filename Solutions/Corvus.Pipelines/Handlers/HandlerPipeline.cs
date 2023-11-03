@@ -32,7 +32,7 @@ public static class HandlerPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static SyncPipelineStepProvider<HandlerState<TInput, TResult>> Name<TInput, TResult>(this SyncPipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
+    public static SyncPipelineStepProvider<HandlerState<TInput, TResult>> WithName<TInput, TResult>(this SyncPipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.WithName(step, name);
 
     /// <summary>
     /// Create a named step.
@@ -42,7 +42,7 @@ public static class HandlerPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static PipelineStepProvider<HandlerState<TInput, TResult>> Name<TInput, TResult>(this PipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
+    public static PipelineStepProvider<HandlerState<TInput, TResult>> WithName<TInput, TResult>(this PipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.WithName(step, name);
 
     /// <summary>
     /// Builds a handler pipeline from an ordered array of handlers.
