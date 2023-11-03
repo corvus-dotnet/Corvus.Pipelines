@@ -2,7 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Collections.Immutable;
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Corvus.Pipelines;
@@ -21,7 +21,7 @@ public readonly struct SyncPipelineStepProvider<TState>
     public SyncPipelineStepProvider(in SyncPipelineStep<TState> step)
     {
         this.Step = step;
-        this.Features = ImmutableDictionary<string, object>.Empty;
+        this.Features = FrozenDictionary<string, object>.Empty;
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public readonly struct SyncPipelineStepProvider<TState>
     /// </summary>
     /// <param name="step">The instance of the step.</param>
     /// <param name="features">The features for the step.</param>
-    private SyncPipelineStepProvider(in SyncPipelineStep<TState> step, in ImmutableDictionary<string, object> features)
+    private SyncPipelineStepProvider(in SyncPipelineStep<TState> step, in FrozenDictionary<string, object> features)
     {
         this.Step = step;
         this.Features = features;
@@ -43,7 +43,7 @@ public readonly struct SyncPipelineStepProvider<TState>
     /// <summary>
     /// Gets the features for the step.
     /// </summary>
-    internal ImmutableDictionary<string, object> Features { get; }
+    internal FrozenDictionary<string, object> Features { get; }
 
     /// <summary>
     /// Add a feature to the step.
@@ -55,7 +55,9 @@ public readonly struct SyncPipelineStepProvider<TState>
     public SyncPipelineStepProvider<TState> AddFeature<T>(string name, T feature)
         where T : notnull
     {
-        return new(this.Step, this.Features.Add(name, feature));
+        var dictionary = this.Features.ToDictionary();
+        dictionary.Add(name, feature);
+        return new(this.Step, dictionary.ToFrozenDictionary());
     }
 
     /// <summary>

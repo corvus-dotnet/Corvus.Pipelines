@@ -29,7 +29,7 @@ public readonly struct YarpPipelineState :
     private readonly TransformState pipelineState;
     private readonly YarpPipelineError errorDetails;
 
-    private YarpPipelineState(RequestTransformContext requestTransformContext, NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
+    private YarpPipelineState(RequestTransformContext requestTransformContext, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
         this.RequestTransformContext = requestTransformContext;
         this.responseDetails = responseDetails;

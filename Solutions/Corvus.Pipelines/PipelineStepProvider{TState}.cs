@@ -2,7 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Collections.Immutable;
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Corvus.Pipelines;
@@ -14,7 +14,7 @@ namespace Corvus.Pipelines;
 public readonly struct PipelineStepProvider<TState>
     where TState : struct
 {
-    private readonly ImmutableDictionary<string, object> features;
+    private readonly FrozenDictionary<string, object> features;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PipelineStepProvider{TState}"/> struct.
@@ -23,7 +23,7 @@ public readonly struct PipelineStepProvider<TState>
     public PipelineStepProvider(in PipelineStep<TState> step)
     {
         this.Step = step;
-        this.features = ImmutableDictionary<string, object>.Empty;
+        this.features = FrozenDictionary<string, object>.Empty;
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public readonly struct PipelineStepProvider<TState>
     /// </summary>
     /// <param name="step">The instance of the step.</param>
     /// <param name="features">The features for the step.</param>
-    private PipelineStepProvider(in PipelineStep<TState> step, in ImmutableDictionary<string, object> features)
+    private PipelineStepProvider(in PipelineStep<TState> step, in FrozenDictionary<string, object> features)
     {
         this.Step = step;
         this.features = features;
@@ -63,7 +63,9 @@ public readonly struct PipelineStepProvider<TState>
     public PipelineStepProvider<TState> AddFeature<T>(string name, T feature)
         where T : notnull
     {
-        return new(this.Step, this.features.Add(name, feature));
+        var dictionary = this.features.ToDictionary();
+        dictionary.Add(name, feature);
+        return new(this.Step, dictionary.ToFrozenDictionary());
     }
 
     /// <summary>
