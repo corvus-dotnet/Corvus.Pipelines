@@ -1395,6 +1395,7 @@ public static class PipelineStepExtensions
         where TService2 : notnull
         where TService3 : notnull
         where TService4 : notnull
+        where TService5 : notnull
     {
         return state => step(state, service1, service2, service3, service4, service5);
     }
@@ -1499,6 +1500,7 @@ public static class PipelineStepExtensions
         where TService2 : notnull
         where TService3 : notnull
         where TService4 : notnull
+        where TService5 : notnull
     {
         return state => step(state, service1, service2, service3, service4, service5);
     }
