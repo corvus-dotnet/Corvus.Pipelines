@@ -13,12 +13,18 @@ namespace Corvus.YarpPipelines;
 public readonly struct NonForwardedResponseDetails
 {
     private readonly string? redirectLocation;
+    private readonly bool redirectShouldPreserveMethod;
 
-    private NonForwardedResponseDetails(
-        int statusCode, string? redirectLocation)
+    private NonForwardedResponseDetails(int statusCode)
     {
         this.StatusCode = statusCode;
+    }
+
+    private NonForwardedResponseDetails(
+        string redirectLocation, bool preserveMethod)
+    {
         this.redirectLocation = redirectLocation;
+        this.redirectShouldPreserveMethod = preserveMethod;
     }
 
     /// <summary>
@@ -33,7 +39,7 @@ public readonly struct NonForwardedResponseDetails
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
     public static NonForwardedResponseDetails ForStatusCode(int statusCode)
     {
-        return new(statusCode, null);
+        return new(statusCode);
     }
 
     /// <summary>
@@ -45,7 +51,7 @@ public readonly struct NonForwardedResponseDetails
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
     public static NonForwardedResponseDetails ForAuthenticationRedirect(string location)
     {
-        return new(StatusCodes.Status302Found, null);
+        return new(location, preserveMethod: false);
     }
 
     /// <summary>
@@ -55,11 +61,11 @@ public readonly struct NonForwardedResponseDetails
     /// Set to the redirect details if this value represents a redirect.
     /// </param>
     /// <returns><see langword="true"/> if this was a redirect.</returns>
-    public bool TryGetRedirect(out (int StatusCode, string Location) result)
+    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod) result)
     {
         if (this.redirectLocation is string location)
         {
-            result = (this.StatusCode, location);
+            result = (location, false, this.redirectShouldPreserveMethod);
             return true;
         }
 
