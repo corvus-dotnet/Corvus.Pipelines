@@ -26,6 +26,17 @@ public static class PipelineStepExtensions
         => new SyncPipelineStepProvider<TState>(step).AddFeature(NameFeature, name!);
 
     /// <summary>
+    /// Create a named step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
+    /// <returns>A named step.</returns>
+    public static SyncPipelineStepProvider<TState> WithName<TState>(this SyncPipelineStepProvider<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
+        where TState : struct
+        => step.AddFeature(NameFeature, name!);
+
+    /// <summary>
     /// Gets the name of the step.
     /// </summary>
     /// <typeparam name="TState">The type of the state for the step.</typeparam>
@@ -43,6 +54,18 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
+    /// Gets the name of the step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state for the step.</typeparam>
+    /// <param name="step">The step provider.</param>
+    /// <returns>the name of the step, or <see cref="string.Empty"/> if the step has no name.</returns>
+    public static bool HasName<TState>(this SyncPipelineStepProvider<TState> step)
+        where TState : struct
+    {
+        return step.HasFeature<string>(NameFeature);
+    }
+
+    /// <summary>
     /// Create a named step.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
@@ -52,6 +75,17 @@ public static class PipelineStepExtensions
     public static PipelineStepProvider<TState> WithName<TState>(this PipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
         where TState : struct
         => new PipelineStepProvider<TState>(step).AddFeature(NameFeature, name!);
+
+    /// <summary>
+    /// Create a named step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step.</param>
+    /// <param name="name">The name of the step.</param>
+    /// <returns>A named step.</returns>
+    public static PipelineStepProvider<TState> WithName<TState>(this PipelineStepProvider<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
+        where TState : struct
+        => step.AddFeature(NameFeature, name!);
 
     /// <summary>
     /// Gets the name of the step.
@@ -68,6 +102,18 @@ public static class PipelineStepExtensions
         }
 
         return string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the name of the step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state for the step.</typeparam>
+    /// <param name="step">The step provider.</param>
+    /// <returns>the name of the step, or <see cref="string.Empty"/> if the step has no name.</returns>
+    public static bool HasName<TState>(this PipelineStepProvider<TState> step)
+        where TState : struct
+    {
+        return step.HasFeature<string>(NameFeature);
     }
 
     /// <summary>

@@ -110,4 +110,15 @@ public readonly struct PipelineStepProvider<TState>
         feature = default;
         return false;
     }
+
+    /// <summary>
+    /// Gets a value indicating whether the step provider has the given feature.
+    /// </summary>
+    /// <typeparam name="T">The type of the feature.</typeparam>
+    /// <param name="name">The name of the feature.</param>
+    /// <returns><see langword="true"/> if a feature with the given name and type exists.</returns>
+    public bool HasFeature<T>(string name)
+    {
+        return this.features.TryGetValue(name, out object? value) && value is T;
+    }
 }

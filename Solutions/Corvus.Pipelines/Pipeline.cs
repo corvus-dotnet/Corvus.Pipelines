@@ -216,6 +216,8 @@ public static class Pipeline
     public static PipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params PipelineStepProvider<TState>[] steps)
         where TState : struct, ILoggable
     {
+        EnsureNames(steps);
+
         return async state =>
         {
             using IDisposable? scope = state.Logger.BeginScope(scopeName);
@@ -255,6 +257,8 @@ public static class Pipeline
     public static PipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params SyncPipelineStepProvider<TState>[] steps)
         where TState : struct, ILoggable
     {
+        EnsureNames(steps);
+
 #pragma warning disable RCS1229 // Use async/await when necessary. This is not necessary because we are wrapping a sync result in a value task.
         return state =>
         {
@@ -300,6 +304,8 @@ public static class Pipeline
     public static PipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params PipelineStepProvider<TState>[] steps)
         where TState : struct, ILoggable
     {
+        EnsureNames(steps);
+
         return async state =>
         {
             using IDisposable? scope = state.Logger.BeginScope(scopeName);
@@ -348,6 +354,8 @@ public static class Pipeline
     public static SyncPipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params SyncPipelineStepProvider<TState>[] steps)
         where TState : struct, ILoggable
     {
+        EnsureNames(steps);
+
         return state =>
         {
             using IDisposable? scope = state.Logger.BeginScope(scopeName);
@@ -371,6 +379,30 @@ public static class Pipeline
 
             return currentResult;
         };
+    }
+
+    private static void EnsureNames<TState>(SyncPipelineStepProvider<TState>[] steps)
+        where TState : struct, ILoggable
+    {
+        for (int i = 0; i < steps.Length; ++i)
+        {
+            if (!steps[i].HasName())
+            {
+                steps[i] = steps[i].WithName($"Step {i}");
+            }
+        }
+    }
+
+    private static void EnsureNames<TState>(PipelineStepProvider<TState>[] steps)
+        where TState : struct, ILoggable
+    {
+        for (int i = 0; i < steps.Length; ++i)
+        {
+            if (!steps[i].HasName())
+            {
+                steps[i] = steps[i].WithName($"Step {i}");
+            }
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
