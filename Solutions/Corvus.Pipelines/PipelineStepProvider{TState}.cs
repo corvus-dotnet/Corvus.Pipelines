@@ -54,6 +54,18 @@ public readonly struct PipelineStepProvider<TState>
     public PipelineStep<TState> Step { get; }
 
     /// <summary>
+    /// Implicit conversion from SyncPipelineStep<typeparamref name="TState"/>.
+    /// </summary>
+    /// <param name="step">The step to convert to a provider.</param>
+    public static implicit operator PipelineStepProvider<TState>(PipelineStep<TState> step) => new(step);
+
+    /// <summary>
+    /// Explicit conversion to SyncPipelineStep<typeparamref name="TState"/>.
+    /// </summary>
+    /// <param name="stepProvider">The step provider to convert to a step.</param>
+    public static explicit operator PipelineStep<TState>(PipelineStepProvider<TState> stepProvider) => stepProvider.Step;
+
+    /// <summary>
     /// Add a feature to the step.
     /// </summary>
     /// <typeparam name="T">The type of the feature to add.</typeparam>

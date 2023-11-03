@@ -46,6 +46,18 @@ public readonly struct SyncPipelineStepProvider<TState>
     internal FrozenDictionary<string, object> Features { get; }
 
     /// <summary>
+    /// Implicit conversion from SyncPipelineStep<typeparamref name="TState"/>.
+    /// </summary>
+    /// <param name="step">The step to convert to a provider.</param>
+    public static implicit operator SyncPipelineStepProvider<TState>(SyncPipelineStep<TState> step) => new(step);
+
+    /// <summary>
+    /// Explicit conversion to SyncPipelineStep<typeparamref name="TState"/>.
+    /// </summary>
+    /// <param name="stepProvider">The step provider to convert to a step.</param>
+    public static explicit operator SyncPipelineStep<TState>(SyncPipelineStepProvider<TState> stepProvider) => stepProvider.Step;
+
+    /// <summary>
     /// Add a feature to the step.
     /// </summary>
     /// <typeparam name="T">The type of the feature to add.</typeparam>

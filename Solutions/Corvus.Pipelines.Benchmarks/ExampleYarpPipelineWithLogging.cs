@@ -123,7 +123,7 @@ public static class ExampleYarpPipelineWithLogging
         YarpPipeline.Build(
             "MainPipeline",
             LogLevel,
-            HandleRoot.WithName(),
+            HandleRoot,
             YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).WithName(),
             HandleMessageContextResult.WithName())
         .Catch(CatchPipelineException)
@@ -139,7 +139,7 @@ public static class ExampleYarpPipelineWithLogging
             "MainAsyncPipeline",
             LogLevel,
             HandleRoot.WithName().ToAsync(), // You can make the named item async
-            AsyncDelay.WithName(),
+            AsyncDelay,
             YarpPipeline.Current.Choose(ChooseMessageContextHandler).WithName(),
             HandleMessageContextResult.ToAsync().WithName()) // You can Name() the Async() item
         .Catch(CatchPipelineException)
