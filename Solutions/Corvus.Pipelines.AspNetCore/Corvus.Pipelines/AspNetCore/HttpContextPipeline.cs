@@ -30,7 +30,7 @@ public static class HttpContextPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedSyncPipelineStep<HttpContextPipelineState> Name(this SyncPipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
+    public static SyncPipelineStepProvider<HttpContextPipelineState> Name(this SyncPipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
 
     /// <summary>
     /// Create a named step.
@@ -38,7 +38,7 @@ public static class HttpContextPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedPipelineStep<HttpContextPipelineState> Name(this PipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
+    public static PipelineStepProvider<HttpContextPipelineState> Name(this PipelineStep<HttpContextPipelineState> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
 
     /// <summary>
     /// Builds an asynchronous pipeline of <see cref="PipelineStep{HttpContextPipelineState}"/>.
@@ -71,7 +71,7 @@ public static class HttpContextPipeline
     /// <param name="level">The level at which to surface step entry/exit logging.</param>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that executes the pipeline.</returns>
-    public static PipelineStep<HttpContextPipelineState> Build(string scopeName, LogLevel level, params NamedPipelineStep<HttpContextPipelineState>[] steps)
+    public static PipelineStep<HttpContextPipelineState> Build(string scopeName, LogLevel level, params PipelineStepProvider<HttpContextPipelineState>[] steps)
     {
         return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,
@@ -87,7 +87,7 @@ public static class HttpContextPipeline
     /// <param name="level">The level at which to surface step entry/exit logging.</param>
     /// <param name="steps">The ordered array of steps in the pipeline.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that executes the pipeline.</returns>
-    public static SyncPipelineStep<HttpContextPipelineState> Build(string scopeName, LogLevel level, params NamedSyncPipelineStep<HttpContextPipelineState>[] steps)
+    public static SyncPipelineStep<HttpContextPipelineState> Build(string scopeName, LogLevel level, params SyncPipelineStepProvider<HttpContextPipelineState>[] steps)
     {
         return Pipeline.Build(
             ctx => ctx.ShouldTerminatePipeline,

@@ -32,7 +32,7 @@ public static class HandlerPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedSyncPipelineStep<HandlerState<TInput, TResult>> Name<TInput, TResult>(this SyncPipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
+    public static SyncPipelineStepProvider<HandlerState<TInput, TResult>> Name<TInput, TResult>(this SyncPipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
 
     /// <summary>
     /// Create a named step.
@@ -42,7 +42,7 @@ public static class HandlerPipeline
     /// <param name="step">The step.</param>
     /// <param name="name">The name of the step.</param>
     /// <returns>A named step.</returns>
-    public static NamedPipelineStep<HandlerState<TInput, TResult>> Name<TInput, TResult>(this PipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => new(name!, step);
+    public static PipelineStepProvider<HandlerState<TInput, TResult>> Name<TInput, TResult>(this PipelineStep<HandlerState<TInput, TResult>> step, [CallerArgumentExpression(nameof(step))] string? name = null) => PipelineStepExtensions.Name(step, name);
 
     /// <summary>
     /// Builds a handler pipeline from an ordered array of handlers.
@@ -123,7 +123,7 @@ public static class HandlerPipeline
     /// On termination, you can inspect the resulting value using <see cref="HandlerState{TInput, TResult}.WasHandled(out TResult)"/>.
     /// </para>
     /// </remarks>
-    public static PipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(string scopeName, LogLevel level, params NamedPipelineStep<HandlerState<TInput, TResult>>[] steps)
+    public static PipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(string scopeName, LogLevel level, params PipelineStepProvider<HandlerState<TInput, TResult>>[] steps)
     {
         return Pipeline.Build(
             ctx => ctx.ShouldTerminate(),
@@ -155,7 +155,7 @@ public static class HandlerPipeline
     /// On termination, you can inspect the resulting value using <see cref="HandlerState{TInput, TResult}.WasHandled(out TResult)"/>.
     /// </para>
     /// </remarks>
-    public static SyncPipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(string scopeName, LogLevel level, params NamedSyncPipelineStep<HandlerState<TInput, TResult>>[] steps)
+    public static SyncPipelineStep<HandlerState<TInput, TResult>> Build<TInput, TResult>(string scopeName, LogLevel level, params SyncPipelineStepProvider<HandlerState<TInput, TResult>>[] steps)
     {
         return Pipeline.Build(
             ctx => ctx.ShouldTerminate(),
