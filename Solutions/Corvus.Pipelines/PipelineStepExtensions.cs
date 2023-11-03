@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace Corvus.Pipelines;
@@ -445,7 +446,9 @@ public static class PipelineStepExtensions
     public static PipelineStep<TState> ToAsync<TState>(this SyncPipelineStep<TState> step)
         where TState : struct
     {
-        return state => ValueTask.FromResult(step(state));
+        return
+            [DebuggerStepThrough]
+            (state) => ValueTask.FromResult(step(state));
     }
 
     /// <summary>

@@ -96,4 +96,24 @@ public static class YarpPipeline
             level,
             steps);
     }
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{YarpPipelineState}"/> that executes a <see cref="PipelineStep{YarpPipelineState}"/>
+    /// chosen by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <param name="selector">The selector which takes the input state and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> which, when executed, will execute the selector to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<YarpPipelineState> Choose(Func<YarpPipelineState, PipelineStep<YarpPipelineState>> selector)
+         => Pipeline.Choose(selector);
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{YarpPipelineState}"/> that executes a <see cref="PipelineStep{YarpPipelineState}"/>
+    /// chosen by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <param name="selector">The selector which takes the input state and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> which, when executed, will execute the selector to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static SyncPipelineStep<YarpPipelineState> Choose(Func<YarpPipelineState, SyncPipelineStep<YarpPipelineState>> selector)
+         => Pipeline.Choose(selector);
 }

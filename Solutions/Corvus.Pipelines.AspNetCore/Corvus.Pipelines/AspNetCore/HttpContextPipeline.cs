@@ -95,4 +95,24 @@ public static class HttpContextPipeline
             level,
             steps);
     }
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{HttpContextPipelineState}"/> that executes a <see cref="PipelineStep{HttpContextPipelineState}"/>
+    /// chosen by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <param name="selector">The selector which takes the input state and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> which, when executed, will execute the selector to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<HttpContextPipelineState> Choose(Func<HttpContextPipelineState, PipelineStep<HttpContextPipelineState>> selector)
+         => Pipeline.Choose(selector);
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{HttpContextPipelineState}"/> that executes a <see cref="PipelineStep{HttpContextPipelineState}"/>
+    /// chosen by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <param name="selector">The selector which takes the input state and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> which, when executed, will execute the selector to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static SyncPipelineStep<HttpContextPipelineState> Choose(Func<HttpContextPipelineState, SyncPipelineStep<HttpContextPipelineState>> selector)
+         => Pipeline.Choose(selector);
 }

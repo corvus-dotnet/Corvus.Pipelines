@@ -373,6 +373,34 @@ public static class Pipeline
         };
     }
 
+    /// <summary>
+    /// An operator that produces a <see cref="SyncPipelineStep{TState}"/> that executes a <see cref="SyncPipelineStep{TState}"/>
+    /// chosen by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="selector">The selector which takes the input state and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="SyncPipelineStep{TState}"/> which, when executed, will execute the selector to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static SyncPipelineStep<TState> Choose<TState>(Func<TState, SyncPipelineStep<TState>> selector)
+        where TState : struct
+    {
+        return state => selector(state)(state);
+    }
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{TState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a <paramref name="selector"/> function.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="selector">The selector which takes the input state and chooses a pipeline with which to proceed.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the selector to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<TState> Choose<TState>(Func<TState, PipelineStep<TState>> selector)
+        where TState : struct
+    {
+        return async state => await selector(state)(state).ConfigureAwait(false);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogTerminated<TState>(LogLevel level, in TState state)
         where TState : struct, ILoggable
