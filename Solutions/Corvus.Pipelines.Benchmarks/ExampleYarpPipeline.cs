@@ -111,7 +111,7 @@ public static class ExampleYarpPipeline
         YarpPipeline.Build(
             HandleRoot.ToAsync(), // You can make the named item async
             AsyncDelay,
-            YarpPipeline.Current.Choose(ChooseMessageContextHandler),
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync(),
             HandleMessageContextResult.ToAsync()) // You can Name() the Async() item
         .Catch(CatchPipelineException)
         .Retry(
