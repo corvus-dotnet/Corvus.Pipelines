@@ -2,10 +2,13 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Collections.Immutable;
 using System.Reflection;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Text;
 using Microsoft.Extensions.DependencyModel;
 using TechTalk.SpecFlow;
 
@@ -173,7 +176,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             EmitResult result = compilation.Emit(ms);
             if (!result.Success)
             {
-                throw new InvalidOperationException("Compilation failed.");
+                throw new InvalidOperationException(BuildError(result.Diagnostics));
             }
 
             // Load the assembly into the current AppDomain
@@ -185,6 +188,40 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             return from l in DependencyContext.Default.CompileLibraries
                    from r in l.ResolveReferencePaths()
                    select MetadataReference.CreateFromFile(r);
+        }
+
+        static string BuildError(ImmutableArray<Diagnostic> diagnostics)
+        {
+            StringBuilder builder = new();
+            builder.AppendLine();
+
+            foreach (Diagnostic diagnostic in diagnostics)
+            {
+                FileLinePositionSpan lineSpan = diagnostic.Location.GetLineSpan();
+                SourceText text = diagnostic.Location.SourceTree?.GetText() ?? throw new InvalidOperationException("No text available");
+
+                for (int i = Math.Max(0, lineSpan.StartLinePosition.Line - 2); i <= lineSpan.StartLinePosition.Line; ++i)
+                {
+                    builder.AppendLine(text.Lines[i].ToString());
+                }
+
+                // Append a number of spaces equal to the column number of the error
+                int indentAmount = lineSpan.StartLinePosition.Character - 1;
+                string indent = new('_', indentAmount);
+                string indentSpace = new(' ', indentAmount);
+                builder.Append(indent);
+                builder.AppendLine("^");
+                builder.Append(diagnostic.GetMessage());
+                builder.Append(' ');
+                builder.Append(lineSpan.StartLinePosition.Line);
+                builder.Append(',');
+                builder.Append(lineSpan.StartLinePosition.Character);
+                builder.AppendLine();
+            }
+
+            builder.AppendLine();
+
+            return builder.ToString();
         }
     }
 
