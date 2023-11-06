@@ -12,17 +12,10 @@ using TechTalk.SpecFlow;
 namespace Corvus.Pipelines.Specs.Steps;
 
 [Binding]
-public class PipelineSteps
+public class PipelineSteps(ScenarioContext scenarioContext)
 {
     private const string SyntaxTreesKey = "SyntaxTrees";
     private const string NamespaceKey = "AssemblyName";
-
-    private readonly ScenarioContext scenarioContext;
-
-    public PipelineSteps(ScenarioContext scenarioContext)
-    {
-        this.scenarioContext = scenarioContext;
-    }
 
     /// <summary>
     /// Gets the syntax trees from the scenario context, creating it if it does not exist.
@@ -59,8 +52,8 @@ public class PipelineSteps
     [When("I execute the (.*) step \"(.*)\" with the input of type \"(.*)\" (.*)")]
     public void IExecuteTheStep(string syncOrAsync, string stepName, string type, string input)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(this.scenarioContext);
-        string namespaceName = GetNamespace(this.scenarioContext);
+        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        string namespaceName = GetNamespace(scenarioContext);
 
         string code =
             $$"""
@@ -95,8 +88,8 @@ public class PipelineSteps
     [Then("the (.*) output of \"(.*)\" should be (.*)")]
     public async Task TheOutputShouldBe(string syncOrAsync, string stepName, string output)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(this.scenarioContext);
-        string namespaceName = GetNamespace(this.scenarioContext);
+        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        string namespaceName = GetNamespace(scenarioContext);
 
         string code =
             $$"""
@@ -198,8 +191,8 @@ public class PipelineSteps
     [Given("I produce the steps")]
     public void IProduceTheSteps(Table table)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(this.scenarioContext);
-        string namespaceName = GetNamespace(this.scenarioContext);
+        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        string namespaceName = GetNamespace(scenarioContext);
 
         string codePrefix =
             $$"""
@@ -243,8 +236,8 @@ public class PipelineSteps
     [Given("I create (.*) match selector called \"(.*)\" for state of type \"(.*)\" with the following configuration")]
     public void ICreateAMatchSelectorCalledForStateOfType(string selectorType, string selectorName, string stateType, Table table)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(this.scenarioContext);
-        string namespaceName = GetNamespace(this.scenarioContext);
+        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        string namespaceName = GetNamespace(scenarioContext);
 
         string pipelineStepType = selectorType == "a sync" ? $"SyncPipelineStep<{stateType}>>" : $"PipelineStep<{stateType}>>";
 
