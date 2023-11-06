@@ -9,7 +9,7 @@ Scenario Outline: Test Corvus.Pipelines.Pipeline.Choose() operator for async ste
 		| 3     | state => ValueTask.FromResult(15) |
 		| _     | state => ValueTask.FromResult(0)  |
 	And I produce the steps
-		| Step name | State type | Sync or async | Step definition               |
+		| Step name | State type | Sync or async | Step definition                         |
 		| TestStep  | int        | async         | Pipeline.Choose(Selectors.TestSelector) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
 	Then the async output of "TestStep" should be <Expected output>
