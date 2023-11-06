@@ -749,5 +749,3 @@ return state =>
 If you have semantics which are better expressed by writing your own custom operator like this, then do so.
 
 Don't turn your code inside out to fit the _wrap, bind, unwrap_ model. Instead, try to create "semantically complete" packages of code - functions that express a well-bounded unit of value.
-
-## Test
