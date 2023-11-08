@@ -65,6 +65,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
             
             namespace {{namespaceName}}
             {
@@ -101,6 +102,8 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
+            
             using NUnit.Framework;            
             
             namespace {{namespaceName}}
@@ -238,6 +241,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
             
             namespace {{namespaceName}}
             {
@@ -278,6 +282,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
             
             namespace {{namespaceName}}
             {
@@ -325,6 +330,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
             
             namespace {{namespaceName}}
             {

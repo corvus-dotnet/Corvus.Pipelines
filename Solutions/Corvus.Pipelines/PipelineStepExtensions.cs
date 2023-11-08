@@ -550,10 +550,12 @@ public static class PipelineStepExtensions
     /// to complete, cancelling the other.
     /// </summary>
     /// <typeparam name="TState">The type of the state of the steps.</typeparam>
+    /// <param name="step">The step for the first attempt.</param>
     /// <param name="attempts">The steps to attempt.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> which returns the result of the first step to return a value.</returns>
     /// <remarks>This executes the steps in parallel, returning the value from the first step that produces a result, and cancelling the other operations.</remarks>
     public static PipelineStep<TState> FirstToComplete<TState>(
+        this PipelineStep<TState> step,
         params PipelineStep<TState>[] attempts)
         where TState : struct, ICancellable<TState>
     {
@@ -563,30 +565,37 @@ public static class PipelineStepExtensions
             var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(input.CancellationToken);
             TState wrappedInput = input.WithCancellationToken(cancellationTokenSource.Token);
 
-            ValueTask<TState>[] valueTasks = ArrayPool<ValueTask<TState>>.Shared.Rent(attempts.Length);
+            int length = attempts.Length + 1;
+            ValueTask<TState>[] valueTasks = ArrayPool<ValueTask<TState>>.Shared.Rent(length);
             Task<TState>[]? tasks = null;
 
             try
             {
-                for (int i = 0; i < attempts.Length; ++i)
-                {
 #pragma warning disable CA2012 // Use ValueTasks correctly - we are deliberately storing this for a brief time for perf reasons
+                valueTasks[0] = step(wrappedInput);
+                if (valueTasks[0].IsCompleted)
+                {
+                    return valueTasks[0].Result;
+                }
+
+                for (int i = 1; i < length; ++i)
+                {
                     valueTasks[i] = attempts[i](wrappedInput);
-#pragma warning restore CA2012 // Use ValueTasks correctly
                     if (valueTasks[i].IsCompleted)
                     {
                         return valueTasks[i].Result;
                     }
                 }
+#pragma warning restore CA2012 // Use ValueTasks correctly
 
                 // We didn't get a synchronous run, so we wait for any task to complete.
-                tasks = ArrayPool<Task<TState>>.Shared.Rent(attempts.Length);
-                for (int i = 0; i < attempts.Length; ++i)
+                tasks = ArrayPool<Task<TState>>.Shared.Rent(length);
+                for (int i = 0; i < length; ++i)
                 {
                     tasks[i] = valueTasks[i].AsTask();
                 }
 
-                Task<TState> result = await Task.WhenAny(new ArraySegment<Task<TState>>(tasks, 0, attempts.Length)).ConfigureAwait(false);
+                Task<TState> result = await Task.WhenAny(new ArraySegment<Task<TState>>(tasks, 0, length)).ConfigureAwait(false);
                 return result.Result;
             }
             finally
