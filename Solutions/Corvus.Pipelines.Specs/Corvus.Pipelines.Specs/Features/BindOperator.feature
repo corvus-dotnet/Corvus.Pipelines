@@ -1,6 +1,6 @@
 Feature: Bind Operator
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator for async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator for async steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition                          |
@@ -14,7 +14,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 4               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator for sync steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator for sync steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition               |
@@ -28,7 +28,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 4               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator with sync wrap and unwrap for async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator with sync wrap and unwrap for async steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition                                                                  |
@@ -41,7 +41,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 2               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator with sync wrap and unwrap for sync steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator with sync wrap and unwrap for sync steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition                                                                  |
@@ -54,7 +54,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 2               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator with sync wrap and async unwrap for async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator with sync wrap and async unwrap for async steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition                                                                                       |
@@ -67,7 +67,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 2               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator with async wrap and sync unwrap for async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator with async wrap and sync unwrap for async steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition                                                                                        |
@@ -80,7 +80,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 2               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Bind() operator with async wrap and unwrap for async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator with async wrap and unwrap for async steps
 
 	Given I produce the steps
 		| Step name | State type | Sync or async | Step definition                                                                                                                           |

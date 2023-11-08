@@ -1,6 +1,6 @@
 Feature: Choose Operator
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Choose() operator for async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for async steps
 
 	Given I create an async match selector called "TestSelector" for state of type "int" with the following configuration
 		| Match | Step definition                   |
@@ -22,7 +22,7 @@ Examples:
 	| 4     | 0               |
 	| 0     | 0               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Choose() operator for sync steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for sync steps
 
 	Given I create a sync match selector called "TestSelector" for state of type "int" with the following configuration
 		| Match | Step definition |
@@ -45,7 +45,7 @@ Examples:
 	| 0     | 0               |
 
 	
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Choose() operator for async steps operating on a preceding step.
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for async steps operating on a preceding step.
 
 	Given I create an async match selector called "TestSelector" for state of type "int" with the following configuration
 		| Match | Step definition                           |
@@ -68,7 +68,7 @@ Examples:
 	| 4     | 0               |
 	| 0     | 5               |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.Choose() operator for sync steps operating on a preceding step.
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for sync steps operating on a preceding step.
 
 	Given I create a sync match selector called "TestSelector" for state of type "int" with the following configuration
 		| Match | Step definition     |

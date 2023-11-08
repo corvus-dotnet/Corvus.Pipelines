@@ -1,6 +1,6 @@
 Feature: Bind services
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with async steps
 
 	Given I define the functions
 		| Function name    | Function type                        | Function definition                                                     |
@@ -16,7 +16,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 11              |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with sync steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with sync steps
 
 	Given I define the functions
 		| Function name    | Function type             | Function definition                               |
@@ -32,7 +32,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 11              |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with async steps and 2 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with async steps and 2 services
 
 	Given I define the functions
 		| Function name    | Function type                                   | Function definition                                                                                      |
@@ -49,7 +49,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 111             |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with sync steps and 2 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with sync steps and 2 services
 
 	Given I define the functions
 		| Function name    | Function type                        | Function definition                                                                |
@@ -66,7 +66,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 111             |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with async steps and 3 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with async steps and 3 services
 
 	Given I define the functions
 		| Function name    | Function type                                              | Function definition                                                                                                                       |
@@ -84,7 +84,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 1111            |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with sync steps and 3 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with sync steps and 3 services
 
 	Given I define the functions
 		| Function name    | Function type                                   | Function definition                                                                                                 |
@@ -102,7 +102,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 1111            |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with async steps and 4 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with async steps and 4 services
 
 	Given I define the functions
 		| Function name    | Function type                                                         | Function definition                                                                                                                                                        |
@@ -121,7 +121,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 11111           |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with sync steps and 4 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with sync steps and 4 services
 
 	Given I define the functions
 		| Function name    | Function type                                              | Function definition                                                                                                                                  |
@@ -140,7 +140,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 11111           |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with async steps and 5 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with async steps and 5 services
 
 	Given I define the functions
 		| Function name    | Function type                                                                    | Function definition                                                                                                                                                                                         |
@@ -160,7 +160,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 111111          |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindServices() operator with sync steps and 5 services
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operator with sync steps and 5 services
 
 	Given I define the functions
 		| Function name    | Function type                                                         | Function definition                                                                                                                                                                   |

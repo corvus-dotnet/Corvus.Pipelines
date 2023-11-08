@@ -1,6 +1,6 @@
 Feature: BindWith operator
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with sync steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with sync steps
 
 	Given I produce the steps
 		| Step name | State type                                   | Sync or async | Step definition                                                             |
@@ -13,7 +13,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 33              |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with async steps
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with async steps
 
 	Given I produce the steps
 		| Step name | State type                                   | Sync or async | Step definition                                                                                   |
@@ -26,7 +26,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 33              |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with sync steps and two parameters
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with sync steps and two parameters
 
 	Given I produce the steps
 		| Step name | State type                                                 | Sync or async | Step definition                                                                             |
@@ -39,7 +39,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 133             |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with async steps and two parameters
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with async steps and two parameters
 
 	Given I produce the steps
 		| Step name | State type                                                 | Sync or async | Step definition                                                                                                                                                               |
@@ -52,7 +52,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 133             |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with sync steps and three parameters
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with sync steps and three parameters
 
 	Given I produce the steps
 		| Step name | State type                                                                        | Sync or async | Step definition                                                                                                                  |
@@ -65,7 +65,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 1133            |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with async steps and three parameters
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with async steps and three parameters
 
 	Given I produce the steps
 		| Step name | State type                                                                        | Sync or async | Step definition                                                                                                                                                                                                                                             |
@@ -79,7 +79,7 @@ Examples:
 	| 1     | 1133            |
 
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with sync steps and seed functions
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with sync steps and seed functions
 
 	Given I define the functions
 		| Function name | Function type                | Function definition              |
@@ -95,7 +95,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 11              |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with async steps and seed functions
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with async steps and seed functions
 
 	Given I define the functions
 		| Function name | Function type                | Function definition              |
@@ -111,7 +111,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 11              |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with sync steps, two parameters, and seed functions
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with sync steps, two parameters, and seed functions
 
 	Given I define the functions
 		| Function name | Function type                | Function definition               |
@@ -128,7 +128,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 111             |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with async steps, two parameters, and seed functions
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with async steps, two parameters, and seed functions
 
 	Given I define the functions
 		| Function name | Function type                | Function definition               |
@@ -145,7 +145,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 111             |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with sync steps, three parameters, and seed functions
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with sync steps, three parameters, and seed functions
 
 	Given I define the functions
 		| Function name | Function type                | Function definition                |
@@ -163,7 +163,7 @@ Examples:
 	| Input | Expected output |
 	| 1     | 1111            |
 
-Scenario Outline: Test Corvus.Pipelines.Pipeline.BindWith() operator with async steps, three parameters, and seed functions
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator with async steps, three parameters, and seed functions
 
 	Given I define the functions
 		| Function name | Function type                | Function definition                |
