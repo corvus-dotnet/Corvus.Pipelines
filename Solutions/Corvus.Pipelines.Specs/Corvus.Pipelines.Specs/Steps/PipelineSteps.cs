@@ -225,6 +225,46 @@ public class PipelineSteps(ScenarioContext scenarioContext)
         }
     }
 
+    [Given("I define the functions")]
+    public void IDefineTheFunctions(Table table)
+    {
+        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        string namespaceName = GetNamespace(scenarioContext);
+
+        string codePrefix =
+            $$"""
+            using System;
+            using System.Threading.Tasks;
+            
+            using Corvus.Pipelines;
+            using Corvus.Pipelines.Handlers;
+            
+            namespace {{namespaceName}}
+            {
+                public static partial class Functions
+                {
+
+            """;
+
+        string steps = string.Join(
+            Environment.NewLine,
+            table.Rows.Select(
+                s =>
+                    $$"""
+                    public static readonly {{s["Function type"]}} {{s["Function name"]}} = {{s["Function definition"]}};
+                    """));
+
+        const string codeSuffix =
+            """
+
+                }
+            }
+            """;
+
+        string code = codePrefix + steps + codeSuffix;
+        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Functions.cs"));
+    }
+
     [Given("I produce the steps")]
     public void IProduceTheSteps(Table table)
     {
