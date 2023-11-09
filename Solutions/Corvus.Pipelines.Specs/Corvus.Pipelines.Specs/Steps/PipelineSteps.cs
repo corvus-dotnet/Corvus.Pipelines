@@ -4,6 +4,8 @@
 
 using System.Collections.Immutable;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Runtime.Loader;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -18,7 +20,8 @@ namespace Corvus.Pipelines.Specs.Steps;
 public class PipelineSteps(ScenarioContext scenarioContext)
 {
     private const string SyntaxTreesKey = "SyntaxTrees";
-    private const string NamespaceKey = "AssemblyName";
+    private const string NamespaceKey = "Namespace";
+    private const string AssemblyMetadataReferenceKey = "AssemblyMetadataReference";
 
     /// <summary>
     /// Gets the syntax trees from the scenario context, creating it if it does not exist.
@@ -67,6 +70,8 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             using Corvus.Pipelines.Handlers;
             using Corvus.Pipelines.Specs.Models;
             
+            using Microsoft.Extensions.Logging;
+            
             namespace {{namespaceName}}
             {
                 public static partial class Executions
@@ -89,10 +94,17 @@ public class PipelineSteps(ScenarioContext scenarioContext)
         }
     }
 
+    [Then("the log (.*) should contain the following entries")]
+    public void TheLogShouldContainTheFollowingEntries(string logServiceName, Table entries)
+    {
+        this.BuildTestCode();
+    }
+
     [Then("the (.*) output of \"(.*)\" should be (.*)")]
     public async Task TheOutputShouldBe(string syncOrAsync, string stepName, string output)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        this.BuildTestCode();
+
         string namespaceName = GetNamespace(scenarioContext);
 
         string code =
@@ -103,6 +115,8 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
             using Corvus.Pipelines.Specs.Models;
+            
+            using Microsoft.Extensions.Logging;
             
             using NUnit.Framework;            
             
@@ -116,13 +130,13 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             """;
 
         List<SyntaxTree> cloneTrees =
-            [.. syntaxTrees];
+            [];
 
         cloneTrees.Add(CSharpSyntaxTree.ParseText(code, path: $"Expectations.{stepName}.cs"));
 
         string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-        Assembly assembly = BuildAndLoadAssembly(cloneTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
+        Assembly assembly = this.BuildAndLoadAssembly(cloneTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
 
         if (syncOrAsync == "sync")
         {
@@ -166,66 +180,49 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
             return $"public static Func<ValueTask> {stepName}OutputShouldBe = async () => Assert.AreEqual({expectedOutput}, await Executions.Execute{stepName}().ConfigureAwait(false));";
         }
+    }
 
-        static Assembly BuildAndLoadAssembly(IEnumerable<SyntaxTree> syntaxTrees, string assemblyName)
-        {
-            var compilation = CSharpCompilation.Create(
-                assemblyName,
-                syntaxTrees,
-                BuildMetadataReferences(),
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    [Given("I create the service instances")]
+    public void ICreateTheServiceInstances(Table table)
+    {
+        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
+        string namespaceName = GetNamespace(scenarioContext);
 
-            var ms = new MemoryStream();
-            EmitResult result = compilation.Emit(ms);
-            if (!result.Success)
+        string codePrefix =
+            $$"""
+            using System;
+            using System.Threading.Tasks;
+            
+            using Corvus.Pipelines;
+            using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
+
+            using Microsoft.Extensions.Logging;
+            
+            namespace {{namespaceName}}
             {
-                throw new InvalidOperationException(BuildError(result.Diagnostics));
-            }
-
-            // Load the assembly into the current AppDomain
-            return Assembly.Load(ms.ToArray());
-        }
-
-        static IEnumerable<MetadataReference> BuildMetadataReferences()
-        {
-            return from l in DependencyContext.Default.CompileLibraries
-                   from r in l.ResolveReferencePaths()
-                   select MetadataReference.CreateFromFile(r);
-        }
-
-        static string BuildError(ImmutableArray<Diagnostic> diagnostics)
-        {
-            StringBuilder builder = new();
-            builder.AppendLine();
-
-            foreach (Diagnostic diagnostic in diagnostics)
-            {
-                FileLinePositionSpan lineSpan = diagnostic.Location.GetLineSpan();
-                SourceText text = diagnostic.Location.SourceTree?.GetText() ?? throw new InvalidOperationException("No text available");
-
-                for (int i = Math.Max(0, lineSpan.StartLinePosition.Line - 2); i <= lineSpan.StartLinePosition.Line; ++i)
+                public static partial class Services
                 {
-                    builder.AppendLine(text.Lines[i].ToString());
+
+            """;
+
+        string steps = string.Join(
+            Environment.NewLine,
+            table.Rows.Select(
+                s =>
+                    $$"""
+                    public static readonly {{s["Service type"]}} {{s["Instance name"]}} = {{s["Factory method"]}};
+                    """));
+
+        const string codeSuffix =
+            """
+
                 }
-
-                // Append a number of spaces equal to the column number of the error
-                int indentAmount = lineSpan.StartLinePosition.Character - 1;
-                string indent = new('_', indentAmount);
-                string indentSpace = new(' ', indentAmount);
-                builder.Append(indent);
-                builder.AppendLine("^");
-                builder.Append(diagnostic.GetMessage());
-                builder.Append(' ');
-                builder.Append(lineSpan.StartLinePosition.Line);
-                builder.Append(',');
-                builder.Append(lineSpan.StartLinePosition.Character);
-                builder.AppendLine();
             }
+            """;
 
-            builder.AppendLine();
-
-            return builder.ToString();
-        }
+        string code = codePrefix + steps + codeSuffix;
+        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Services.cs"));
     }
 
     [Given("I define the functions")]
@@ -242,6 +239,8 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
             using Corvus.Pipelines.Specs.Models;
+            
+            using Microsoft.Extensions.Logging;
             
             namespace {{namespaceName}}
             {
@@ -283,6 +282,8 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             using Corvus.Pipelines;
             using Corvus.Pipelines.Handlers;
             using Corvus.Pipelines.Specs.Models;
+            
+            using Microsoft.Extensions.Logging;
             
             namespace {{namespaceName}}
             {
@@ -332,6 +333,8 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             using Corvus.Pipelines.Handlers;
             using Corvus.Pipelines.Specs.Models;
             
+            using Microsoft.Extensions.Logging;
+            
             namespace {{namespaceName}}
             {
                 public static partial class Selectors
@@ -364,5 +367,96 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
         string code = codePrefix + matchCases + codeSuffix;
         syntaxTrees.Add(CSharpSyntaxTree.ParseText(code));
+    }
+
+    private static IEnumerable<MetadataReference> BuildMetadataReferences()
+    {
+        return from l in DependencyContext.Default.CompileLibraries
+               from r in l.ResolveReferencePaths()
+               select MetadataReference.CreateFromFile(r);
+    }
+
+    private static string BuildError(ImmutableArray<Diagnostic> diagnostics)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine();
+
+        foreach (Diagnostic diagnostic in diagnostics)
+        {
+            FileLinePositionSpan lineSpan = diagnostic.Location.GetLineSpan();
+            SourceText text = diagnostic.Location.SourceTree?.GetText() ?? throw new InvalidOperationException("No text available");
+
+            for (int i = Math.Max(0, lineSpan.StartLinePosition.Line - 2); i <= lineSpan.StartLinePosition.Line; ++i)
+            {
+                builder.AppendLine(text.Lines[i].ToString());
+            }
+
+            // Append a number of spaces equal to the column number of the error
+            int indentAmount = lineSpan.StartLinePosition.Character - 1;
+            string indent = new('_', indentAmount);
+            string indentSpace = new(' ', indentAmount);
+            builder.Append(indent);
+            builder.AppendLine("^");
+            builder.Append(diagnostic.GetMessage());
+            builder.Append(' ');
+            builder.Append(lineSpan.StartLinePosition.Line);
+            builder.Append(',');
+            builder.Append(lineSpan.StartLinePosition.Character);
+            builder.AppendLine();
+        }
+
+        builder.AppendLine();
+
+        return builder.ToString();
+    }
+
+    private void BuildTestCode()
+    {
+        if (scenarioContext.ContainsKey(AssemblyMetadataReferenceKey))
+        {
+            return;
+        }
+
+        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
+        _ = this.BuildAndLoadAssembly(GetSyntaxTrees(scenarioContext), assemblyName, true) ?? throw new InvalidOperationException("The assembly could not be built.");
+    }
+
+    private Assembly BuildAndLoadAssembly(IEnumerable<SyntaxTree> syntaxTrees, string assemblyName, bool isTestAssembly = false)
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName,
+            syntaxTrees,
+            BuildMetadataReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        if (!isTestAssembly && this.TryGetTestAssemblyMetadataReference(out MetadataReference testAssemblyMetadataReference))
+        {
+            compilation = compilation.AddReferences(testAssemblyMetadataReference);
+        }
+
+        var ms = new MemoryStream();
+        EmitResult result = compilation.Emit(ms);
+        ms.Flush();
+        ms.Seek(0, SeekOrigin.Begin);
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(BuildError(result.Diagnostics));
+        }
+
+        Assembly assembly = AssemblyLoadContext.Default.LoadFromStream(ms);
+
+        ms.Seek(0, SeekOrigin.Begin);
+
+        if (isTestAssembly)
+        {
+            scenarioContext.Set(MetadataReference.CreateFromStream(ms), AssemblyMetadataReferenceKey);
+        }
+
+        return assembly;
+    }
+
+    private bool TryGetTestAssemblyMetadataReference(out MetadataReference testAssemblyMetadataReference)
+    {
+        return scenarioContext.TryGetValue(AssemblyMetadataReferenceKey, out testAssemblyMetadataReference);
     }
 }
