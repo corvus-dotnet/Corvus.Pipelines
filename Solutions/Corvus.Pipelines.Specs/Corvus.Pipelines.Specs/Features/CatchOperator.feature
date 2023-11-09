@@ -1,4 +1,4 @@
-Feature: Catch() operator
+Feature: Catch operator
 
 Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Catch() operator for async steps
 
