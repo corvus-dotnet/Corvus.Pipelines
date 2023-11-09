@@ -118,14 +118,14 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
-    /// An operator which returns a step which logs on entry to and exit from the input step.
+    /// An operator which returns a step which executes an action on entry to and exit from the input step.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <param name="step">The step for which to log exit.</param>
-    /// <param name="logEntry">The method that performs the logging on entry. It is provided with the state before the step.</param>
-    /// <param name="logExit">The method that performs the logging. It is provided with the state both before and after the step.</param>
+    /// <param name="logEntry">The action to perform on entry. It is provided with the state before the step.</param>
+    /// <param name="logExit">The action to perform on exit. It is provided with the state both before and after the step.</param>
     /// <returns>A step which wraps the input step and logs on entry and exit.</returns>
-    public static PipelineStep<TState> LogEntryAndExit<TState>(this PipelineStep<TState> step, Action<TState> logEntry, Action<TState, TState> logExit)
+    public static PipelineStep<TState> OnEntryAndExit<TState>(this PipelineStep<TState> step, Action<TState> logEntry, Action<TState, TState> logExit)
         where TState : struct, ILoggable
     {
         return step.Bind(
@@ -142,13 +142,13 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
-    /// An operator which returns a step which logs on entry to the input step.
+    /// An operator which returns a step which executes an action on entry to the input step.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <param name="step">The step for which to log exit.</param>
-    /// <param name="logEntry">The method that performs the logging on entry. It is provided with the state before the step.</param>
+    /// <param name="logEntry">The action to perform on entry. It is provided with the state before the step.</param>
     /// <returns>A step which wraps the input step and logs on entry.</returns>
-    public static PipelineStep<TState> LogEntry<TState>(this PipelineStep<TState> step, Action<TState> logEntry)
+    public static PipelineStep<TState> OnEntry<TState>(this PipelineStep<TState> step, Action<TState> logEntry)
         where TState : struct, ILoggable
     {
         return step.Bind(
@@ -161,20 +161,20 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
-    /// An operator which returns a step which logs on exit from the input step.
+    /// An operator which returns a step which executes an action on exit from the input step.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <param name="step">The step for which to log exit.</param>
-    /// <param name="logExit">The method that performs the logging on exit. It is provided with the state both before and after the step.</param>
+    /// <param name="onExit">The action to perform on exit. It is provided with the state both before and after the step.</param>
     /// <returns>A step which wraps the input step and logs on entry.</returns>
-    public static PipelineStep<TState> LogExit<TState>(this PipelineStep<TState> step, Action<TState, TState> logExit)
+    public static PipelineStep<TState> OnExit<TState>(this PipelineStep<TState> step, Action<TState, TState> onExit)
         where TState : struct, ILoggable
     {
         return step.Bind(
             (TState state) => state,
             (entryState, exitState) =>
             {
-                logExit(entryState, exitState);
+                onExit(entryState, exitState);
                 return exitState;
             });
     }
