@@ -580,7 +580,7 @@ public static class PipelineStepExtensions
 
                 for (int i = 1; i < length; ++i)
                 {
-                    valueTasks[i] = attempts[i](wrappedInput);
+                    valueTasks[i] = attempts[i - 1](wrappedInput);
                     if (valueTasks[i].IsCompleted)
                     {
                         return valueTasks[i].Result;
