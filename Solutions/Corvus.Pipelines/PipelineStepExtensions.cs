@@ -191,7 +191,7 @@ public static class PipelineStepExtensions
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
     /// <see cref="ICanFail"/> step with permanent or transient failure handling via
     /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
-    /// <see cref="OnError{TState, TError}(PipelineStep{TState}, PipelineStep{TState})"/>.
+    /// <see cref="OnError{TState}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
     public static PipelineStep<TState> Catch<TState, TException>(this PipelineStep<TState> step, Func<TState, TException, ValueTask<TState>> exceptionHandler)
         where TState : struct
@@ -222,7 +222,7 @@ public static class PipelineStepExtensions
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
     /// <see cref="ICanFail"/> step with permanent or transient failure handling via
     /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
-    /// <see cref="OnError{TState, TError}(PipelineStep{TState}, PipelineStep{TState})"/>.
+    /// <see cref="OnError{TState}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
     public static PipelineStep<TState> Catch<TState, TException>(this PipelineStep<TState> step, Func<TState, TException, TState> exceptionHandler)
         where TState : struct
@@ -366,25 +366,23 @@ public static class PipelineStepExtensions
     /// An operator which provides the ability to choose a step to run if the bound step fails.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <typeparam name="TError">The type of the error details.</typeparam>
     /// <param name="step">The step to execute.</param>
     /// <param name="onError">The step to execute if the step fails.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, and, if an error occurs,
     /// execute the error step before returning the final result.</returns>
-    public static PipelineStep<TState> OnError<TState, TError>(
+    public static PipelineStep<TState> OnError<TState>(
         this PipelineStep<TState> step,
         PipelineStep<TState> onError)
         where TState : struct, ICanFail
-        where TError : struct
     {
-        return step.Bind(async state =>
+        return step.Bind(state =>
         {
             if (state.ExecutionStatus != PipelineStepStatus.Success)
             {
-                return await onError(state).ConfigureAwait(false);
+                return onError(state);
             }
 
-            return state;
+            return ValueTask.FromResult(state);
         });
     }
 
