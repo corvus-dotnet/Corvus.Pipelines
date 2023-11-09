@@ -254,12 +254,11 @@ public static class Pipeline
     /// passed to the next step, and so on, until the final resulting state is returned.
     /// </para>
     /// </remarks>
-    public static PipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params SyncPipelineStepProvider<TState>[] steps)
+    public static SyncPipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params SyncPipelineStepProvider<TState>[] steps)
         where TState : struct, ILoggable
     {
         EnsureNames(steps);
 
-#pragma warning disable RCS1229 // Use async/await when necessary. This is not necessary because we are wrapping a sync result in a value task.
         return state =>
         {
             using IDisposable? scope = state.Logger.BeginScope(scopeName);
@@ -276,9 +275,8 @@ public static class Pipeline
                 LogExit(level, state);
             }
 
-            return ValueTask.FromResult(currentResult);
+            return currentResult;
         };
-#pragma warning restore RCS1229 // Use async/await when necessary.
     }
 
     /// <summary>

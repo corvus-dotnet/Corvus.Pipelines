@@ -4,7 +4,6 @@
 
 using System.Collections.Immutable;
 using System.Reflection;
-using System.Reflection.Metadata;
 using System.Runtime.Loader;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -98,6 +97,64 @@ public class PipelineSteps(ScenarioContext scenarioContext)
     public void TheLogShouldContainTheFollowingEntries(string logServiceName, Table entries)
     {
         this.BuildTestCode();
+        string namespaceName = GetNamespace(scenarioContext);
+
+        string code =
+        $$"""
+            using System;
+            using System.Threading.Tasks;
+            
+            using Corvus.Pipelines;
+            using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
+            
+            using Microsoft.Extensions.Logging;
+            
+            using NUnit.Framework;            
+            
+            namespace {{namespaceName}}
+            {
+                public static partial class LogExpectations
+                {
+                    public static Action Assert = () => {{logServiceName}}.Validate({{GetMessages(entries)}});
+                }
+            }
+            """;
+
+        List<SyntaxTree> syntaxTrees =
+            [
+                CSharpSyntaxTree.ParseText(code, path: "LogExpectations.cs"),
+            ];
+
+        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
+
+        Assembly assembly = this.BuildAndLoadAssembly(syntaxTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
+
+        Type? type = assembly.GetType($"{namespaceName}.LogExpectations");
+
+        object? expectationObject = type?.GetField($"Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
+
+        if (expectationObject is Action expectation)
+        {
+            expectation();
+        }
+        else
+        {
+            throw new InvalidOperationException("The assertion could not be loaded.");
+        }
+
+        static string GetMessages(Table table)
+        {
+            return string.Join(
+                ", ",
+                table.Rows.Select(
+                    s => $"(LogLevel.{s["Log level"]}, \"{Escape(s["Message"])}\")"));
+        }
+
+        static string Escape(string v)
+        {
+            return v.Replace("\"", "\\\"").Replace("{", "\\{").Replace("}", "\\}");
+        }
     }
 
     [Then("the (.*) output of \"(.*)\" should be (.*)")]
@@ -129,14 +186,14 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             }
             """;
 
-        List<SyntaxTree> cloneTrees =
+        List<SyntaxTree> syntaxTrees =
             [];
 
-        cloneTrees.Add(CSharpSyntaxTree.ParseText(code, path: $"Expectations.{stepName}.cs"));
+        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: $"Expectations.{stepName}.cs"));
 
         string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
 
-        Assembly assembly = this.BuildAndLoadAssembly(cloneTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
+        Assembly assembly = this.BuildAndLoadAssembly(syntaxTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
 
         if (syncOrAsync == "sync")
         {
@@ -392,7 +449,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             }
 
             // Append a number of spaces equal to the column number of the error
-            int indentAmount = lineSpan.StartLinePosition.Character - 1;
+            int indentAmount = Math.Max(0, lineSpan.StartLinePosition.Character - 1);
             string indent = new('_', indentAmount);
             string indentSpace = new(' ', indentAmount);
             builder.Append(indent);
@@ -402,6 +459,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             builder.Append(lineSpan.StartLinePosition.Line);
             builder.Append(',');
             builder.Append(lineSpan.StartLinePosition.Character);
+            builder.AppendLine();
             builder.AppendLine();
         }
 
