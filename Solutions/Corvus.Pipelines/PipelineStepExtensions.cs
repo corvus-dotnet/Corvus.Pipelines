@@ -677,6 +677,11 @@ public static class PipelineStepExtensions
     /// <param name="step1">The first input step.</param>
     /// <param name="step2">The second input step.</param>
     /// <returns>A <see cref="PipelineStep{Tuple}"/> which returns a tuple of the results of the input steps.</returns>
+    /// <remarks>
+    /// This executes <paramref name="step1"/>, then executes <paramref name="step2"/>, then returns the result. Compare with
+    /// <see cref="ParallelCombineSteps{TState1, TState2}(PipelineStep{TState1}, PipelineStep{TState2})"/> which executes the steps
+    /// in parallel.
+    /// </remarks>
     public static PipelineStep<(TState1 State1, TState2 State2)> CombineSteps<TState1, TState2>(
         this PipelineStep<TState1> step1,
         PipelineStep<TState2> step2)
@@ -703,6 +708,12 @@ public static class PipelineStepExtensions
     /// <param name="step2">The second input step.</param>
     /// <param name="step3">The third input step.</param>
     /// <returns>A <see cref="PipelineStep{Tuple}"/> which returns a tuple of the results of the input steps.</returns>
+    /// <remarks>
+    /// This executes <paramref name="step1"/>, then executes <paramref name="step2"/>, then executes <paramref name="step3"/>,
+    /// then returns the result. Compare with
+    /// <see cref="ParallelCombineSteps{TState1, TState2, TState3}(PipelineStep{TState1}, PipelineStep{TState2}, PipelineStep{TState3})"/> which executes the steps
+    /// in parallel.
+    /// </remarks>
     public static PipelineStep<(TState1 State1, TState2 State2, TState3 State3)> CombineSteps<TState1, TState2, TState3>(
         this PipelineStep<TState1> step1,
         PipelineStep<TState2> step2,
