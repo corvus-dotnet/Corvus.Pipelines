@@ -86,6 +86,6 @@ public readonly struct CanFailInt32State : ICanFail, IEquatable<CanFailInt32Stat
 
     public override string ToString()
     {
-        return this.Value.ToString();
+        return $"({this.Value},{Enum.GetName(this.ExecutionStatus)})";
     }
 }
