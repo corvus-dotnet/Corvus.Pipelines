@@ -366,26 +366,36 @@ static class InvoiceSteps
 
 We have two discount policy steps, one for a low invoice total, and one for a high invoice total; plus a step that applies sales tax.
 
-And here's a pipeline that uses those steps to process an invoice total:
+And here's a pipeline step that uses those steps to process an invoice total and apply a discount:
 
 ```csharp
-public static PipelineStep<decimal> ApplyDiscountAndTax =
-    Pipeline.Build(
-        Pipeline.Current<decimal>().Choose(
-            selector: static state => state > 1000m
-                ? InvoiceSteps.ApplyHighDiscount
-                : InvoiceSteps.ApplyLowDiscount),
-        InvoiceSteps.ApplySalesTax.ToAsync()
+SyncPipelineStep<decimal> chooseDiscount =
+    Pipeline.Choose(
+            selector: static (decimal state) =>
+            state switch
+            {
+                > 1000m => InvoiceSteps.ApplyHighDiscount,
+                > 500m => InvoiceSteps.ApplyLowDiscount,
+                _ => Pipeline.CurrentSync<decimal>(),
+            });
 );
 ```
 
-This pipeline selects a discount step based on the current value, then applies sales tax to the discounted amount.
+This pipeline selects a discount step based on the current value.
 
 The discount selection is performed by function provided to the `Choose()` operator, which takes the input state and returns a suitable step.
 
-In this case the function looks at the state, and returns the `ApplyHighDiscount` step if the state is `>1000`, and the `ApplyLowDiscount` step if the state is `<=1000`.
+In this case the function looks at the state, and returns the `ApplyHighDiscount` step if the state is `>1000`, and the `ApplyLowDiscount` step if the state is `>500`,m
+and no discount at all if the step is `<=500`.
 
-> Remember we mentioned the `ToAsync()` operator earlier, and that it was another way to convert a sync step to an async step for use in an async context. Here we are using it to convert our `ApplySalesTax` step (which is synchronous) to an async step, to match the async step returned by `Choose()`.
+We can now combine that step with our sales tax application:
+
+```csharp
+SyncPipelineStep<decimal> invoicePipeline =
+    Pipeline.Build(
+        chooseDiscount,
+        InvoiceSteps.ApplySalesTax);
+```
 
 So, let's see what happens if we run our pipeline with the value `1000`
 
@@ -393,10 +403,10 @@ So, let's see what happens if we run our pipeline with the value `1000`
 // 1000m => Choose[<=1000m] =>
 //     ApplyLowDiscount () => (1000 * 0.8) = 800 =>
 // ApplySalesTax => (800 * 1.2) = 960
-decimal output = await pipeline(1000m).ConfigureAwait(false);
+decimal output = await invoicePipeline(1000m).ConfigureAwait(false);
 ```
 
-The step produced by `Choose()` selects and executes the low discount step because `1000` is `<=1000`. It executes that step with the current state, to produce `800`.
+The step produced by `Choose()` selects and executes the low discount step because `1000` is `>500`, but `<=1000`. It executes that step with the current state, to produce `800`.
 
 Once it has completed that, we are back on the main flow of the pipeline, and it continues with the next step which is `ApplySalesTax`.
 
@@ -410,10 +420,10 @@ If on the other hand, we pass `2000` as the input state, we take a different pat
 // 2000m => Choose[>1000m] =>
 //     ApplyHighDiscount () => (2000 * 0.7) = 1400 =>
 // ApplySalesTax => (1400 * 1.2) = 1680
-decimal output = await pipeline(2000m).ConfigureAwait(false);
+decimal output = await invoicePipeline(2000m).ConfigureAwait(false);
 ```
 
-The step produced by `Choose()` selects and executes the *high* discount step because `2000` is `<=1000`. It executes that step with the current state, to produce `1400`.
+The step produced by `Choose()` selects and executes the *high* discount step because `2000` is `>1000`. It executes that step with the current state, to produce `1400`.
 
 Once it has completed that, we are back on the main flow of the pipeline, and it continues with the next step which is `ApplySalesTax`.
 
@@ -562,20 +572,44 @@ What if you want to use an operator, such as `Choose()` but you don't have an ex
 We've already seen an example of this in our invoice processing code. Let's remind ourselves of that:
 
 ```csharp
-PipelineStep<decimal> pipeline = Pipeline.Build(
-    Pipeline.Current<decimal>().Choose(
-        selector: static state => state > 1000m
-            ? InvoiceSteps.ApplyHighDiscount
-            : InvoiceSteps.ApplyLowDiscount),
-    InvoiceSteps.ApplySalesTax.ToAsync()
+SyncPipelineStep<decimal> chooseDiscount =
+    Pipeline.Choose(
+            selector: static (decimal state) =>
+            state switch
+            {
+                > 1000m => InvoiceSteps.ApplyHighDiscount,
+                > 500m => InvoiceSteps.ApplyLowDiscount,
+                _ => Pipeline.CurrentSync<decimal>(),
+            });
 );
 ```
 
-Notice that the `Choose()` operator is applied to the output from another special operator called `Pipeline.Current()`.
+Here, the `Choose()` operator is not being applied to any particular step - we're using the static method on the `Pipeline` type.
 
-This operator is special because it doesn't take an existing step, but it still provides step which, when executed, just returns the current state of the pipeline.
+However, we could have used the version of the operator that applies to a specific step.
 
-This, in fact, gives you the "something" on which an operator can operate, if you do not otherwise have some specific step. We've already seen how this effectively threads the current state through the pipeline when it is executed.
+```csharp
+SyncPipelineStep<decimal> chooseDiscount =
+    Pipeline.CurrentSync<decimal>().Choose(
+            selector: static (decimal state) =>
+            state switch
+            {
+                > 1000m => InvoiceSteps.ApplyHighDiscount,
+                > 500m => InvoiceSteps.ApplyLowDiscount,
+                _ => Pipeline.CurrentSync<decimal>(),
+            });
+);
+```
+
+Notice that the `Choose()` operator is applied to the output from another special operator called `Pipeline.CurrentSync<decimal>()`.
+
+> There is an async version too - `Pipeline.Current<T>()`
+
+This operator provides a step which, when executed, just returns the current state of the pipeline.
+
+This, in fact, gives you the "something" on which an operator can operate, if you do not otherwise have some specific step. This effectively threads the current state through the pipeline when it is executed.
+
+> As you have seen, for common operators like `Choose()` we provide a custom implementation that guarantees to optimize-away the step created by `Current()`. But this is very useful when building your own pipelines. You can think of those step-less operators as operating on `Pipeline.Current()`.`
 
 ## Pipelines and Handlers
 
@@ -661,6 +695,18 @@ static class PricingCatalogs
                     _ => state.NotHandled(),
                 };
             };
+
+    public static SyncPipelineStep<HandlerState<string, decimal>>
+        PricingCatalog3 =
+            state =>
+            {
+                return state.Input switch
+                {
+                    "Catalog3_ProductA" => state.Handled(12.99m),
+                    "Catalog3_ProductB" => state.Handled(21.99m),
+                    _ => state.NotHandled(),
+                };
+            };
 }
 ```
 
@@ -675,7 +721,8 @@ static class PricingCatalogs
         PricingHandler =
             HandlerPipeline.Build(
                 PricingCatalog1,
-                PricingCatalog2);
+                PricingCatalog2,
+                PricingCatalog3);
 }
 ```
 
@@ -701,13 +748,31 @@ else
 }
 ```
 
+This passes the product ID to the first product catalog step, which returns `State.NotHandled()` as it cannot match the ID.
+
+The pipeline checks the result and doesn't terminate, so it passes the product ID to the second catalog step, which recognizes the ID and returns `state.Handled(3.99m)`.
+
+The pipeline recognizes the "handled" result, and terminates, returning the value provided by the second catalog step. It does not pass it on to the third step.
+
 ## More ways to Bind()
 
-Sometimes you will have reusable steps that operate on some part of your state, rather than the state as a whole.
+Sometimes you will have reusable steps that operate on different types that are (sometimes) convertible, but not directly compatible.
 
-Or the step requires some different state which includes information which can be derived from your existing state, or can be augmented with information from elsewhere in your execution environment (such as by calling another API with parameters provided from your state).
+e.g. a `PipelineStep<int>` and a `PipelineStep<decimal>`.
 
-Or maybe the step needs its input state to support different capabilities such as error reporting or cancellation, that your state doesn't.
+Or maybe you have steps that operate on some information that can be derived from your existing state, or can be augmented with information from elsewhere in your execution environment (such as by calling another API with parameters provided from your state).
+
+For example, imagine we had a `Name` type:
+
+```csharp
+public readonly record struct Name(NonNullableString FirstName, NonNullableString LastName);
+```
+
+We might have a `PipelineStep<Name>` that processes names, and a `PipelineStep<NonNullableString>` capable of processing a part of a name.
+
+> `NonNullableString` is, as the name implies, a non-nullable representation of a `string` as an value type. It has the same equality and hashing semantics as a regular `string` but you can use it directly in a pipeline.
+
+Or maybe the step needs its input state to support different _capabilities_ such as error reporting or cancellation, that your state doesn't.
 
 > We will learn more about [capabilities](./docs/ubiquitous-language.md#capability) later.
 
@@ -715,7 +780,7 @@ In any of these cases, we will need to be able to convert an instance of our exi
 
 There are overloads of `Bind()` that do exactly that.
 
-In a addition to the usual steps, they take two mapping functions: `wrap()` and `unwrap()`, and produce a step like this:
+These overloads of take two mapping functions: `wrap()` and `unwrap()`, and produce a step like this:
 
 ```mermaid
 flowchart
