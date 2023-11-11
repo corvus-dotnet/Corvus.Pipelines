@@ -2,13 +2,13 @@
 
 ## What is it?
 
-A low-allocation, extensible pipeline composition library, supporting sync and async pipeline steps arranged into terminating and non-terminating pipelines.
+A low-allocation, extensible pipeline composition library, supporting sync and async functional pipeline steps arranged into terminating and non-terminating pipelines.
 
 Out-of-the-box, it includes support for exception and error handling, logging, and cancellation.
 
 Amongst other features, it supports (but does not require) ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/) - avoiding exception throwing, and offering a functional approach to termination, error handling, and retries.
 
-If you're familiar with these terms and know that's what you want, you can [skip ahead to the getting started section](#getting-started).
+If you're familiar with these terms and know that's what you want, you can [review the ubiquitous language](./docs/ubiquitous-language.md) (so we can avoid miscommunication when using overloaded terminology), and  [skip ahead to the getting started section](#getting-started).
 
 If you'd like to understand more about the thinking behind **Corvus.Pipelines** then read on.
 
@@ -30,22 +30,22 @@ It can be used in many applications, e.g. input handling, request processing, or
 
 Here are a few examples.
 
-### Corvus.YarpPipelines
-
-We originally built this to help us reduce the complexity of building high-performance HTTP Request Processing in YARP proxies, and have also open-sourced our **Corvus.YarpPipelines** library which we have built on top of it.
-
-### Corvus.Pipelines.Handlers
-
-We use **Corvus.Pipelines** to implement a version of the [Chain of Responsibility](https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern) pattern that doesn't couple each step directly to the next. We call this the Handler Pattern, and it is implemented by the types in the `Corvus.Pipelines.Handlers` namespace.
-
-This is so useful, we include it in the **Corvus.Pipelines** library itself.
-
 ### ASP.NET Core
 **Corvus.Pipelines** is particularly useful when coupled with, for example, [ASP.NET Core Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview), or (especially) directly through `HttpContext`, to build lightweight pipelines for request processing from common building blocks.
 
 We are using Corvus.Pipelines in code-generation scenarios for HTTP API handlers, where it is simpler to emit the code that builds pipelines than all of the code that they embody.
 
 We also provide an `HttpContextPipeline` in `Corvus.Pipelines.AspNetCore` that directly supports `HttpContext` request processing.
+
+### Corvus.YarpPipelines
+
+We originally built this to help us reduce the complexity of building high-performance HTTP Request transforms in YARP proxies. We have also open-sourced our **Corvus.YarpPipelines** library which we have built on top of it.
+
+### Corvus.Pipelines.Handlers
+
+We use **Corvus.Pipelines** to implement a version of the [Chain of Responsibility](https://en.wikipedia.org/wiki/Chain-of-responsibility_pattern) pattern that doesn't couple each step directly to the next. We call this the Handler Pattern, and it is implemented by the types in the `Corvus.Pipelines.Handlers` namespace.
+
+This is so useful, we include it in the **Corvus.Pipelines** library itself.
 
 ## Corvus.Pipelines vs. LINQ to objects vs. TPL Dataflow
 
@@ -79,11 +79,19 @@ This is what ensures, as with LINQ-to-objects, that TPL Dataflow (and [Parallel 
 
 This is not intended for coarse-grained, highly parallizable data processing, where you are trying to execute large, in-memory workloads that consume all the resources on multi-processor machines.
 
-Instead, it is geared towards executing many, heterogenous, isolated pipelines on shared resources with low overhead.
+Instead, it is geared towards executing many pipelines:
 
-The workloads are likely to be largely synchronous in nature, but with some asynchronous (rather than parallelizable) steps that, in a traditional programming model, require the entire call tree to be aware of the async pattern. In those async cases, the pipeline is essentially suspended until they complete, such as when you perform network I/O operations.
+- with execution request affinity
+- heterogenous behaviour
+- composed largely of common step types
+- on shared resources
+- with low overhead (allocations, developer ceremony, additional compute cost)
 
-Hence its applicability to, for example, (the front end of) HttpRequest handlers.
+Our experience suggests that in applications with these characteristics, the workloads are likely to be largely synchronous in nature, but with some asynchronous (rather than parallelizable) steps that, in a traditional programming model, require the entire call tree to be aware of the async pattern.
+
+In those async cases, the pipeline is essentially suspended until they complete, such as when you perform network I/O operations.
+
+This makes **Corvus.Pipelines** particularly applicable to, for example, HttpRequest handlers.
 
 ## How does it perform?
 
