@@ -8,6 +8,10 @@ Out-of-the-box, it includes support for exception and error handling, logging, a
 
 Amongst other features, it supports (but does not require) ["railway oriented programming"](https://fsharpforfunandprofit.com/rop/) - avoiding exception throwing, and offering a functional approach to termination, error handling, and retries.
 
+If you're familiar with these terms and know that's what you want, you can [skip ahead to the getting started section](#getting-started).
+
+If you'd like to understand more about the thinking behind **Corvus.Pipelines** then read on.
+
 ## What can I do with it?
 
 The library helps you to build programs dynamically (i.e. at runtime) out of predefined (functional) components, to operate on some particular state, and produce some result.
@@ -17,6 +21,8 @@ Those functional components are themselves stateless, and so can be reused witho
 It is useful when you want to be able to be able declaratively define the way in which a system responds to input, while dynamically adapating the processing to both the input state, and/or other environmental conditions.
 
 It also supports moving (relatively) seamlessly from synchronous to asynchronous contexts, with minimal overhead, making it ideal for request processing and data scenarios where we frequently mix async processing (e.g. calling external services to augment our state) with synchronous processing (operating on our in-memory domain model).
+
+It is particularly useful when you have a need for executing many, isolated pipelines that respond somewhat differently to different types of request, but share a lot of common processing.
 
 ## What kind of applications would find that useful?
 
@@ -41,15 +47,43 @@ We are using Corvus.Pipelines in code-generation scenarios for HTTP API handlers
 
 We also provide an `HttpContextPipeline` in `Corvus.Pipelines.AspNetCore` that directly supports `HttpContext` request processing.
 
-## Corvus.Pipelines vs. LINQ to objects
+## Corvus.Pipelines vs. LINQ to objects vs. TPL Dataflow
 
-Q: But can't I do everything this does, and more, with assorted `Func<,>` and LINQ to objects?
+### Q: But can't I do everything this does, and more, with assorted `Func<,>` and LINQ to objects?
 
-A: Yes; you can. But...
+### A: Yes; you can. But...
 
 The idea of **Corvus.Pipelines** is to _constrain_ what you can do to make the programming model simpler, and enable some common patterns like retries, cancellation, logging and `Exception`-free error handling.
 
 At the end of the day, it is just built on top of dotnet delegates/`Func<,>`, and you can bring in as much LINQ to objects as you like, around that! There's no special magic going on.
+
+The workload that inspired the creation of this library started out just using LINQ-to-objects, but we rapidly discovered that we were having to write a lot of boiler plate around the code we really needed; and so this project was born.
+
+### Q: What about TPL Dataflow - that has similar concepts in its blocks and networks, but gives us more control of parallelization and async behaviour.
+
+### A: Yes, that's absolutely true.
+
+[TPL Dataflow](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/dataflow-task-parallel-library) is a very powerful library with a similar philosophy of in-process state-passing for dataflow and pipelining tasks.
+
+It gives you much more control over the async context than we offer in **Corvus.Pipelines**.
+
+However, it is much more heavy-weight; it doesn't attempt to minimize allocations, or optimize for (largely) synchronous use cases.
+
+There's also a lot more ceremony in building and connecting blocks and pipelines; there's nothing wrong with that, but **Corvus.Pipelines** tries to put as little between the functional building blocks and the execution as possible.
+
+This is what ensures, as with LINQ-to-objects, that TPL Dataflow (and [Parallel LINQ](https://learn.microsoft.com/en-us/dotnet/standard/parallel-programming/introduction-to-plinq)) can be seamlessly integrated into a **Corvus.Pipelines** pipeline (or vice-versa).
+
+### Q: So _should_ I use this for coarse-grained, highly-parallel data processing pipelines?
+
+### A: Probably not, no...
+
+This is not intended for coarse-grained, highly parallizable data processing, where you are trying to execute large, in-memory workloads that consume all the resources on multi-processor machines.
+
+Instead, it is geared towards executing many, heterogenous, isolated pipelines on shared resources with low overhead.
+
+The workloads are likely to be largely synchronous in nature, but with some asynchronous (rather than parallelizable) steps that, in a traditional programming model, require the entire call tree to be aware of the async pattern. In those async cases, the pipeline is essentially suspended until they complete, such as when you perform network I/O operations.
+
+Hence its applicability to, for example, (the front end of) HttpRequest handlers.
 
 ## How does it perform?
 
@@ -121,13 +155,13 @@ flowchart LR
 Here is a very simple pipeline whose state is an `int`.
 
 ```csharp
-PipelineStep<int> pipeline = Pipeline.Build<int>(
+SyncPipelineStep<int> pipeline = Pipeline.Build<int>(
     static state => state + 1,
     static state => state * 2,
     static state => state - 1);
 
 // ((1 + 1) * 2) - 1 = 3
-int output = await pipeline(1).ConfigureAwait(false);
+int output = pipeline(1);
 ```
 
 You can see that a pipeline is, itself, just another step.
@@ -150,11 +184,9 @@ Sometimes we show the input or result states inside the composed-step box, somet
 
 ## Sync and Async steps
 
-The individual steps passed to the `Build()` operator were all synchronous - but you can use async steps too.
+Although the individual steps passed to the `Build()` operator were all synchronous - but you can use async steps too.
 
-You may have noticed that the step produced by the `Build()` operator was itself async - we had to `await` the result.
-
-Async steps are the "natural" form in **Corvus.Pipelines**.
+In fact, async steps are the "natural" form in **Corvus.Pipelines**.
 
 But rather than returning a `Task<TState>` we use `ValueTask<TState>`, so you avoid unnecessary overhead when operating in a purely synchronous context.
 
