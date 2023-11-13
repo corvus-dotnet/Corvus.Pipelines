@@ -101,3 +101,25 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 Examples:
 	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                 |
 	| LoggableCanFailInt32State.For(0, Services.Logger) | LoggableCanFailInt32State.For(5, Services.Logger).PermanentFailure() | PermanentFailure | TimeSpan.Zero | Retry.CountPolicy<LoggableCanFailInt32State>(5) | Retry.LogStrategy<LoggableCanFailInt32State>() |
+
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for sync steps and retry strategy
+
+	Given I produce the steps
+		| Step name | State type                | Sync or async | Step definition                                                  |
+		| Step1     | LoggableCanFailInt32State | sync          | state => { return state.WithValue(state + 1).<Failure type>(); } |
+		| TestStep  | LoggableCanFailInt32State | sync          | Steps.Step1.Retry(<Retry policy>, <Retry strategy>)              |
+	And I create the service instances
+		| Service type | Instance name | Factory method   |
+		| TestLogger   | Logger        | new TestLogger() |
+	When I execute the sync step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
+	Then the sync output of "TestStep" should be <Expected output>
+	And the log Services.Logger should contain the following entries
+		| Log level   | Message     |
+		| Information | Retrying: 1 |
+		| Information | Retrying: 2 |
+		| Information | Retrying: 3 |
+		| Information | Retrying: 4 |
+
+Examples:
+	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                     |
+	| LoggableCanFailInt32State.For(0, Services.Logger) | LoggableCanFailInt32State.For(5, Services.Logger).PermanentFailure() | PermanentFailure | TimeSpan.Zero | Retry.CountPolicy<LoggableCanFailInt32State>(5) | Retry.LogStrategySync<LoggableCanFailInt32State>() |
