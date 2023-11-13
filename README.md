@@ -163,13 +163,13 @@ flowchart LR
 Here is a very simple pipeline whose state is an `int`.
 
 ```csharp
-SyncPipelineStep<int> pipeline = Pipeline.Build<int>(
+SyncPipelineStep<int> syncPipeline = Pipeline.Build<int>(
     static state => state + 1,
     static state => state * 2,
     static state => state - 1);
 
 // ((1 + 1) * 2) - 1 = 3
-int output = pipeline(1);
+int output = syncPipeline(1);
 ```
 
 You can see that a pipeline is, itself, just another step.
@@ -201,7 +201,7 @@ But rather than returning a `Task<TState>` we use `ValueTask<TState>`, so you av
 Here's an example of an async step. It makes use of `Task.Delay()`.
 
 ```csharp
-PipelineStep<int> pipeline = Pipeline.Build<int>(
+PipelineStep<int> asyncPipeline = Pipeline.Build<int>(
     static async state =>
     {
         await Task.Delay(1000).ConfigureAwait(false);
@@ -283,7 +283,7 @@ static class CommonSteps
 Then, we use the `Build()` operator overload that takes a _termination predicate_.
 
 ```csharp
-PipelineStep<int> pipeline = Pipeline.Build(
+PipelineStep<int> terminatingPipeline = Pipeline.Build(
     shouldTerminate: state => state > 25,
     CommonSteps.MultiplyBy5,
     CommonSteps.MultiplyBy5
@@ -302,7 +302,7 @@ If we run the pipeline with `1` as the input, we get
 
 ```csharp
 // (1 * 5) * 5 = 25
-int output = await pipeline(1).ConfigureAwait(false);
+int output = await terminatingPipeline(1).ConfigureAwait(false);
 ```
 
 However, if we pass `6` as the input to the pipeline, we get
@@ -313,7 +313,7 @@ However, if we pass `6` as the input to the pipeline, we get
 
 ```csharp
 // (6 * 5) [Terminate] = 30
-int output = await pipeline(6).ConfigureAwait(false);
+int output = await terminatingPipeline(6).ConfigureAwait(false);
 ```
 
 ## Branching

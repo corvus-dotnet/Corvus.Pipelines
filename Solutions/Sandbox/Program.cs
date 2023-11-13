@@ -7,23 +7,30 @@ int result = addOne(1);
 
 Console.WriteLine(result);
 
-SyncPipelineStep<int> pipeline = Pipeline.Build<int>(
+SyncPipelineStep<int> syncPipeline = Pipeline.Build<int>(
     static state => state + 1,
     static state => state * 2,
     static state => state - 1);
 
-result = pipeline(1);
+result = syncPipeline(1);
 
 Console.WriteLine(result);
 
-PipelineStep<int> nextPipeline = Pipeline.Build<int>(
+PipelineStep<int> asyncPipeline = Pipeline.Build<int>(
     static async state =>
     {
         await Task.Delay(1000).ConfigureAwait(false);
         return state * 2;
     });
 
-result = await nextPipeline(2);
+result = await asyncPipeline(2);
+
+asyncPipeline = Pipeline.Build<int>(
+    static state => ValueTask.FromResult(state + 1),
+    static async state => { await Task.Delay(0); return state * 2; },
+    static state => ValueTask.FromResult(state - 1));
+
+result = await asyncPipeline(1);
 
 Console.WriteLine(result);
 
