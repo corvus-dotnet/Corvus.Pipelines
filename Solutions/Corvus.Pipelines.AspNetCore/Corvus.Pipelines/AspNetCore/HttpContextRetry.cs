@@ -43,15 +43,21 @@ public static class HttpContextRetry
     /// <summary>
     /// Gets a pipeline step that can log a retry state.
     /// </summary>
+    /// <returns>A <see cref="PipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
+    public static PipelineStep<RetryContext<HttpContextPipelineState>> LogStrategy() => Retry.LogStrategy<HttpContextPipelineState>();
+
+    /// <summary>
+    /// Gets a pipeline step that can log a retry state.
+    /// </summary>
     /// <returns>A <see cref="SyncPipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
-    public static SyncPipelineStep<RetryContext<HttpContextPipelineState>> LogStrategy() => Retry.LogStrategy<HttpContextPipelineState>();
+    public static SyncPipelineStep<RetryContext<HttpContextPipelineState>> LogStrategySync() => Retry.LogStrategySync<HttpContextPipelineState>();
 
     /// <summary>
     /// Gets a pipeline step that delays for a fixed period.
     /// </summary>
     /// <param name="duration">The fixed duration to delay before retrying.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<HttpContextPipelineState>> FixedDelayStrategy(TimeSpan duration) => LogStrategy().ToAsync().Bind(Retry.FixedDelayStrategy<HttpContextPipelineState>(duration));
+    public static PipelineStep<RetryContext<HttpContextPipelineState>> FixedDelayStrategy(TimeSpan duration) => LogStrategy().Bind(Retry.FixedDelayStrategy<HttpContextPipelineState>(duration));
 
     /// <summary>
     /// Gets a pipeline step that delays with a linear backoff.
@@ -61,7 +67,7 @@ public static class HttpContextRetry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<HttpContextPipelineState>> LinearDelayStrategy(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        => LogStrategy().ToAsync().Bind(Retry.LinearDelayStrategy<HttpContextPipelineState>(initialDuration, increment, maximumDuration));
+        => LogStrategy().Bind(Retry.LinearDelayStrategy<HttpContextPipelineState>(initialDuration, increment, maximumDuration));
 
     /// <summary>
     /// Gets a pipeline step that delays with an exponential backoff.
@@ -71,5 +77,5 @@ public static class HttpContextRetry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<HttpContextPipelineState>> ExponentialDelayStrategy(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        => LogStrategy().ToAsync().Bind(Retry.ExponentialDelayStrategy<HttpContextPipelineState>(initialDuration, increment, maximumDuration));
+        => LogStrategy().Bind(Retry.ExponentialDelayStrategy<HttpContextPipelineState>(initialDuration, increment, maximumDuration));
 }

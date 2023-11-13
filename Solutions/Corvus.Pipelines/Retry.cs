@@ -51,7 +51,7 @@ public static class Retry
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <returns>A <see cref="SyncPipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
-    public static SyncPipelineStep<RetryContext<TState>> LogStrategy<TState>()
+    public static PipelineStep<RetryContext<TState>> LogStrategy<TState>()
         where TState : struct, ILoggable, ICanFail
         => static retryContext =>
             {
@@ -60,8 +60,25 @@ public static class Retry
                     retryContext.State.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount}", retryContext.FailureCount);
                 }
 
-                return retryContext;
+                return ValueTask.FromResult(retryContext);
             };
+
+    /// <summary>
+    /// Gets a pipeline step that can log a retry state.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <returns>A <see cref="SyncPipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
+    public static SyncPipelineStep<RetryContext<TState>> LogStrategySync<TState>()
+        where TState : struct, ILoggable, ICanFail
+        => static retryContext =>
+        {
+            if (retryContext.State.Logger.IsEnabled(LogLevel.Information))
+            {
+                retryContext.State.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount}", retryContext.FailureCount);
+            }
+
+            return retryContext;
+        };
 
     /// <summary>
     /// Gets a pipeline step that delays for a fixed period.

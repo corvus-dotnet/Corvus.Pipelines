@@ -45,15 +45,21 @@ public static class YarpRetry
     /// <summary>
     /// Gets a pipeline step that can log a retry state.
     /// </summary>
+    /// <returns>A <see cref="PipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
+    public static PipelineStep<RetryContext<YarpPipelineState>> LogStrategy() => Retry.LogStrategy<YarpPipelineState>();
+
+    /// <summary>
+    /// Gets a pipeline step that can log a retry state.
+    /// </summary>
     /// <returns>A <see cref="SyncPipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
-    public static SyncPipelineStep<RetryContext<YarpPipelineState>> LogStrategy() => Retry.LogStrategy<YarpPipelineState>();
+    public static SyncPipelineStep<RetryContext<YarpPipelineState>> LogStrategySync() => Retry.LogStrategySync<YarpPipelineState>();
 
     /// <summary>
     /// Gets a pipeline step that delays for a fixed period.
     /// </summary>
     /// <param name="duration">The fixed duration to delay before retrying.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<YarpPipelineState>> FixedDelayStrategy(TimeSpan duration) => LogStrategy().ToAsync().Bind(Retry.FixedDelayStrategy<YarpPipelineState>(duration));
+    public static PipelineStep<RetryContext<YarpPipelineState>> FixedDelayStrategy(TimeSpan duration) => LogStrategy().Bind(Retry.FixedDelayStrategy<YarpPipelineState>(duration));
 
     /// <summary>
     /// Gets a pipeline step that delays with a linear backoff.
@@ -63,7 +69,7 @@ public static class YarpRetry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<YarpPipelineState>> LinearDelayStrategy(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        => LogStrategy().ToAsync().Bind(Retry.LinearDelayStrategy<YarpPipelineState>(initialDuration, increment, maximumDuration));
+        => LogStrategy().Bind(Retry.LinearDelayStrategy<YarpPipelineState>(initialDuration, increment, maximumDuration));
 
     /// <summary>
     /// Gets a pipeline step that delays with an exponential backoff.
@@ -73,5 +79,5 @@ public static class YarpRetry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<YarpPipelineState>> ExponentialDelayStrategy(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        => LogStrategy().ToAsync().Bind(Retry.ExponentialDelayStrategy<YarpPipelineState>(initialDuration, increment, maximumDuration));
+        => LogStrategy().Bind(Retry.ExponentialDelayStrategy<YarpPipelineState>(initialDuration, increment, maximumDuration));
 }
