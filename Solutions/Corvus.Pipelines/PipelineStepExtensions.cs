@@ -180,6 +180,68 @@ public static class PipelineStepExtensions
     }
 
     /// <summary>
+    /// An operator which returns a step which executes an action on entry to and exit from the input step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step for which to log exit.</param>
+    /// <param name="logEntry">The action to perform on entry. It is provided with the state before the step.</param>
+    /// <param name="logExit">The action to perform on exit. It is provided with the state both before and after the step.</param>
+    /// <returns>A step which wraps the input step and logs on entry and exit.</returns>
+    public static SyncPipelineStep<TState> OnEntryAndExit<TState>(this SyncPipelineStep<TState> step, Action<TState> logEntry, Action<TState, TState> logExit)
+        where TState : struct
+    {
+        return step.Bind(
+            (TState state) =>
+            {
+                logEntry(state);
+                return state;
+            },
+            (state, innerState) =>
+            {
+                logExit(state, innerState);
+                return innerState;
+            });
+    }
+
+    /// <summary>
+    /// An operator which returns a step which executes an action on entry to the input step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step for which to log exit.</param>
+    /// <param name="logEntry">The action to perform on entry. It is provided with the state before the step.</param>
+    /// <returns>A step which wraps the input step and logs on entry.</returns>
+    public static SyncPipelineStep<TState> OnEntry<TState>(this SyncPipelineStep<TState> step, Action<TState> logEntry)
+        where TState : struct
+    {
+        return step.Bind(
+            (TState state) =>
+            {
+                logEntry(state);
+                return state;
+            },
+            (_, innerState) => innerState);
+    }
+
+    /// <summary>
+    /// An operator which returns a step which executes an action on exit from the input step.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="step">The step for which to log exit.</param>
+    /// <param name="onExit">The action to perform on exit. It is provided with the state both before and after the step.</param>
+    /// <returns>A step which wraps the input step and logs on entry.</returns>
+    public static SyncPipelineStep<TState> OnExit<TState>(this SyncPipelineStep<TState> step, Action<TState, TState> onExit)
+        where TState : struct
+    {
+        return step.Bind(
+            (TState state) => state,
+            (entryState, exitState) =>
+            {
+                onExit(entryState, exitState);
+                return exitState;
+            });
+    }
+
+    /// <summary>
     /// An operator which provides a step that catches an exception thrown by a step, and passes it to a handler.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
