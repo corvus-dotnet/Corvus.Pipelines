@@ -148,6 +148,8 @@ If we execute the step with some given initial state (in this case the integer `
 int result = addOne(1);
 ```
 
+> The code used in this document can be found in executable form in the [./Solutions/ReadMe/](./Solutions/ReadMe/) project.
+
 ## Composing steps into a pipeline
 We can compose one or more of these steps into a [pipeline](./docs/ubiquitous-language.md#pipeline).
 
