@@ -73,11 +73,13 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	Then the async output of "TestStep" should be <Expected output>
 
 Examples:
-	| Input                    | Expected output                             | Failure type     | Delay                     | Retry policy                                                                            |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(3).TransientFailure() | TransientFailure | TimeSpan.Zero             | Retry.TransientPolicy<CanFailInt32State>().And(Retry.CountPolicy<CanFailInt32State>(3)) |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(1).PermanentFailure() | PermanentFailure | TimeSpan.Zero             | Retry.TransientPolicy<CanFailInt32State>()                                              |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(1).TransientFailure() | TransientFailure | TimeSpan.FromSeconds(0.2) | Retry.DurationPolicy<CanFailInt32State>(TimeSpan.FromSeconds(0.1))                      |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(5).PermanentFailure() | PermanentFailure | TimeSpan.Zero             | Retry.CountPolicy<CanFailInt32State>(5)                                                 |
+	| Input                    | Expected output                             | Failure type     | Delay                     | Retry policy                                                                                                                                                                              |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(3).TransientFailure() | TransientFailure | TimeSpan.Zero             | Retry.TransientPolicy<CanFailInt32State>().And(Retry.CountPolicy<CanFailInt32State>(3))                                                                                                   |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(3).TransientFailure() | TransientFailure | TimeSpan.Zero             | Retry.TransientPolicy<CanFailInt32State>().And(Retry.CountPolicy<CanFailInt32State>(3)).Or(Retry.TransientPolicy<CanFailInt32State>().Not().And(Retry.CountPolicy<CanFailInt32State>(5))) |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).PermanentFailure() | PermanentFailure | TimeSpan.Zero             | Retry.TransientPolicy<CanFailInt32State>().And(Retry.CountPolicy<CanFailInt32State>(3)).Or(Retry.TransientPolicy<CanFailInt32State>().Not().And(Retry.CountPolicy<CanFailInt32State>(5))) |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(1).PermanentFailure() | PermanentFailure | TimeSpan.Zero             | Retry.TransientPolicy<CanFailInt32State>()                                                                                                                                                |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(1).TransientFailure() | TransientFailure | TimeSpan.FromSeconds(0.2) | Retry.DurationPolicy<CanFailInt32State>(TimeSpan.FromSeconds(0.1))                                                                                                                        |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).PermanentFailure() | PermanentFailure | TimeSpan.Zero             | Retry.CountPolicy<CanFailInt32State>(5)                                                                                                                                                   |
 
 
 Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for async steps and retry strategy
