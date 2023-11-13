@@ -97,20 +97,23 @@ This makes **Corvus.Pipelines** particularly applicable to, for example, HttpReq
 
 We have a suite of benchmarks that verify we have a low-overhead, low-allocation solution.
 
-These are typical results for a YARP HTTP transform processing pipeline. It uses async steps, with and without logging.
+These are typical results for [an example YARP HTTP transform processing pipeline](./Solutions/Corvus.Pipelines.Benchmarks/AllSortsBenchmark.cs).
 
-| Method                 | Mean     | Error     | StdDev    | Ratio | Allocated | Alloc Ratio |
-|----------------------- |---------:|----------:|----------:|------:|----------:|------------:|
-| RunPipeline            | 6.317 μs | 0.0452 μs | 0.0377 μs |  1.00 |         - |          NA |
-| RunPipelineWithLogging | 6.960 μs | 0.0395 μs | 0.0308 μs |  1.10 |         - |          NA |
+| Method                      | Mean       | Error    | StdDev   | Ratio | RatioSD | Allocated |
+|---------------------------- |-----------:|---------:|---------:|------:|--------:|----------:|
+| RunPipeline                 |   794.1 ns |  2.46 ns |  2.30 ns |  1.00 |    0.00 |         - |
+| RunPipelineWithLogging      | 1,117.0 ns |  3.91 ns |  3.66 ns |  1.41 |    0.01 |         - |
+| RunPipelineAsync            | 2,163.9 ns |  9.37 ns |  8.77 ns |  2.72 |    0.01 |         - |
+| RunPipelineWithLoggingAsync | 2,524.0 ns | 17.29 ns | 15.33 ns |  3.18 |    0.02 |         - |
 
+Here's [another example](./Solutions/Corvus.Pipelines.Benchmarks/ExceptionVersusErrorBenchmark.cs) that compares the railway-oriented approach for error handling, with an exception-based process:
 
-Here's another example that compares the railway-oriented approach for error handling, with an exception-based process:
-
-| Method                   | Mean         | Error       | StdDev      | Ratio  | RatioSD | Gen0   | Allocated | Alloc Ratio |
-|------------------------- |-------------:|------------:|------------:|-------:|--------:|-------:|----------:|------------:|
-| RunPipelineWithError     |     253.7 ns |     2.02 ns |     1.58 ns |   1.00 |    0.00 |      - |         - |          NA |
-| RunPipelineWithException | 135,239.0 ns | 1,443.82 ns | 1,279.91 ns | 534.02 |    6.00 | 2.6855 |   11960 B |          NA |
+| Method                        | Mean        | Error     | StdDev    | Ratio  | RatioSD | Gen0   | Allocated |
+|------------------------------ |------------:|----------:|----------:|-------:|--------:|-------:|----------:|
+| RunPipelineWithError          |    119.6 ns |   0.66 ns |   0.55 ns |   1.00 |    0.00 |      - |         - |
+| RunPipelineWithErrorAsync     |    155.5 ns |   0.69 ns |   0.64 ns |   1.30 |    0.01 |      - |         - |
+| RunPipelineWithException      | 25,930.4 ns | 108.26 ns |  95.97 ns | 216.85 |    1.36 | 0.1221 |    1720 B |
+| RunPipelineWithExceptionAsync | 87,468.5 ns | 509.10 ns | 476.21 ns | 731.46 |    4.92 | 0.8545 |   11720 B |
 
 # Concepts
 
