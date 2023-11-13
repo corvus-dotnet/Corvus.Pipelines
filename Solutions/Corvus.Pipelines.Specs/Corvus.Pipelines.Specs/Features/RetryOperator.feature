@@ -125,3 +125,20 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 Examples:
 	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                     |
 	| LoggableCanFailInt32State.For(0, Services.Logger) | LoggableCanFailInt32State.For(5, Services.Logger).PermanentFailure() | PermanentFailure | TimeSpan.Zero | Retry.CountPolicy<LoggableCanFailInt32State>(5) | Retry.LogStrategySync<LoggableCanFailInt32State>() |
+
+Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for async steps with delay strategies
+
+	Given I produce the steps
+		| Step name | State type        | Sync or async | Step definition                                                                                                                                                        |
+		| Step1     | CanFailInt32State | async         | state => ValueTask.FromResult(state.WithValue(state + 1).<Failure type>())                                                                                             |
+		| TestStep  | CanFailInt32State | async         | Steps.Step1.Retry(Retry.CountPolicy<CanFailInt32State>(5), <Retry strategy>).OnEntryAndExit(state => Services.Timer.Start(), (before, after) => Services.Timer.Stop()) |
+	And I create the service instances
+		| Service type | Instance name | Factory method  |
+		| TestTimer    | Timer         | new TestTimer() |
+	When I execute the async step "TestStep" with the input of type "CanFailInt32State" <Input>
+	Then the async output of "TestStep" should be <Expected output>
+	And the timer Services.Timer should show <Expected time> within <Timing delta>
+
+Examples:
+	| Input                    | Expected output                             | Failure type     | Retry strategy                                                             | Expected time                  | Timing delta                  |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.FixedDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50)) | TimeSpan.FromMilliseconds(250) | TimeSpan.FromMilliseconds(25) |

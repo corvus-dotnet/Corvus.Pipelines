@@ -171,6 +171,4 @@ public static class Retry
     public static Predicate<RetryContext<TState>> Not<TState>(this Predicate<RetryContext<TState>> predicate)
         where TState : struct, ICanFail
         => retryContext => !predicate(retryContext);
-
-
 }

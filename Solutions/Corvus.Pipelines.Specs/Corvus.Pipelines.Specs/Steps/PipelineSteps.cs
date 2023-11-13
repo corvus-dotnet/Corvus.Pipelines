@@ -93,6 +93,57 @@ public class PipelineSteps(ScenarioContext scenarioContext)
         }
     }
 
+    [Then("the timer (.*) should show (.*) within (.*)")]
+    public void TheTimerShouldShow(string timerServiceName, string timeSpan, string deltaTimeSpan)
+    {
+        this.BuildTestCode();
+        string namespaceName = GetNamespace(scenarioContext);
+
+        string code =
+        $$"""
+            using System;
+            using System.Threading.Tasks;
+            
+            using Corvus.Pipelines;
+            using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
+            
+            using Microsoft.Extensions.Logging;
+            
+            using NUnit.Framework;            
+            
+            namespace {{namespaceName}}
+            {
+                public static partial class TimerExpectations
+                {
+                    public static Action Assert = () => {{timerServiceName}}.AssertInRange({{timeSpan}}, {{deltaTimeSpan}});
+                }
+            }
+            """;
+
+        List<SyntaxTree> syntaxTrees =
+            [
+                CSharpSyntaxTree.ParseText(code, path: "TimerExpectations.cs"),
+            ];
+
+        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
+
+        Assembly assembly = this.BuildAndLoadAssembly(syntaxTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
+
+        Type? type = assembly.GetType($"{namespaceName}.TimerExpectations");
+
+        object? expectationObject = type?.GetField($"Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
+
+        if (expectationObject is Action expectation)
+        {
+            expectation();
+        }
+        else
+        {
+            throw new InvalidOperationException("The assertion could not be loaded.");
+        }
+    }
+
     [Then("the log (.*) should contain the following entries")]
     public void TheLogShouldContainTheFollowingEntries(string logServiceName, Table entries)
     {
