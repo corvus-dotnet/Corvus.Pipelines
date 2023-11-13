@@ -140,5 +140,6 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	And the timer Services.Timer should show <Expected time> within <Timing delta>
 
 Examples:
-	| Input                    | Expected output                             | Failure type     | Retry strategy                                                             | Expected time                  | Timing delta                  |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.FixedDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50)) | TimeSpan.FromMilliseconds(250) | TimeSpan.FromMilliseconds(25) |
+	| Input                    | Expected output                             | Failure type     | Retry strategy                                                                                                                            | Expected time                  | Timing delta                  |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.FixedDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50))                                                                | TimeSpan.FromMilliseconds(250) | TimeSpan.FromMilliseconds(50) |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.LinearDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(0), TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150)) | TimeSpan.FromMilliseconds(300) | TimeSpan.FromMilliseconds(50) |
