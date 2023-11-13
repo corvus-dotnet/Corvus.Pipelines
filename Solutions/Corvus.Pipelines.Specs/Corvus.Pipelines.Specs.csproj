@@ -15,7 +15,7 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0-preview-23503-02" />
 		<PackageReference Include="SpecFlow.NUnit" Version="3.9.74" />
-		<PackageReference Include="nunit" Version="3.13.3" />
+		<PackageReference Include="nunit" Version="3.14.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
 		<!-- Required for publishing test results directly to Azure Pipelines -->
 		<PackageReference Include="azurepipelines.testlogger" Version="1.2.3" />
@@ -36,5 +36,9 @@
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 		<RestoreLockedMode Condition="$(ContinuousIntegrationBuild) == 'true'">true</RestoreLockedMode>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="Roslynator.Analyzers" Version="4.6.2" />
+	</ItemGroup>
 
 </Project>
