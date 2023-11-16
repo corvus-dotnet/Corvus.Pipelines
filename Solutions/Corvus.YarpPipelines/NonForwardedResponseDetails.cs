@@ -4,6 +4,8 @@
 
 using Microsoft.AspNetCore.Http;
 
+using CookieDetails =(string Path, string Name, string Value, System.DateTimeOffset ExpiresFrom);
+
 namespace Corvus.YarpPipelines;
 
 /// <summary>
@@ -13,6 +15,8 @@ namespace Corvus.YarpPipelines;
 public readonly struct NonForwardedResponseDetails
 {
     private readonly string? redirectLocation;
+    private readonly CookieDetails? cookieDetails;
+    private readonly DateTimeOffset cookieExpiresFrom;
     private readonly bool redirectShouldPreserveMethod;
 
     private NonForwardedResponseDetails(int statusCode)
@@ -24,6 +28,19 @@ public readonly struct NonForwardedResponseDetails
         string redirectLocation, bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
+        this.redirectShouldPreserveMethod = preserveMethod;
+    }
+
+    private NonForwardedResponseDetails(
+        string redirectLocation,
+        string cookiePath,
+        string cookieName,
+        string cookieValue,
+        DateTimeOffset cookieExpiresFrom,
+        bool preserveMethod)
+    {
+        this.redirectLocation = redirectLocation;
+        this.cookieDetails = (cookiePath, cookieName, cookieValue, cookieExpiresFrom);
         this.redirectShouldPreserveMethod = preserveMethod;
     }
 
@@ -55,17 +72,38 @@ public readonly struct NonForwardedResponseDetails
     }
 
     /// <summary>
+    /// Creates a <see cref="NonForwardedResponseDetails"/> indicating that a redirect response should be
+    /// produced with a status code suitable for scenarios where we are redirecting the
+    /// user to a login UI (302), and that this response should also set a cookie.
+    /// </summary>
+    /// <param name="location">The redirection location.</param>
+    /// <param name="cookiePath">The path for the cookie.</param>
+    /// <param name="cookieName">The cookie name.</param>
+    /// <param name="cookieValue">The cookie value.</param>
+    /// <param name="cookieExpiresFrom">The time after which the cookie expires.</param>
+    /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
+    public static NonForwardedResponseDetails ForAuthenticationRedirectSettingCookie(
+        string location,
+        string cookiePath,
+        string cookieName,
+        string cookieValue,
+        DateTimeOffset cookieExpiresFrom)
+    {
+        return new(location, cookiePath, cookieName, cookieValue, cookieExpiresFrom, preserveMethod: false);
+    }
+
+    /// <summary>
     /// Gets the redirect location if there is one.
     /// </summary>
     /// <param name="result">
     /// Set to the redirect details if this value represents a redirect.
     /// </param>
     /// <returns><see langword="true"/> if this was a redirect.</returns>
-    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod) result)
+    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod, CookieDetails? CookieDetails) result)
     {
         if (this.redirectLocation is string location)
         {
-            result = (location, false, this.redirectShouldPreserveMethod);
+            result = (location, false, this.redirectShouldPreserveMethod, this.cookieDetails);
             return true;
         }
 

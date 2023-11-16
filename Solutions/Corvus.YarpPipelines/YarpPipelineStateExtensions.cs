@@ -49,9 +49,7 @@ public static class YarpPipelineStateExtensions
         this YarpPipelineState state,
         out ReadOnlyMemory<char> rawToken)
     {
-        RequestTransformContext requestTxContext = state.RequestTransformContext;
-
-        if (requestTxContext.HttpContext.Request.Headers.Authorization is StringValues authHeader
+        if (state.HttpRequest.Headers.Authorization is StringValues authHeader
             && authHeader.Count == 1)
         {
             // This code looks for a Bearer token, which is something we're only going
