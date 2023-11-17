@@ -2,9 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using Microsoft.AspNetCore.Http;
-
-using CookieDetails =(string Path, string Name, string Value, System.DateTimeOffset ExpiresFrom);
+using CookieDetails =(string Path, string Name, string Value, System.DateTimeOffset ExpiresFrom, bool Adding);
 
 namespace Corvus.YarpPipelines;
 
@@ -16,7 +14,6 @@ public readonly struct NonForwardedResponseDetails
 {
     private readonly string? redirectLocation;
     private readonly CookieDetails? cookieDetails;
-    private readonly DateTimeOffset cookieExpiresFrom;
     private readonly bool redirectShouldPreserveMethod;
 
     private NonForwardedResponseDetails(int statusCode)
@@ -37,10 +34,11 @@ public readonly struct NonForwardedResponseDetails
         string cookieName,
         string cookieValue,
         DateTimeOffset cookieExpiresFrom,
+        bool addingCookie,
         bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
-        this.cookieDetails = (cookiePath, cookieName, cookieValue, cookieExpiresFrom);
+        this.cookieDetails = (cookiePath, cookieName, cookieValue, cookieExpiresFrom, addingCookie);
         this.redirectShouldPreserveMethod = preserveMethod;
     }
 
@@ -89,7 +87,24 @@ public readonly struct NonForwardedResponseDetails
         string cookieValue,
         DateTimeOffset cookieExpiresFrom)
     {
-        return new(location, cookiePath, cookieName, cookieValue, cookieExpiresFrom, preserveMethod: false);
+        return new(location, cookiePath, cookieName, cookieValue, cookieExpiresFrom, addingCookie: true, preserveMethod: false);
+    }
+
+    /// <summary>
+    /// Creates a <see cref="NonForwardedResponseDetails"/> indicating that a redirect response should be
+    /// produced with a status code suitable for scenarios where we are redirecting the
+    /// user to a login UI (302), and that this response should also set a cookie.
+    /// </summary>
+    /// <param name="location">The redirection location.</param>
+    /// <param name="cookiePath">The path for the cookie.</param>
+    /// <param name="cookieName">The cookie name.</param>
+    /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
+    public static NonForwardedResponseDetails ForAuthenticationRedirectRemovingCookie(
+        string location,
+        string cookiePath,
+        string cookieName)
+    {
+        return new(location, cookiePath, cookieName, default!, DateTimeOffset.UtcNow, addingCookie: false, preserveMethod: false);
     }
 
     /// <summary>
