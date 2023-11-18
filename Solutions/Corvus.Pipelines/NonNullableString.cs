@@ -7,7 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Corvus.Pipelines;
 
 /// <summary>
-/// A non-nullable string whose default value is string.Empty.
+/// A non-nullable string.
 /// </summary>
 public readonly struct NonNullableString
     : IComparable<NonNullableString>, IEquatable<NonNullableString>

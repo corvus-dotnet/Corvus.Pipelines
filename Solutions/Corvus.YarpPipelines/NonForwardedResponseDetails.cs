@@ -16,7 +16,6 @@ public readonly struct NonForwardedResponseDetails
 {
     private readonly string? redirectLocation;
     private readonly CookieDetails? cookieDetails;
-    private readonly DateTimeOffset cookieExpiresFrom;
     private readonly bool redirectShouldPreserveMethod;
 
     private NonForwardedResponseDetails(int statusCode)
