@@ -54,7 +54,6 @@ public static class ExampleYarpPipeline
                     {
                         if (message is string msg)
                         {
-                            state.Features.Set(new RequestMessage(msg));
                             return state.Continue();
                         }
                         else
@@ -79,11 +78,6 @@ public static class ExampleYarpPipeline
                 ? state.TerminateAndForward()
                 : InnerPipelineInstance(state);
 
-    private static readonly SyncPipelineStep<YarpPipelineState> HandleMessageContextResult =
-        static state => state.Features.Get<RequestMessage>() is RequestMessage message
-                        ? state.Continue()
-                        : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404));
-
     private static readonly PipelineStep<YarpPipelineState> AsyncDelay =
         static async state =>
         {
@@ -97,8 +91,7 @@ public static class ExampleYarpPipeline
     public static SyncPipelineStep<YarpPipelineState> Instance { get; } =
         YarpPipeline.Build(
             HandleRoot,
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler),
-            HandleMessageContextResult)
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler))
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5)) // YarpRetry automatically logs
@@ -111,17 +104,10 @@ public static class ExampleYarpPipeline
         YarpPipeline.Build(
             HandleRoot.ToAsync(), // You can make the named item async
             AsyncDelay,
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync(),
-            HandleMessageContextResult.ToAsync()) // You can Name() the Async() item
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync())
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5),
             YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
-
-    /// <summary>
-    /// A message record.
-    /// </summary>
-    /// <param name="Message">The message text.</param>
-    public record RequestMessage(string Message);
 }
