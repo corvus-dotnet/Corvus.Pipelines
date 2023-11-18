@@ -2,7 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using CookieDetails =(string Path, string Name, string Value, System.DateTimeOffset ExpiresFrom, bool Adding);
+using System.Collections.Immutable;
 
 namespace Corvus.YarpPipelines;
 
@@ -13,7 +13,7 @@ namespace Corvus.YarpPipelines;
 public readonly struct NonForwardedResponseDetails
 {
     private readonly string? redirectLocation;
-    private readonly CookieDetails? cookieDetails;
+    private readonly ImmutableArray<CookieDetails>? cookieDetails;
     private readonly bool redirectShouldPreserveMethod;
 
     private NonForwardedResponseDetails(int statusCode)
@@ -34,11 +34,12 @@ public readonly struct NonForwardedResponseDetails
         string cookieName,
         string cookieValue,
         DateTimeOffset cookieExpiresFrom,
-        bool addingCookie,
+        CookieAction cookieAction,
         bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
-        this.cookieDetails = (cookiePath, cookieName, cookieValue, cookieExpiresFrom, addingCookie);
+        this.cookieDetails =
+            [new CookieDetails(cookiePath, cookieName, cookieValue, cookieExpiresFrom, cookieAction)];
         this.redirectShouldPreserveMethod = preserveMethod;
     }
 
@@ -87,7 +88,7 @@ public readonly struct NonForwardedResponseDetails
         string cookieValue,
         DateTimeOffset cookieExpiresFrom)
     {
-        return new(location, cookiePath, cookieName, cookieValue, cookieExpiresFrom, addingCookie: true, preserveMethod: false);
+        return new(location, cookiePath, cookieName, cookieValue, cookieExpiresFrom, cookieAction: CookieAction.Add, preserveMethod: false);
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ public readonly struct NonForwardedResponseDetails
         string cookiePath,
         string cookieName)
     {
-        return new(location, cookiePath, cookieName, default!, DateTimeOffset.UtcNow, addingCookie: false, preserveMethod: false);
+        return new(location, cookiePath, cookieName, default!, DateTimeOffset.UtcNow, cookieAction: CookieAction.EnsureRemoved, preserveMethod: false);
     }
 
     /// <summary>
@@ -114,7 +115,7 @@ public readonly struct NonForwardedResponseDetails
     /// Set to the redirect details if this value represents a redirect.
     /// </param>
     /// <returns><see langword="true"/> if this was a redirect.</returns>
-    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod, CookieDetails? CookieDetails) result)
+    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod, ImmutableArray<CookieDetails>? CookieDetails) result)
     {
         if (this.redirectLocation is string location)
         {

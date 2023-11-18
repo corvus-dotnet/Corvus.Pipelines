@@ -4,7 +4,6 @@
 
 using System.Buffers;
 using Microsoft.Extensions.Primitives;
-using Yarp.ReverseProxy.Transforms;
 
 namespace Corvus.YarpPipelines;
 
@@ -22,7 +21,7 @@ public static class YarpPipelineStateExtensions
     /// </typeparam>
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <param name="tokenReceiverState">A value passed through to the <paramref name="rawTokenReceiver"/>.</param>
-    /// <param name="rawTokenReceiver">Callback that will be invoked with the raw token, if present.</param>
+    /// <param name="rawTokenReceiver">Call-back that will be invoked with the raw token, if present.</param>
     /// <returns>True if a bearer token was present.</returns>
     public static bool TryGetRawBearerToken<TTokenReceiverState>(
         this YarpPipelineState state,
