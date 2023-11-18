@@ -53,11 +53,6 @@ public readonly struct YarpPipelineState :
         TerminateAndForward,
     }
 
-    ///// <summary>
-    ///// Gets the <see cref="HttpRequest"/> for the current request.
-    ///// </summary>
-    ////public HttpRequest HttpRequest => this.requestTransformContext.HttpContext.Request;
-
     /// <summary>
     /// Gets the header for the current request.
     /// </summary>
