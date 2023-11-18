@@ -3,10 +3,11 @@
 // </copyright>
 
 using System.Diagnostics.CodeAnalysis;
+
 using Corvus.Pipelines;
 
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -52,15 +53,30 @@ public readonly struct YarpPipelineState :
         TerminateAndForward,
     }
 
+    ///// <summary>
+    ///// Gets the <see cref="HttpRequest"/> for the current request.
+    ///// </summary>
+    ////public HttpRequest HttpRequest => this.requestTransformContext.HttpContext.Request;
+
     /// <summary>
-    /// Gets the <see cref="HttpRequest"/> for the current request.
+    /// Gets the header for the current request.
     /// </summary>
-    public HttpRequest HttpRequest => this.requestTransformContext.HttpContext.Request;
+    public IHeaderDictionary Headers => this.requestTransformContext.HttpContext.Request.Headers;
 
     /// <summary>
     /// Gets the <see cref="IFeatureCollection"/> for the current request.
     /// </summary>
     public IFeatureCollection Features => this.requestTransformContext.HttpContext.Features;
+
+    /// <summary>
+    /// Gets a <see cref="RequestSignature"/> for the current request.
+    /// </summary>
+    public RequestSignature RequestSignature => RequestSignature.From(this.requestTransformContext.HttpContext.Request);
+
+    /// <summary>
+    /// Gets a value indicating whether the current request is authenticated.
+    /// </summary>
+    public bool IsAuthenticated => this.requestTransformContext.HttpContext.User.Identity?.IsAuthenticated == true;
 
     /// <inheritdoc/>
     public PipelineStepStatus ExecutionStatus { get; }
@@ -93,6 +109,35 @@ public readonly struct YarpPipelineState :
     public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
         return new(requestTransformContext, default, TransformState.Continue, default, default, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns the combined components of the request URL in a fully escaped form suitable for use in HTTP headers
+    /// and other HTTP operations.
+    /// </summary>
+    /// <returns>The URL.</returns>
+    public string GetEncodedUrl() => this.requestTransformContext.HttpContext.Request.GetEncodedUrl();
+
+    /// <summary>
+    /// Builds an absolute URL by combining the base URL of the incoming request with a relative path.
+    /// </summary>
+    /// <param name="relativePath">The relative path.</param>
+    /// <returns>The absolute URL.</returns>
+    public string BuildAbsoluteUrlFromRequestRelativePath(string relativePath) => UriHelper.BuildAbsolute(
+        this.requestTransformContext.HttpContext.Request.Scheme,
+        this.requestTransformContext.HttpContext.Request.Host,
+        relativePath);
+
+    /// <summary>
+    /// Finds a cookie from the incoming request that matches a predicate.
+    /// </summary>
+    /// <param name="predicate">Determines the criteria.</param>
+    /// <param name="cookie">The matching cookie, if found.</param>
+    /// <returns>True if a match was found.</returns>
+    public bool TryFindCookie(Func<KeyValuePair<string, string>, bool> predicate, out KeyValuePair<string, string> cookie)
+    {
+        cookie = this.requestTransformContext.HttpContext.Request.Cookies.SingleOrDefault(predicate);
+        return cookie.Key is not null;
     }
 
     /// <summary>
@@ -225,5 +270,37 @@ public readonly struct YarpPipelineState :
             this.errorDetails,
             this.Logger,
             cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
+    /// ensuring that the proxied request will not include the specified header unless a downstream
+    /// step adds it back in.
+    /// </summary>
+    /// <param name="headerName">The header to remove if present.</param>
+    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
+    public YarpPipelineState EnsureHeaderNotPresentAndContinue(string headerName)
+    {
+        this.requestTransformContext.ProxyRequest.Headers.Remove(headerName);
+        return this.Continue();
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
+    /// ensuring that the proxied request includes the specified header. The header must not already
+    /// be present.
+    /// </summary>
+    /// <param name="headerName">The header to add.</param>
+    /// <param name="value">The value for the header.</param>
+    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown if the header is already present.</exception>
+    public YarpPipelineState AddHeaderAndContinue(string headerName, string value)
+    {
+        if (!this.requestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
+        {
+            throw new ArgumentException($"Unable to add header '{headerName}' to proxy request");
+        }
+
+        return this.Continue();
     }
 }
