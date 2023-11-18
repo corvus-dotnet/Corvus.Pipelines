@@ -18,12 +18,12 @@ public static class ExampleYarpPipelineWithLogging
     private static readonly LogLevel LogLevel = LogLevel.Information;
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleFizz =
-        static state => state.RequestTransformContext.Path == "/fizz"
+        static state => state.RequestSignature.Path == "/fizz"
                     ? state.TerminateAndForward()
                     : state.Continue();
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleBuzz =
-        static state => state.RequestTransformContext.Path == "/buzz"
+        static state => state.RequestSignature.Path == "/buzz"
                     ? throw new InvalidOperationException("Something's gone wrong!")
                     : state.Continue();
 
@@ -54,14 +54,14 @@ public static class ExampleYarpPipelineWithLogging
     private static readonly SyncPipelineStep<YarpPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
             .Bind(
-                wrap: static (YarpPipelineState state) => HandlerState<PathString, string?>.For(state.RequestTransformContext.Path, state.Logger),
+                wrap: static (YarpPipelineState state) => HandlerState<PathString, string?>.For(state.RequestSignature.Path, state.Logger),
                 unwrap: static (state, innerState) =>
                 {
                     if (innerState.WasHandled(out string? message))
                     {
                         if (message is string msg)
                         {
-                            state.RequestTransformContext.HttpContext.Items["Message"] = msg;
+                            state.Features.Set(new RequestMessage(msg));
                             return state.Continue();
                         }
                         else
@@ -74,7 +74,7 @@ public static class ExampleYarpPipelineWithLogging
                 });
 
     private static readonly Func<YarpPipelineState, SyncPipelineStep<YarpPipelineState>> ChooseMessageContextHandler =
-            static state => state.RequestTransformContext.Query.QueryString.HasValue
+            static state => state.RequestSignature.QueryString.HasValue
                                 ? state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400))
                                 : AddMessageToHttpContext;
 
@@ -100,12 +100,12 @@ public static class ExampleYarpPipelineWithLogging
         };
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleRoot =
-        static state => state.RequestTransformContext.Path == "/" // You can write in this style where we execute steps directly
+        static state => state.RequestSignature.Path == "/" // You can write in this style where we execute steps directly
                 ? state.TerminateAndForward()
                 : InnerPipelineInstance(state);
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleMessageContextResult =
-        static state => state.RequestTransformContext.HttpContext.Items["Message"] is string message
+        static state => state.Features.Get<RequestMessage>() is RequestMessage message
                         ? state.Continue()
                         : state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(404));
 
@@ -147,4 +147,10 @@ public static class ExampleYarpPipelineWithLogging
             YarpRetry.TransientWithCountPolicy(5),
             YarpRetry.FixedDelayStrategy(TimeSpan.Zero)) // YarpRetry automatically logs
         .OnError(state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(500)));
+
+    /// <summary>
+    /// A message record.
+    /// </summary>
+    /// <param name="Message">The message text.</param>
+    public record RequestMessage(string Message);
 }
