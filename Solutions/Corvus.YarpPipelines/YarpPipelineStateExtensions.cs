@@ -8,6 +8,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Primitives;
 
 namespace Corvus.YarpPipelines;
@@ -175,4 +176,23 @@ public static class YarpPipelineStateExtensions
         rawToken = default;
         return false;
     }
+
+    /// <summary>
+    /// Returns the combined components of the request URL in a fully escaped form suitable for use in HTTP headers
+    /// and other HTTP operations.
+    /// </summary>
+    /// <param name="state">The state representing the request to be inspected.</param>
+    /// <returns>The URL.</returns>
+    public static string GetEncodedUrl(this YarpPipelineState state) => state.RequestTransformContext.HttpContext.Request.GetEncodedUrl();
+
+    /// <summary>
+    /// Builds an absolute URL by combining the base URL of the incoming request with a relative path.
+    /// </summary>
+    /// <param name="state">The state representing the request to be inspected.</param>
+    /// <param name="relativePath">The relative path.</param>
+    /// <returns>The absolute URL.</returns>
+    public static string BuildAbsoluteUrlFromRequestRelativePath(this YarpPipelineState state, string relativePath) => UriHelper.BuildAbsolute(
+        state.RequestTransformContext.HttpContext.Request.Scheme,
+        state.RequestTransformContext.HttpContext.Request.Host,
+        relativePath);
 }

@@ -116,23 +116,6 @@ public readonly struct YarpPipelineState :
     }
 
     /// <summary>
-    /// Returns the combined components of the request URL in a fully escaped form suitable for use in HTTP headers
-    /// and other HTTP operations.
-    /// </summary>
-    /// <returns>The URL.</returns>
-    public string GetEncodedUrl() => this.RequestTransformContext.HttpContext.Request.GetEncodedUrl();
-
-    /// <summary>
-    /// Builds an absolute URL by combining the base URL of the incoming request with a relative path.
-    /// </summary>
-    /// <param name="relativePath">The relative path.</param>
-    /// <returns>The absolute URL.</returns>
-    public string BuildAbsoluteUrlFromRequestRelativePath(string relativePath) => UriHelper.BuildAbsolute(
-        this.RequestTransformContext.HttpContext.Request.Scheme,
-        this.RequestTransformContext.HttpContext.Request.Host,
-        relativePath);
-
-    /// <summary>
     /// Returns a <see cref="YarpPipelineState"/> instance which will terminate the pipeline
     /// with the given response details. The request will not be forwarded to the endpoint.
     /// </summary>
