@@ -29,17 +29,13 @@ public readonly struct NonForwardedResponseDetails
     }
 
     private NonForwardedResponseDetails(
-        string redirectLocation,
-        string cookiePath,
-        string cookieName,
-        string cookieValue,
-        DateTimeOffset cookieExpiresFrom,
-        CookieAction cookieAction,
-        bool preserveMethod)
+    string redirectLocation,
+    CookieDetails cookieDetails,
+    bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
         this.cookieDetails =
-            [new CookieDetails(cookiePath, cookieName, cookieValue, cookieExpiresFrom, cookieAction)];
+            [cookieDetails];
         this.redirectShouldPreserveMethod = preserveMethod;
     }
 
@@ -88,7 +84,7 @@ public readonly struct NonForwardedResponseDetails
         string cookieValue,
         DateTimeOffset cookieExpiresFrom)
     {
-        return new(location, cookiePath, cookieName, cookieValue, cookieExpiresFrom, cookieAction: CookieAction.Add, preserveMethod: false);
+        return new(location, new(cookiePath, cookieName, cookieValue, cookieExpiresFrom, CookieAction.Add), preserveMethod: false);
     }
 
     /// <summary>
@@ -105,7 +101,7 @@ public readonly struct NonForwardedResponseDetails
         string cookiePath,
         string cookieName)
     {
-        return new(location, cookiePath, cookieName, default!, DateTimeOffset.UtcNow, cookieAction: CookieAction.EnsureRemoved, preserveMethod: false);
+        return new(location, new(cookiePath, cookieName, default!, DateTimeOffset.UtcNow, CookieAction.EnsureRemoved), preserveMethod: false);
     }
 
     /// <summary>
