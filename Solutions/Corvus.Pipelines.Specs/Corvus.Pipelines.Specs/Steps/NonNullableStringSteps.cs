@@ -75,6 +75,122 @@ public class NonNullableStringSteps(ScenarioContext scenarioContext)
         }
     }
 
+    [Then("the NonNullableString (.*) NotEqualsHashCode (.*)")]
+    public void TheNonNullableStringNotEqualsHashCode(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.AreNotEqual(default(NonNullableString).GetHashCode(), sut.GetHashCode());
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.AreNotEqual(expected[1..^1].GetHashCode(), sut.GetHashCode());
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.AreNotEqual(string.Empty.GetHashCode(), sut.GetHashCode());
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.AreNotEqual(new NonNullableString(string.Empty).GetHashCode(), sut.GetHashCode());
+        }
+        else
+        {
+            Assert.AreNotEqual(new NonNullableString(expected).GetHashCode(), sut.GetHashCode());
+        }
+    }
+
+    [Then("the NonNullableString (.*) EqualsHashCode (.*)")]
+    public void TheNonNullableStringEqualsHashCode(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.AreEqual(default(NonNullableString).GetHashCode(), sut.GetHashCode());
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.AreEqual(expected[1..^1].GetHashCode(), sut.GetHashCode());
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.AreEqual(string.Empty.GetHashCode(), sut.GetHashCode());
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.AreEqual(new NonNullableString(string.Empty).GetHashCode(), sut.GetHashCode());
+        }
+        else
+        {
+            Assert.AreEqual(new NonNullableString(expected).GetHashCode(), sut.GetHashCode());
+        }
+    }
+
+    [Then("the NonNullableString (.*) ObjectNotEquals (.*)")]
+    public void TheNonNullableStringObjectNotEquals(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.IsFalse(sut.Equals((object)default(NonNullableString)));
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsFalse(sut.Equals((object)expected[1..^1]));
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsFalse(sut.Equals((object)string.Empty));
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsFalse(sut.Equals((object)new NonNullableString(string.Empty)));
+        }
+        else if (expected == "null")
+        {
+            Assert.IsFalse(sut.Equals((object?)null));
+        }
+        else
+        {
+            Assert.IsFalse(sut.Equals((object)new NonNullableString(expected)));
+        }
+    }
+
+    [Then("the NonNullableString (.*) ObjectEquals (.*)")]
+    public void TheNonNullableStringObjectEquals(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.IsTrue(sut.Equals((object)default(NonNullableString)));
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut.Equals((object)expected[1..^1]));
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut.Equals((object)string.Empty));
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut.Equals((object)new NonNullableString(string.Empty)));
+        }
+        else if (expected == "null")
+        {
+            Assert.IsTrue(sut.Equals((object?)null));
+        }
+        else
+        {
+            Assert.IsTrue(sut.Equals((object)new NonNullableString(expected)));
+        }
+    }
+
     [Then("the NonNullableString (.*) == (.*)")]
     public void TheNonNullableStringShouldEqualOperator(string name, string expected)
     {
@@ -263,6 +379,114 @@ public class NonNullableStringSteps(ScenarioContext scenarioContext)
         else
         {
             Assert.IsTrue(sut <= expected);
+        }
+    }
+
+    [Then("the NonNullableString (.*) >= (.*)")]
+    public void TheNonNullableStringShouldBeGreaterThanOrEqual(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.IsTrue(sut >= default(NonNullableString));
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut >= expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut >= string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut >= new NonNullableString(string.Empty));
+        }
+        else
+        {
+            Assert.IsTrue(sut >= new NonNullableString(expected));
+        }
+    }
+
+    [Then("the NonNullableString (.*) > (.*)")]
+    public void TheNonNullableStringShouldBeGreaterThan(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.IsTrue(sut > default(NonNullableString));
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut > expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut > string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut > new NonNullableString(string.Empty));
+        }
+        else
+        {
+            Assert.IsTrue(sut > new NonNullableString(expected));
+        }
+    }
+
+    [Then("the NonNullableString (.*) < (.*)")]
+    public void TheNonNullableStringShouldBeLessThan(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.IsTrue(sut < default(NonNullableString));
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut < expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut < string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut < new NonNullableString(string.Empty));
+        }
+        else
+        {
+            Assert.IsTrue(sut < new NonNullableString(expected));
+        }
+    }
+
+    [Then("the NonNullableString (.*) <= (.*)")]
+    public void TheNonNullableStringShouldBeLessThanOrEqual(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            Assert.IsTrue(sut <= default(NonNullableString));
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut <= expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut <= string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut <= new NonNullableString(string.Empty));
+        }
+        else
+        {
+            Assert.IsTrue(sut <= new NonNullableString(expected));
         }
     }
 

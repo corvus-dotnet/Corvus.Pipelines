@@ -31,7 +31,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
     {
         if (!context.TryGetValue(SyntaxTreesKey, out List<SyntaxTree> syntaxTrees))
         {
-            syntaxTrees = new List<SyntaxTree>();
+            syntaxTrees = new();
             context.Add(SyntaxTreesKey, syntaxTrees);
         }
 
@@ -132,7 +132,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
         Type? type = assembly.GetType($"{namespaceName}.TimerExpectations");
 
-        object? expectationObject = type?.GetField($"Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
+        object? expectationObject = type?.GetField("Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
 
         if (expectationObject is Action expectation)
         {
@@ -183,7 +183,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
         Type? type = assembly.GetType($"{namespaceName}.LogExpectations");
 
-        object? expectationObject = type?.GetField($"Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
+        object? expectationObject = type?.GetField("Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
 
         if (expectationObject is Action expectation)
         {
@@ -502,7 +502,6 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             // Append a number of spaces equal to the column number of the error
             int indentAmount = Math.Max(0, lineSpan.StartLinePosition.Character - 1);
             string indent = new('_', indentAmount);
-            string indentSpace = new(' ', indentAmount);
             builder.Append(indent);
             builder.AppendLine("^");
             builder.Append(diagnostic.GetMessage());

@@ -52,12 +52,6 @@ public readonly struct SyncPipelineStepProvider<TState>
     public static implicit operator SyncPipelineStepProvider<TState>(SyncPipelineStep<TState> step) => new(step);
 
     /// <summary>
-    /// Explicit conversion to SyncPipelineStep<typeparamref name="TState"/>.
-    /// </summary>
-    /// <param name="stepProvider">The step provider to convert to a step.</param>
-    public static explicit operator SyncPipelineStep<TState>(SyncPipelineStepProvider<TState> stepProvider) => stepProvider.Step;
-
-    /// <summary>
     /// Add a feature to the step.
     /// </summary>
     /// <typeparam name="T">The type of the feature to add.</typeparam>
@@ -70,29 +64,6 @@ public readonly struct SyncPipelineStepProvider<TState>
         var dictionary = this.Features.ToDictionary();
         dictionary.Add(name, feature);
         return new(this.Step, dictionary.ToFrozenDictionary());
-    }
-
-    /// <summary>
-    /// Gets a required feature.
-    /// </summary>
-    /// <typeparam name="T">The type of the feature.</typeparam>
-    /// <param name="name">The name of the feature.</param>
-    /// <returns>An instance of the required feature.</returns>
-    /// <exception cref="ArgumentException">No feature was registered with that name and type.</exception>
-    public T GetRequiredFeature<T>(string name)
-        where T : notnull
-    {
-        if (!this.Features.TryGetValue(name, out object? value))
-        {
-            throw new ArgumentException($"The feature {name} was not available.", nameof(name));
-        }
-
-        if (value is T feature)
-        {
-            return feature;
-        }
-
-        throw new ArgumentException($"The feature {name} was not of type {typeof(T)}.", nameof(name));
     }
 
     /// <summary>

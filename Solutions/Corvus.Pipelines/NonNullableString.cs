@@ -113,44 +113,6 @@ public readonly struct NonNullableString
     }
 
     /// <summary>
-    /// Get a hash code for the string.
-    /// </summary>
-    /// <param name="obj">The string for which to get the hash code.</param>
-    /// <returns>The hash code for the string.</returns>
-    public static int GetHashCode([DisallowNull] NonNullableString obj)
-    {
-        ArgumentNullException.ThrowIfNull(obj);
-        ArgumentNullException.ThrowIfNull(obj.value);
-
-        return obj.GetHashCode();
-    }
-
-    /// <summary>
-    /// Get a hash code for the string.
-    /// </summary>
-    /// <param name="obj">The string for which to get the hash code.</param>
-    /// <param name="comparisonType">The comparison type.</param>
-    /// <returns>The hash code for the string.</returns>
-    public static int GetHashCode([DisallowNull] NonNullableString obj, StringComparison comparisonType)
-    {
-        ArgumentNullException.ThrowIfNull(obj);
-        ArgumentNullException.ThrowIfNull(obj.value);
-
-        return obj.GetHashCode(comparisonType);
-    }
-
-    /// <summary>
-    /// Compare two strings for equality.
-    /// </summary>
-    /// <param name="x">The first string.</param>
-    /// <param name="y">The second string.</param>
-    /// <returns><see langword="true"/> if the strings are equal.</returns>
-    public static bool Equals(NonNullableString x, NonNullableString y)
-    {
-        return string.Equals(x.value, y.value);
-    }
-
-    /// <summary>
     /// Compare two strings for equality.
     /// </summary>
     /// <param name="x">The first string.</param>
@@ -166,17 +128,6 @@ public readonly struct NonNullableString
     public bool Equals(NonNullableString other)
     {
         return string.Equals(this.value, other.value);
-    }
-
-    /// <summary>
-    /// Compare two strings for equality.
-    /// </summary>
-    /// <param name="other">The string with which to compare.</param>
-    /// <param name="comparisonType">The comparison type.</param>
-    /// <returns><see langword="true"/> if the strings are equal.</returns>
-    public bool Equals(NonNullableString other, StringComparison comparisonType)
-    {
-        return string.Equals(this.value, other.value, comparisonType);
     }
 
     /// <inheritdoc/>
