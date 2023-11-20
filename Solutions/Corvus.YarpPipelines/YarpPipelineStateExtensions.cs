@@ -3,6 +3,11 @@
 // </copyright>
 
 using System.Buffers;
+using System.Security.Claims;
+
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
 namespace Corvus.YarpPipelines;
@@ -12,6 +17,55 @@ namespace Corvus.YarpPipelines;
 /// </summary>
 public static class YarpPipelineStateExtensions
 {
+    /// <summary>
+    /// Performs an ASP.NET Core sign in for interactive login (using
+    /// <see cref="CookieAuthenticationDefaults.AuthenticationScheme"/>) and returns
+    /// a state directing the pipeline executor to redirect to the original URL the
+    /// user was trying to access when they were redirected to log in.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="identity">The user details with which to complete the login.</param>
+    /// <param name="authenticationProperties">
+    /// Authentication properties to associate with the login.
+    /// </param>
+    /// <param name="returnUrl">The URL to which to redirect the user.</param>
+    /// <param name="cookiePath">
+    /// The cookie path, typically limited to work only for the login callback URL.
+    /// </param>
+    /// <param name="cookieName">
+    /// The name of the login cookie to remove. This cookie is used to validate the login.
+    /// It incorporates the nonce.
+    /// </param>
+    /// <returns>
+    /// A task producing the pipeline state to terminate the pipeline with.
+    /// </returns>
+    public static async ValueTask<YarpPipelineState> CompleteInteractiveSignInAsync(
+        this YarpPipelineState state,
+        ClaimsIdentity identity,
+        AuthenticationProperties authenticationProperties,
+        string returnUrl,
+        string cookiePath,
+        string cookieName)
+    {
+        await state.RequestTransformContext.HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity),
+            authenticationProperties);
+
+        return state.TerminateWith(NonForwardedResponseDetails.ForAuthenticationRedirectRemovingCookie(
+            returnUrl,
+            cookiePath,
+            cookieName));
+    }
+
+    /// <summary>
+    /// Retrieves the body of the request as an <see cref="IFormCollection"/>.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <returns>A task producing an <see cref="IFormCollection"/>.</returns>
+    public static Task<IFormCollection> ReadFormAsync(this YarpPipelineState state)
+        => state.RequestTransformContext.HttpContext.Request.ReadFormAsync();
+
     /// <summary>
     /// Gets the raw text value of a bearer token in the Authorization header of the request
     /// associated with a <see cref="YarpPipelineState"/>, if such a header is present.

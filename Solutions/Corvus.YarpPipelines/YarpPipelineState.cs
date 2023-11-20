@@ -20,9 +20,9 @@ namespace Corvus.YarpPipelines;
 /// The state for processing a YARP transform.
 /// </summary>
 /// <remarks>
-/// The steps in the pipe can inspect and modify the <see cref="RequestTransformContext"/>,
+/// The steps in the pipe can inspect and modify the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>,
 /// then choose to either <see cref="Continue()"/> processing, <see cref="TerminateAndForward()"/> - passing
-/// the <see cref="RequestTransformContext"/> on to YARP for forwarding to the appropriate endpoint, or
+/// the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/> on to YARP for forwarding to the appropriate endpoint, or
 /// <see cref="TerminateWith(NonForwardedResponseDetails)"/> a specific response code, headers and/or body.
 /// </remarks>
 public readonly struct YarpPipelineState :
@@ -30,14 +30,13 @@ public readonly struct YarpPipelineState :
     ICancellable<YarpPipelineState>,
     ILoggable
 {
-    private readonly RequestTransformContext requestTransformContext;
     private readonly NonForwardedResponseDetails responseDetails;
     private readonly TransformState pipelineState;
     private readonly YarpPipelineError errorDetails;
 
     private YarpPipelineState(RequestTransformContext requestTransformContext, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
-        this.requestTransformContext = requestTransformContext;
+        this.RequestTransformContext = requestTransformContext;
         this.responseDetails = responseDetails;
         this.pipelineState = pipelineState;
         this.errorDetails = errorDetails;
@@ -56,22 +55,27 @@ public readonly struct YarpPipelineState :
     /// <summary>
     /// Gets the header for the current request.
     /// </summary>
-    public IHeaderDictionary Headers => this.requestTransformContext.HttpContext.Request.Headers;
+    public IHeaderDictionary Headers => this.RequestTransformContext.HttpContext.Request.Headers;
 
     /// <summary>
     /// Gets the <see cref="IFeatureCollection"/> for the current request.
     /// </summary>
-    public IFeatureCollection Features => this.requestTransformContext.HttpContext.Features;
+    public IFeatureCollection Features => this.RequestTransformContext.HttpContext.Features;
 
     /// <summary>
     /// Gets a <see cref="RequestSignature"/> for the current request.
     /// </summary>
-    public RequestSignature RequestSignature => RequestSignature.From(this.requestTransformContext.HttpContext.Request);
+    public RequestSignature RequestSignature => RequestSignature.From(this.RequestTransformContext.HttpContext.Request);
 
     /// <summary>
     /// Gets a value indicating whether the current request is authenticated.
     /// </summary>
-    public bool IsAuthenticated => this.requestTransformContext.HttpContext.User.Identity?.IsAuthenticated == true;
+    public bool IsAuthenticated => this.RequestTransformContext.HttpContext.User.Identity?.IsAuthenticated == true;
+
+    /// <summary>
+    /// Gets a value indicating whether the current request's content is a form.
+    /// </summary>
+    public bool RequestHasFormContentType => this.RequestTransformContext.HttpContext.Request.HasFormContentType;
 
     /// <inheritdoc/>
     public PipelineStepStatus ExecutionStatus { get; }
@@ -83,6 +87,11 @@ public readonly struct YarpPipelineState :
     public ILogger Logger { get; }
 
     /// <summary>
+    /// Gets the YARP <see cref="RequestTransformContext"/>.
+    /// </summary>
+    internal RequestTransformContext RequestTransformContext { get; }
+
+    /// <summary>
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
     /// terminate predicate for the <see cref="YarpPipeline"/>.
     /// </summary>
@@ -90,9 +99,9 @@ public readonly struct YarpPipelineState :
 
     /// <summary>
     /// Gets an instance of the <see cref="YarpPipelineState"/> for a particular
-    /// <see cref="RequestTransformContext"/>.
+    /// <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>.
     /// </summary>
-    /// <param name="requestTransformContext">The <see cref="RequestTransformContext"/> with which to
+    /// <param name="requestTransformContext">The <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/> with which to
     /// initialize the <see cref="YarpPipelineState"/>.</param>
     /// <param name="logger">The logger to use for the context.</param>
     /// <param name="cancellationToken">The cancellation token to use for the context.</param>
@@ -111,7 +120,7 @@ public readonly struct YarpPipelineState :
     /// and other HTTP operations.
     /// </summary>
     /// <returns>The URL.</returns>
-    public string GetEncodedUrl() => this.requestTransformContext.HttpContext.Request.GetEncodedUrl();
+    public string GetEncodedUrl() => this.RequestTransformContext.HttpContext.Request.GetEncodedUrl();
 
     /// <summary>
     /// Builds an absolute URL by combining the base URL of the incoming request with a relative path.
@@ -119,8 +128,8 @@ public readonly struct YarpPipelineState :
     /// <param name="relativePath">The relative path.</param>
     /// <returns>The absolute URL.</returns>
     public string BuildAbsoluteUrlFromRequestRelativePath(string relativePath) => UriHelper.BuildAbsolute(
-        this.requestTransformContext.HttpContext.Request.Scheme,
-        this.requestTransformContext.HttpContext.Request.Host,
+        this.RequestTransformContext.HttpContext.Request.Scheme,
+        this.RequestTransformContext.HttpContext.Request.Host,
         relativePath);
 
     /// <summary>
@@ -131,7 +140,7 @@ public readonly struct YarpPipelineState :
     /// <returns>True if a match was found.</returns>
     public bool TryFindCookie(Func<KeyValuePair<string, string>, bool> predicate, out KeyValuePair<string, string> cookie)
     {
-        cookie = this.requestTransformContext.HttpContext.Request.Cookies.SingleOrDefault(predicate);
+        cookie = this.RequestTransformContext.HttpContext.Request.Cookies.SingleOrDefault(predicate);
         return cookie.Key is not null;
     }
 
@@ -144,7 +153,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState TerminateWith(NonForwardedResponseDetails responseDetails)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with");
-        return new(this.requestTransformContext, responseDetails, TransformState.Terminate, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return new(this.RequestTransformContext, responseDetails, TransformState.Terminate, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
     }
 
     /// <summary>
@@ -155,7 +164,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState TerminateAndForward()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-and-forward");
-        return new(this.requestTransformContext, default, TransformState.TerminateAndForward, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return new(this.RequestTransformContext, default, TransformState.TerminateAndForward, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
     }
 
     /// <summary>
@@ -171,7 +180,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState Continue()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "continue");
-        return new(this.requestTransformContext, default, TransformState.Continue, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return new(this.RequestTransformContext, default, TransformState.Continue, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
     }
 
     /// <summary>
@@ -212,7 +221,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState PermanentFailure(YarpPipelineError errorDetails)
     {
         return new YarpPipelineState(
-            this.requestTransformContext,
+            this.RequestTransformContext,
             this.responseDetails,
             this.pipelineState,
             PipelineStepStatus.PermanentFailure,
@@ -229,7 +238,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState TransientFailure(YarpPipelineError errorDetails)
     {
         return new YarpPipelineState(
-            this.requestTransformContext,
+            this.RequestTransformContext,
             this.responseDetails,
             this.pipelineState,
             PipelineStepStatus.TransientFailure,
@@ -245,7 +254,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState Success()
     {
         return new YarpPipelineState(
-            this.requestTransformContext,
+            this.RequestTransformContext,
             this.responseDetails,
             this.pipelineState,
             PipelineStepStatus.Success,
@@ -258,7 +267,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState WithCancellationToken(CancellationToken cancellationToken)
     {
         return new YarpPipelineState(
-            this.requestTransformContext,
+            this.RequestTransformContext,
             this.responseDetails,
             this.pipelineState,
             this.ExecutionStatus,
@@ -276,7 +285,7 @@ public readonly struct YarpPipelineState :
     /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
     public YarpPipelineState EnsureHeaderNotPresentAndContinue(string headerName)
     {
-        this.requestTransformContext.ProxyRequest.Headers.Remove(headerName);
+        this.RequestTransformContext.ProxyRequest.Headers.Remove(headerName);
         return this.Continue();
     }
 
@@ -291,7 +300,7 @@ public readonly struct YarpPipelineState :
     /// <exception cref="ArgumentException">Thrown if the header is already present.</exception>
     public YarpPipelineState AddHeaderAndContinue(string headerName, string value)
     {
-        if (!this.requestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
+        if (!this.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
         {
             throw new ArgumentException($"Unable to add header '{headerName}' to proxy request");
         }
