@@ -133,18 +133,6 @@ public readonly struct YarpPipelineState :
         relativePath);
 
     /// <summary>
-    /// Finds a cookie from the incoming request that matches a predicate.
-    /// </summary>
-    /// <param name="predicate">Determines the criteria.</param>
-    /// <param name="cookie">The matching cookie, if found.</param>
-    /// <returns>True if a match was found.</returns>
-    public bool TryFindCookie(Func<KeyValuePair<string, string>, bool> predicate, out KeyValuePair<string, string> cookie)
-    {
-        cookie = this.RequestTransformContext.HttpContext.Request.Cookies.SingleOrDefault(predicate);
-        return cookie.Key is not null;
-    }
-
-    /// <summary>
     /// Returns a <see cref="YarpPipelineState"/> instance which will terminate the pipeline
     /// with the given response details. The request will not be forwarded to the endpoint.
     /// </summary>
@@ -274,37 +262,5 @@ public readonly struct YarpPipelineState :
             this.errorDetails,
             this.Logger,
             cancellationToken);
-    }
-
-    /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
-    /// ensuring that the proxied request will not include the specified header unless a downstream
-    /// step adds it back in.
-    /// </summary>
-    /// <param name="headerName">The header to remove if present.</param>
-    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
-    public YarpPipelineState EnsureHeaderNotPresentAndContinue(string headerName)
-    {
-        this.RequestTransformContext.ProxyRequest.Headers.Remove(headerName);
-        return this.Continue();
-    }
-
-    /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
-    /// ensuring that the proxied request includes the specified header. The header must not already
-    /// be present.
-    /// </summary>
-    /// <param name="headerName">The header to add.</param>
-    /// <param name="value">The value for the header.</param>
-    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
-    /// <exception cref="ArgumentException">Thrown if the header is already present.</exception>
-    public YarpPipelineState AddHeaderAndContinue(string headerName, string value)
-    {
-        if (!this.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
-        {
-            throw new ArgumentException($"Unable to add header '{headerName}' to proxy request");
-        }
-
-        return this.Continue();
     }
 }

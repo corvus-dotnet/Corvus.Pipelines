@@ -18,6 +18,45 @@ namespace Corvus.YarpPipelines;
 public static class YarpPipelineStateExtensions
 {
     /// <summary>
+    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
+    /// ensuring that the proxied request will not include the specified header unless a downstream
+    /// step adds it back in.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="headerName">The header to remove if present.</param>
+    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
+    public static YarpPipelineState EnsureHeaderNotPresentAndContinue(
+        this YarpPipelineState state,
+        string headerName)
+    {
+        state.RequestTransformContext.ProxyRequest.Headers.Remove(headerName);
+        return state.Continue();
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
+    /// ensuring that the proxied request includes the specified header. The header must not already
+    /// be present.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="headerName">The header to add.</param>
+    /// <param name="value">The value for the header.</param>
+    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown if the header is already present.</exception>
+    public static YarpPipelineState AddHeaderAndContinue(
+        this YarpPipelineState state,
+        string headerName,
+        string value)
+    {
+        if (!state.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
+        {
+            throw new ArgumentException($"Unable to add header '{headerName}' to proxy request");
+        }
+
+        return state.Continue();
+    }
+
+    /// <summary>
     /// Performs an ASP.NET Core sign in for interactive login (using
     /// <see cref="CookieAuthenticationDefaults.AuthenticationScheme"/>) and returns
     /// a state directing the pipeline executor to redirect to the original URL the
@@ -39,7 +78,7 @@ public static class YarpPipelineStateExtensions
     /// <returns>
     /// A task producing the pipeline state to terminate the pipeline with.
     /// </returns>
-    public static async ValueTask<YarpPipelineState> CompleteInteractiveSignInAsync(
+    public static async ValueTask<YarpPipelineState> CompleteInteractiveSignInAndTerminateAsync(
         this YarpPipelineState state,
         ClaimsIdentity identity,
         AuthenticationProperties authenticationProperties,
@@ -56,6 +95,22 @@ public static class YarpPipelineStateExtensions
             returnUrl,
             cookiePath,
             cookieName));
+    }
+
+    /// <summary>
+    /// Finds a cookie from the incoming request that matches a predicate.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="predicate">Determines the criteria.</param>
+    /// <param name="cookie">The matching cookie, if found.</param>
+    /// <returns>True if a match was found.</returns>
+    public static bool TryFindCookie(
+        this YarpPipelineState state,
+        Func<KeyValuePair<string, string>, bool> predicate,
+        out KeyValuePair<string, string> cookie)
+    {
+        cookie = state.RequestTransformContext.HttpContext.Request.Cookies.SingleOrDefault(predicate);
+        return cookie.Key is not null;
     }
 
     /// <summary>
