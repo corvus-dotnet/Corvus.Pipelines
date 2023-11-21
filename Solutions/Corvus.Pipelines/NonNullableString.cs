@@ -9,19 +9,14 @@ namespace Corvus.Pipelines;
 /// <summary>
 /// A non-nullable string.
 /// </summary>
-public readonly struct NonNullableString
-    : IComparable<NonNullableString>, IEquatable<NonNullableString>
+/// <remarks>
+/// Initializes a new instance of the <see cref="NonNullableString"/> struct.
+/// </remarks>
+/// <param name="value">The string from which to create the value.</param>
+public readonly struct NonNullableString(string value)
+        : IComparable<NonNullableString>, IEquatable<NonNullableString>
 {
-    private readonly string? value;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NonNullableString"/> struct.
-    /// </summary>
-    /// <param name="value">The string from which to create the value.</param>
-    public NonNullableString(string value)
-    {
-        this.value = value;
-    }
+    private readonly string? value = value;
 
     /// <summary>
     /// Gets a value indicating whether this is a default string, rather than an

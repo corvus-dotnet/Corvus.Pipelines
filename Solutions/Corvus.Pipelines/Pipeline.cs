@@ -407,6 +407,68 @@ public static class Pipeline
         return async state => await selector(state)(state).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// An operator that binds the output of one <see cref="PipelineStep{TState}"/> to another <see cref="PipelineStep{TState}"/>
+    /// based on a <paramref name="predicate"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="predicate">The predicate which takes the state, and determines the next step.</param>
+    /// <param name="thenStep">The step to execute if the predicate is true.</param>
+    /// <param name="elseStep">The step to execute if the predicate is false.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline based on a predicate,
+    /// and execute it using the result.</returns>
+    public static PipelineStep<TState> If<TState>(Predicate<TState> predicate, PipelineStep<TState> thenStep, PipelineStep<TState> elseStep)
+        where TState : struct
+    {
+        return state => predicate(state) ? thenStep(state) : elseStep(state);
+    }
+
+    /// <summary>
+    /// An operator that binds the output of one <see cref="PipelineStep{TState}"/> to another <see cref="PipelineStep{TState}"/>
+    /// based on a <paramref name="predicate"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="predicate">The predicate which takes the state, and determines the next step.</param>
+    /// <param name="thenStep">The step to execute if the predicate is true.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline based on a predicate,
+    /// and execute it using the result.</returns>
+    public static PipelineStep<TState> If<TState>(Predicate<TState> predicate, PipelineStep<TState> thenStep)
+        where TState : struct
+    {
+        return state => predicate(state) ? thenStep(state) : ValueTask.FromResult(state);
+    }
+
+    /// <summary>
+    /// An operator that binds the output of one <see cref="PipelineStep{TState}"/> to another <see cref="PipelineStep{TState}"/>
+    /// based on a <paramref name="predicate"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="predicate">The predicate which takes the state, and determines the next step.</param>
+    /// <param name="thenStep">The step to execute if the predicate is true.</param>
+    /// <param name="elseStep">The step to execute if the predicate is false.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline based on a predicate,
+    /// and execute it using the result.</returns>
+    public static SyncPipelineStep<TState> If<TState>(Predicate<TState> predicate, SyncPipelineStep<TState> thenStep, SyncPipelineStep<TState> elseStep)
+        where TState : struct
+    {
+        return state => predicate(state) ? thenStep(state) : elseStep(state);
+    }
+
+    /// <summary>
+    /// An operator that binds the output of one <see cref="PipelineStep{TState}"/> to another <see cref="PipelineStep{TState}"/>
+    /// based on a <paramref name="predicate"/>.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="predicate">The predicate which takes the state, and determines the next step.</param>
+    /// <param name="thenStep">The step to execute if the predicate is true.</param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline based on a predicate,
+    /// and execute it using the result. If the predicate is false, a step which returns the current state will be provided.</returns>
+    public static SyncPipelineStep<TState> If<TState>(Predicate<TState> predicate, SyncPipelineStep<TState> thenStep)
+        where TState : struct
+    {
+        return state => predicate(state) ? thenStep(state) : state;
+    }
+
     private static void EnsureNames<TState>(SyncPipelineStepProvider<TState>[] steps)
         where TState : struct, ILoggable
     {

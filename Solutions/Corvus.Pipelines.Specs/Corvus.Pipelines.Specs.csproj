@@ -10,6 +10,10 @@
 		<PreserveCompilationContext>true</PreserveCompilationContext>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <SpecFlowObsoleteCodeBehindFiles Remove="Corvus.Pipelines.Specs\Features\ChooseOperator - Copy.feature.cs" />
+	</ItemGroup>
+
   <ItemGroup>
 		<PackageReference Include="Corvus.Testing.SpecFlow.NUnit" Version="2.0.1" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.7.0" />
@@ -38,7 +42,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Update="Corvus.Pipelines.Specs\Features\IfOperator.feature.cs">
+	    <DependentUpon>IfOperator.feature</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <PackageReference Update="Roslynator.Analyzers" Version="4.6.2" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <SpecFlowFeatureFiles Update="Corvus.Pipelines.Specs\Features\IfOperator.feature">
+	    <Visible>$(UsingMicrosoftNETSdk)</Visible>
+	    <CodeBehindFile>%(RelativeDir)%(Filename).feature$(DefaultLanguageSourceExtension)</CodeBehindFile>
+	  </SpecFlowFeatureFiles>
 	</ItemGroup>
 
 </Project>

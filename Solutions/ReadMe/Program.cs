@@ -150,7 +150,7 @@ productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't 
 
 Console.WriteLine(productPricingResult);
 
-public readonly record struct ProductPrice(string ProductId, decimal? Price);
+readonly record struct ProductPrice(string ProductId, decimal? Price);
 
 static class CommonSteps
 {

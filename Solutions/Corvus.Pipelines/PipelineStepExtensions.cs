@@ -539,7 +539,7 @@ public static class PipelineStepExtensions
     {
         return
             [DebuggerStepThrough]
-            (state) => ValueTask.FromResult(step(state));
+        (state) => ValueTask.FromResult(step(state));
     }
 
     /// <summary>

@@ -4,14 +4,14 @@ namespace InvoiceExample;
 
 public static class BasketPipeline
 {
-    public static PipelineStep<BasketState> Current = Pipeline.Current<BasketState>();
-    public static SyncPipelineStep<BasketState> CurrentSync = Pipeline.CurrentSync<BasketState>();
+    public static readonly PipelineStep<BasketState> Current = Pipeline.Current<BasketState>();
+    public static readonly SyncPipelineStep<BasketState> CurrentSync = Pipeline.CurrentSync<BasketState>();
 
-    public static SyncPipelineStep<BasketState> ApplyLowDiscount = static state => state.ApplyDiscountFactor("20% bulk purchase discount", 0.2m);
-    public static SyncPipelineStep<BasketState> ApplyHighDiscount = static state => state.ApplyDiscount("30% bulk purchase discount", 0.3m);
-    public static SyncPipelineStep<BasketState> ApplyVAT = static state => state.ApplyTaxFactor("VAT", 0.2m);
+    public static readonly SyncPipelineStep<BasketState> ApplyLowDiscount = static state => state.ApplyDiscountFactor("20% bulk purchase discount", 0.2m);
+    public static readonly SyncPipelineStep<BasketState> ApplyHighDiscount = static state => state.ApplyDiscount("30% bulk purchase discount", 0.3m);
+    public static readonly SyncPipelineStep<BasketState> ApplyVAT = static state => state.ApplyTaxFactor("VAT", 0.2m);
 
-    public static SyncPipelineStep<BasketState> ApplyDiscountPolicy =
+    public static readonly SyncPipelineStep<BasketState> ApplyDiscountPolicy =
         CurrentSync.Choose(
             state =>
             {
