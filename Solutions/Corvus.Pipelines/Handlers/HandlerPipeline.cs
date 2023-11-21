@@ -163,4 +163,108 @@ public static class HandlerPipeline
             level,
             steps);
     }
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{TState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline.
+    /// </summary>
+    /// <typeparam name="THandlerInput">The handler input type.</typeparam>
+    /// <typeparam name="TState">The pipeline state type.</typeparam>
+    /// <param name="getInput">
+    /// Gets the handler input from the pipeline state.
+    /// </param>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<TState> Choose<THandlerInput, TState>(
+        Func<TState, THandlerInput> getInput,
+        PipelineStep<TState> notHandled,
+        params PipelineStep<HandlerState<THandlerInput, PipelineStep<TState>>>[] handlers)
+        where TState : struct
+        => Build(handlers)
+            .Bind(
+                (TState state) => HandlerState<THandlerInput, PipelineStep<TState>>.For(getInput(state)),
+                (TState state, HandlerState<THandlerInput, PipelineStep<TState>> handlerState) =>
+                    handlerState.WasHandled(out PipelineStep<TState>? result) ? result(state) : notHandled(state));
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{TState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline.
+    /// </summary>
+    /// <typeparam name="THandlerInput">The handler input type.</typeparam>
+    /// <typeparam name="TState">The pipeline state type.</typeparam>
+    /// <param name="getInput">
+    /// Gets the handler input from the pipeline state.
+    /// </param>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<TState> Choose<THandlerInput, TState>(
+        Func<TState, THandlerInput> getInput,
+        PipelineStep<TState> notHandled,
+        params SyncPipelineStep<HandlerState<THandlerInput, PipelineStep<TState>>>[] handlers)
+        where TState : struct
+        => Build(handlers).ToAsync()
+            .Bind(
+                (TState state) => HandlerState<THandlerInput, PipelineStep<TState>>.For(getInput(state)),
+                (TState state, HandlerState<THandlerInput, PipelineStep<TState>> handlerState) =>
+                    handlerState.WasHandled(out PipelineStep<TState>? result) ? result(state) : notHandled(state));
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{TState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline.
+    /// </summary>
+    /// <typeparam name="THandlerInput">The handler input type.</typeparam>
+    /// <typeparam name="TState">The pipeline state type.</typeparam>
+    /// <param name="getInput">
+    /// Gets the handler input from the pipeline state.
+    /// </param>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<TState> Choose<THandlerInput, TState>(
+        Func<TState, THandlerInput> getInput,
+        SyncPipelineStep<TState> notHandled,
+        params PipelineStep<HandlerState<THandlerInput, SyncPipelineStep<TState>>>[] handlers)
+        where TState : struct
+        => Build(handlers)
+            .Bind(
+                (TState state) => HandlerState<THandlerInput, SyncPipelineStep<TState>>.For(getInput(state)),
+                (TState state, HandlerState<THandlerInput, SyncPipelineStep<TState>> handlerState) =>
+                    handlerState.WasHandled(out SyncPipelineStep<TState>? result) ? result(state) : notHandled(state));
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{TState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline.
+    /// </summary>
+    /// <typeparam name="THandlerInput">The handler input type.</typeparam>
+    /// <typeparam name="TState">The pipeline state type.</typeparam>
+    /// <param name="getInput">
+    /// Gets the handler input from the pipeline state.
+    /// </param>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static SyncPipelineStep<TState> Choose<THandlerInput, TState>(
+        Func<TState, THandlerInput> getInput,
+        SyncPipelineStep<TState> notHandled,
+        params SyncPipelineStep<HandlerState<THandlerInput, SyncPipelineStep<TState>>>[] handlers)
+        where TState : struct
+        => Build(handlers)
+            .Bind(
+                (TState state) => HandlerState<THandlerInput, SyncPipelineStep<TState>>.For(getInput(state)),
+                (TState state, HandlerState<THandlerInput, SyncPipelineStep<TState>> handlerState) =>
+                    handlerState.WasHandled(out SyncPipelineStep<TState>? result) ? result(state) : notHandled(state));
 }

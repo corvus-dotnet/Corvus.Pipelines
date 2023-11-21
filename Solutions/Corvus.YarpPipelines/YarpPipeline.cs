@@ -4,6 +4,8 @@
 
 using System.Runtime.CompilerServices;
 using Corvus.Pipelines;
+using Corvus.Pipelines.Handlers;
+
 using Microsoft.Extensions.Logging;
 
 namespace Corvus.YarpPipelines;
@@ -116,4 +118,76 @@ public static class YarpPipeline
     /// and execute it.</returns>
     public static SyncPipelineStep<YarpPipelineState> Choose(Func<YarpPipelineState, SyncPipelineStep<YarpPipelineState>> selector)
          => Pipeline.Choose(selector);
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{YarpPipelineState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline that takes a <see cref="RequestSignature"/> as input.
+    /// </summary>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<YarpPipelineState> Choose(
+        PipelineStep<YarpPipelineState> notHandled,
+        params PipelineStep<HandlerState<RequestSignature, PipelineStep<YarpPipelineState>>>[] handlers)
+        => HandlerPipeline.Choose(
+            state => state.RequestSignature,
+            notHandled,
+            handlers);
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{YarpPipelineState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline that takes a <see cref="RequestSignature"/> as input.
+    /// </summary>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<YarpPipelineState> Choose(
+        PipelineStep<YarpPipelineState> notHandled,
+        params SyncPipelineStep<HandlerState<RequestSignature, PipelineStep<YarpPipelineState>>>[] handlers)
+        => HandlerPipeline.Choose(
+            state => state.RequestSignature,
+            notHandled,
+            handlers);
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{YarpPipelineState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline that takes a <see cref="RequestSignature"/> as input.
+    /// </summary>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static PipelineStep<YarpPipelineState> Choose(
+        SyncPipelineStep<YarpPipelineState> notHandled,
+        params PipelineStep<HandlerState<RequestSignature, SyncPipelineStep<YarpPipelineState>>>[] handlers) =>
+        HandlerPipeline.Choose(
+            state => state.RequestSignature,
+            notHandled,
+            handlers);
+
+    /// <summary>
+    /// An operator that produces a <see cref="PipelineStep{YarpPipelineState}"/> that executes a <see cref="PipelineStep{TState}"/>
+    /// chosen by a handler pipeline that takes a <see cref="RequestSignature"/> as input.
+    /// </summary>
+    /// <param name="notHandled">Invoked if not handled.</param>
+    /// <param name="handlers">
+    /// The sequence of handlers, the outcome of which determines the pipeline.
+    /// </param>
+    /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> which, when executed, will execute the handlers to choose the appropriate pipeline,
+    /// and execute it.</returns>
+    public static SyncPipelineStep<YarpPipelineState> Choose(
+        SyncPipelineStep<YarpPipelineState> notHandled,
+        params SyncPipelineStep<HandlerState<RequestSignature, SyncPipelineStep<YarpPipelineState>>>[] handlers) =>
+        HandlerPipeline.Choose(
+            state => state.RequestSignature,
+            notHandled,
+            handlers);
 }
