@@ -94,6 +94,64 @@ else
     Console.WriteLine("was not priced");
 }
 
+SyncPipelineStep<ProductPrice> lookupProductPrice =
+    PricingCatalogs.PricingHandler.Bind(
+        (ProductPrice state) =>
+            HandlerState<string, decimal>.For(state.ProductId),
+        (outerState, innerState) =>
+            new ProductPrice(
+                innerState.Input,
+                innerState.WasHandled(out decimal result) 
+                    ? result : null));
+
+SyncPipelineStep<ProductPrice> discountProductPrice =
+    invoicePipeline.Bind(
+        (ProductPrice state) => state.Price ?? 0m,
+        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
+
+SyncPipelineStep<ProductPrice> lookupPriceAndDiscount = 
+    lookupProductPrice.Bind(discountProductPrice);
+
+ProductPrice productPricingResult = lookupPriceAndDiscount(new ProductPrice(productId, null));
+
+Console.WriteLine(productPricingResult);
+
+productPricingResult = lookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+
+Console.WriteLine(productPricingResult);
+
+SyncPipelineStep<ProductPrice> saferDiscountProductPrice =
+    invoicePipeline.Bind(
+        (ProductPrice state) => state.Price ?? throw new InvalidOperationException("The base price was null."),
+        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
+
+SyncPipelineStep<ProductPrice> saferLookupPriceAndDiscount =
+    lookupProductPrice.Bind(saferDiscountProductPrice);
+
+productPricingResult = saferLookupPriceAndDiscount(new ProductPrice(productId, null));
+
+Console.WriteLine(productPricingResult);
+
+try
+{
+    productPricingResult = saferLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+}
+catch(Exception ex)
+{
+    Console.WriteLine(ex);
+}
+
+SyncPipelineStep<ProductPrice> safestLookupPriceAndDiscount =
+    saferLookupPriceAndDiscount.Catch(
+        (ProductPrice state, InvalidOperationException ex) => new (state.ProductId, null));
+
+
+productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+
+Console.WriteLine(productPricingResult);
+
+public readonly record struct ProductPrice(string ProductId, decimal? Price);
+
 static class CommonSteps
 {
     public static SyncPipelineStep<int> MultiplyBy5 =
@@ -149,9 +207,9 @@ static class PricingCatalogs
             };
 
     public static SyncPipelineStep<HandlerState<string, decimal>>
-    PricingHandler =
-        HandlerPipeline.Build(
-            PricingCatalog1,
-            PricingCatalog2,
-            PricingCatalog3);
+        PricingHandler =
+            HandlerPipeline.Build(
+                PricingCatalog1,
+                PricingCatalog2,
+                PricingCatalog3);
 }

@@ -835,9 +835,92 @@ So, when the step produced by the `Bind()` operator is executed, it:
 
 ### Example: binding to a handler pipeline
 
-A common use for this type of binding is when you are connnecting a handler pipeline into an overall pipeline.
+A common use for this type of binding is when you are connecting a handler pipeline into an overall pipeline.
 
-> TODO: We're here!
+Let's consider a type representing a product and its price
+
+```csharp
+public readonly record struct ProductPrice(string ProductId, decimal? Price);
+```
+
+You'll remember that we have our invoice pipleline that can apply a discount and add sales tax to a price:
+
+```csharp
+SyncPipelineStep<decimal> invoicePipeline =
+    Pipeline.Build(
+        chooseDiscount,
+        InvoiceSteps.ApplySalesTax);
+```
+
+This takes a decimal and returns a decimal.
+
+And we have a pipeline that can find a product price from our product catalogs.
+
+```csharp
+    public static SyncPipelineStep<HandlerState<string, decimal>>
+        PricingHandler =
+            HandlerPipeline.Build(
+                PricingCatalog1,
+                PricingCatalog2,
+                PricingCatalog3);
+```
+
+But what we want is a new pipeline that can produce a `ProductPrice`
+
+```csharp
+SyncPipelineStep<ProductPrice> productPricer = ???
+```
+
+The types are not compatible, but we can use bind with wrap/unwrap methods to help us with that.
+
+```csharp
+SyncPipelineStep<ProductPrice> lookupProductPrice =
+    PricingCatalogs.PricingHandler.Bind(
+        (ProductPrice state) =>
+            HandlerState<string, decimal>.For(state.ProductId),
+        (outerState, innerState) =>
+            new ProductPrice(
+                innerState.Input,
+                innerState.WasHandled(out decimal result)
+                    ? result : null));
+```
+
+Here we are creating a step called `lookupProductPrice` that adapts from the incoming `ProductPrice` type to the `HandlerState<string, decimal>` that is required by our product catalog step.
+
+The `wrap` function takes an instance of the input `ProductPrice` state, and produces an appropriate `HandlerState<string, decimal>` for the `PricingCatalogs.PricingHandler` step.
+
+The `unwrap` function takes *both* the input (outer) state (the original `ProductPrice`), and the result of the bound step (if there was one). It uses those to produce the resulting `ProductPrice`.
+
+So that's the first half. Now we need to adapt our `invoicePipeline` step in the same way.
+
+```csharp
+SyncPipelineStep<ProductPrice> discountProductPrice =
+    invoicePipeline.Bind(
+        (ProductPrice state) => state.Price ?? 0m,
+        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
+```
+
+In this case we produce the price from the `ProductPrice` for input to the `invoicePipeline` in the `wrap` function,
+and then we build the updated `ProductPrice` from the original `ProductId` from the `outerState`, and the resulting decimal from the `innerState`.
+
+We can now produce a simple two-step pipeline from these two, now compatible steps:
+
+```csharp
+SyncPipelineStep<ProductPrice> lookupPriceAndDiscount =
+    lookupProductPrice.Bind(discountProductPrice);
+```
+
+and when we call it with the `productId` we used above:
+
+```csharp
+ProductPrice productPricingResult = lookupPriceAndDiscount(new ProductPrice(productId, null))
+```
+
+We get the result we might expect:
+
+```
+ProductPrice { ProductId = Catalog2_Product2, Price = 4.79 }
+```
 
 ### When to use Bind()?
 
@@ -859,3 +942,94 @@ return state =>
 If you have semantics which are better expressed by writing your own custom operator like this, then do so.
 
 Don't turn your code inside out to fit the _wrap, bind, unwrap_ model. Instead, try to create "semantically complete" packages of code - functions that express a well-bounded unit of value.
+
+## Handling exceptions
+
+You may have noticed an issue with the code we just wrote in our pricing handler:
+
+```csharp
+SyncPipelineStep<ProductPrice> discountProductPrice =
+    invoicePipeline.Bind(
+        (ProductPrice state) => state.Price ?? 0m,
+        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
+```
+
+Specifically I am looking at this line here:
+
+> *`state.Price ?? 0m`*
+
+If the value *wasn't* priced by the pricing step, we carry on along the pipeline as if the product was free, rather than non-existent!
+
+```csharp
+productPricingResult = lookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+```
+
+That doesn't sound entirely correct.
+
+There are a number of approaches we could take to this problem.
+
+We've already seen one - we could insert a `Choose()` and only execute the next step in the pipeline if the value was not null at this stage.
+
+Later, we will look at the `ICanFail` [capability](./docs/ubiquitous-language.md#capability) and an efficient approach to [error handling](#handling-errors).
+
+But for now, we will look at how to handle exceptions in a pipeline.
+
+```csharp
+SyncPipelineStep<ProductPrice> saferDiscountProductPrice =
+    invoicePipeline.Bind(
+        (ProductPrice state) => state.Price ?? throw new InvalidOperationException("The base price was null."),
+        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
+```
+
+If we build a pipeline from this `saferDiscountProductPrice` step, we should see exactly the same result with our previous input:
+
+```csharp
+SyncPipelineStep<ProductPrice> saferLookupPriceAndDiscount =
+    lookupProductPrice.Bind(saferDiscountProductPrice);
+
+productPricingResult = saferLookupPriceAndDiscount(new ProductPrice(productId, null));
+```
+
+```
+ProductPrice { ProductId = Catalog2_Product2, Price = 4.79 }
+```
+
+However, if we ask for a product that doesn't exist:
+
+```csharp
+productPricingResult = saferLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+```
+
+We get an unhandled exception in our pipeline:
+
+```
+Unhandled exception. System.InvalidOperationException: The base price was null.
+```
+
+Fortunately, we have an operator that can deal with that: `Catch()`
+
+This operator can be attached to the pipeline at any point, and it can catch an exception of any given type.
+
+Here's an example attatching the exception handler at the top of the pipeline:
+
+```csharp
+SyncPipelineStep<ProductPrice> safestLookupPriceAndDiscount =
+    saferLookupPriceAndDiscount.Catch(
+        (ProductPrice state, InvalidOperationException ex) => new (state.ProductId, null));
+```
+
+In this case, we are catching `InvalidOperationException` instances, and explicitly returning a null price for the given product ID. As this catch is at the end of the pipeline, the state it produces is the final result.
+
+So if we now call this new step:
+
+```csharp
+productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+```
+
+We get a `null` result, instead of a zero result, and we haven't passed the state through the rest of the pipeline.
+
+```
+ProductPrice { ProductId = You won't find me!, Price =  }
+```
+
+## Handling Errors
