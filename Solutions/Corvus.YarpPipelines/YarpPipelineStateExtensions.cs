@@ -114,7 +114,7 @@ public static class YarpPipelineStateExtensions
     /// </summary>
     /// <param name="state">The pipeline state.</param>
     /// <param name="user">Receives the user.</param>
-    /// <returns>True if a user was available.</returns>
+    /// <returns><see langword="true"/> if a user was available.</returns>
     public static bool TryGetAuthenticatedUser(this YarpPipelineState state, [NotNullWhen(true)] out ClaimsPrincipal? user)
     {
         user = state.RequestTransformContext.HttpContext.User;
@@ -127,7 +127,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="state">The YARP pipeline state.</param>
     /// <param name="predicate">Determines the criteria.</param>
     /// <param name="cookie">The matching cookie, if found.</param>
-    /// <returns>True if a match was found.</returns>
+    /// <returns><see langword="true"/> if a match was found.</returns>
     public static bool TryFindCookie(
         this YarpPipelineState state,
         Func<KeyValuePair<string, string>, bool> predicate,
@@ -155,7 +155,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <param name="tokenReceiverState">A value passed through to the <paramref name="rawTokenReceiver"/>.</param>
     /// <param name="rawTokenReceiver">Call-back that will be invoked with the raw token, if present.</param>
-    /// <returns>True if a bearer token was present.</returns>
+    /// <returns><see langword="true"/> if a bearer token was present.</returns>
     public static bool TryGetRawBearerToken<TTokenReceiverState>(
         this YarpPipelineState state,
         in TTokenReceiverState tokenReceiverState,
@@ -176,7 +176,7 @@ public static class YarpPipelineStateExtensions
     /// </summary>
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <param name="rawToken">The raw token, if present.</param>
-    /// <returns>True if a bearer token was present.</returns>
+    /// <returns><see langword="true"/> if a bearer token was present.</returns>
     public static bool TryGetRawBearerToken(
         this YarpPipelineState state,
         out ReadOnlyMemory<char> rawToken)
