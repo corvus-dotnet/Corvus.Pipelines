@@ -3,6 +3,7 @@
 // </copyright>
 
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Authentication;
@@ -96,6 +97,28 @@ public static class YarpPipelineStateExtensions
             returnUrl,
             cookiePath,
             cookieName));
+    }
+
+    /// <summary>
+    /// Sets the <see cref="HttpContext.User"/> of the request associated with this pipeline state.
+    /// </summary>
+    /// <param name="state">The pipeline state.</param>
+    /// <param name="user">The <see cref="ClaimsPrincipal"/> to set as the request's user.</param>
+    public static void SetUser(this YarpPipelineState state, ClaimsPrincipal user)
+    {
+        state.RequestTransformContext.HttpContext.User = user;
+    }
+
+    /// <summary>
+    /// Determines whether the request has an authenticated user associated with it, and if so, returns it.
+    /// </summary>
+    /// <param name="state">The pipeline state.</param>
+    /// <param name="user">Receives the user.</param>
+    /// <returns>True if a user was available.</returns>
+    public static bool TryGetAuthenticatedUser(this YarpPipelineState state, [NotNullWhen(true)] out ClaimsPrincipal? user)
+    {
+        user = state.RequestTransformContext.HttpContext.User;
+        return user is not null && user.Identity?.IsAuthenticated == true;
     }
 
     /// <summary>
