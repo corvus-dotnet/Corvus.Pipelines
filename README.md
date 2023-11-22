@@ -943,9 +943,59 @@ If you have semantics which are better expressed by writing your own custom oper
 
 Don't turn your code inside out to fit the _wrap, bind, unwrap_ model. Instead, try to create "semantically complete" packages of code - functions that express a well-bounded unit of value.
 
+For instance, a common requirement is to combine the handler pattern with a `Choose()` operation - that is to say, we have a set of handlers that determine the next `PipelineStep<T>` to execute.
+
+You may remember our pricing `Choose()` operation above.
+
+```csharp
+SyncPipelineStep<decimal> chooseDiscount =
+    Pipeline.Choose(
+            selector: static (decimal state) =>
+            state switch
+            {
+                > 1000m => InvoiceSteps.ApplyHighDiscount,
+                > 500m => InvoiceSteps.ApplyLowDiscount,
+                _ => Pipeline.CurrentSync<decimal>(),
+            });
+);
+```
+
+In that case, we have a hard-coded switch statement. However, if we were building the discount pipeline from business logic configuration, we might want to switch to a handler model.
+
+We can convert our hard-coded switch statements into handlers:
+
+```csharp
+static class DiscountHandlers
+{
+    public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleHighDiscount =
+        state => state.Input > 1000m 
+            ? state.Handled(InvoiceSteps.ApplyHighDiscount)
+            : state.NotHandled();
+
+    public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleLowDiscount =
+        state => state.Input > 500m
+            ? state.Handled(InvoiceSteps.ApplyLowDiscount)
+            : state.NotHandled();
+}
+```
+
+And then use the `HandlerPipeline.Choose()` operator to produce a step that executes the step produced by whichever handler it is that handles the input.
+
+```csharp
+SyncPipelineStep<decimal> chooseDiscountWithHandler =
+    HandlerPipeline.Choose(
+        Pipeline.CurrentSync<decimal>(),
+        DiscountHandlers.HandleHighDiscount,
+        DiscountHandler.HandleLowDiscount);
+```
+
+Notice that the first parameter to the `Choose()` method is the value to return if the input is unhandled - in this case, the step that just returns the current value of the state, as per the original `default` case in the switch statement.
+
+> There is an overload of this `Choose()` method that allows you to get a different input value from your state to pass into the handler pipeline - like the "wrap" function of the `Bind()` operation.
+
 ## Handling exceptions
 
-You may have noticed an issue with the code we just wrote in our pricing handler:
+Let's look back at our product pricing handler.
 
 ```csharp
 SyncPipelineStep<ProductPrice> discountProductPrice =
@@ -954,7 +1004,7 @@ SyncPipelineStep<ProductPrice> discountProductPrice =
         (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
 ```
 
-Specifically I am looking at this line here:
+We have a potential issue here where the price has not been set.
 
 > *`state.Price ?? 0m`*
 

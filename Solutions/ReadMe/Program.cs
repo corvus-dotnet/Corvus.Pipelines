@@ -101,7 +101,7 @@ SyncPipelineStep<ProductPrice> lookupProductPrice =
         (outerState, innerState) =>
             new ProductPrice(
                 innerState.Input,
-                innerState.WasHandled(out decimal result) 
+                innerState.WasHandled(out decimal result)
                     ? result : null));
 
 SyncPipelineStep<ProductPrice> discountProductPrice =
@@ -109,7 +109,7 @@ SyncPipelineStep<ProductPrice> discountProductPrice =
         (ProductPrice state) => state.Price ?? 0m,
         (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
 
-SyncPipelineStep<ProductPrice> lookupPriceAndDiscount = 
+SyncPipelineStep<ProductPrice> lookupPriceAndDiscount =
     lookupProductPrice.Bind(discountProductPrice);
 
 ProductPrice productPricingResult = lookupPriceAndDiscount(new ProductPrice(productId, null));
@@ -136,19 +136,43 @@ try
 {
     productPricingResult = saferLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
 }
-catch(Exception ex)
+catch (Exception ex)
 {
     Console.WriteLine(ex);
 }
 
 SyncPipelineStep<ProductPrice> safestLookupPriceAndDiscount =
     saferLookupPriceAndDiscount.Catch(
-        (ProductPrice state, InvalidOperationException ex) => new (state.ProductId, null));
+        (ProductPrice state, InvalidOperationException ex) => new(state.ProductId, null));
 
 
 productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
 
 Console.WriteLine(productPricingResult);
+
+SyncPipelineStep<decimal> chooseDiscountWithHandler =
+    HandlerPipeline.Choose(
+        Pipeline.CurrentSync<decimal>(),
+        state => state.Input > 1000m ? state.Handled(InvoiceSteps.ApplyHighDiscount) : state.NotHandled(),
+        state => state.Input > 500m ? state.Handled(InvoiceSteps.ApplyLowDiscount) : state.NotHandled());
+
+SyncPipelineStep<decimal> invoicePipelineWithHandler =
+    Pipeline.Build(
+        chooseDiscountWithHandler,
+        InvoiceSteps.ApplySalesTax);
+
+value = invoicePipeline(1000m);
+
+Console.WriteLine(value);
+
+value = invoicePipeline(2000m);
+
+Console.WriteLine(value);
+
+value = invoicePipeline(100m);
+
+Console.WriteLine(value);
+
 
 readonly record struct ProductPrice(string ProductId, decimal? Price);
 
@@ -166,6 +190,15 @@ static class InvoiceSteps
         state => Math.Ceiling(state * 100 * 0.7m) / 100;
     public static SyncPipelineStep<decimal> ApplySalesTax =
         state => Math.Ceiling(state * 100 * 1.2m) / 100;
+}
+
+static class DiscountHandlers
+{
+    public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleHighDiscount =
+        state => state.Input > 1000m ? state.Handled(InvoiceSteps.ApplyHighDiscount) : state.NotHandled();
+
+    public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleLowDiscount =
+        state => state.Input > 500m ? state.Handled(InvoiceSteps.ApplyLowDiscount) : state.NotHandled();
 }
 
 static class PricingCatalogs
