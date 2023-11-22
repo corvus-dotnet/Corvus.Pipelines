@@ -922,7 +922,7 @@ We get the result we might expect:
 ProductPrice { ProductId = Catalog2_Product2, Price = 4.79 }
 ```
 
-### When to use Bind()?
+### When to use Bind(), and when to build custom operators?
 
 Bind (with or without wrapping and unwrapping) is a very powerful technique, and you can get a long way using it without writing a completely "custom" operator (or a lot of steps).
 
@@ -979,11 +979,27 @@ static class DiscountHandlers
 }
 ```
 
-And then use the `HandlerPipeline.Choose()` operator to produce a step that executes the step produced by whichever handler it is that handles the input.
+And then build a custom operator that wraps up a call to `Bind()` to do the wrapping/unwrapping in and out of the pipeline.
+
+```csharp
+static SyncPipelineStep<TState> ChooseWithHandlerPipeline<TState>(
+    SyncPipelineStep<TState> notHandled,
+    params SyncPipelineStep<HandlerState<TState, SyncPipelineStep<TState>>>[] handlers)
+    where TState : struct
+    => HandlerPipeline.Build(handlers)
+        .Bind(
+            (TState state)
+                => HandlerState<TState, SyncPipelineStep<TState>>.For(state),
+            (TState state, HandlerState<TState, SyncPipelineStep<TState>> handlerState)
+                => handlerState.WasHandled(out SyncPipelineStep<TState>? result)
+                    ? result(state)
+                    : notHandled(state));
+```
+
 
 ```csharp
 SyncPipelineStep<decimal> chooseDiscountWithHandler =
-    HandlerPipeline.Choose(
+    ChooseWithHandlerPipeline(
         Pipeline.CurrentSync<decimal>(),
         DiscountHandlers.HandleHighDiscount,
         DiscountHandler.HandleLowDiscount);
@@ -991,7 +1007,7 @@ SyncPipelineStep<decimal> chooseDiscountWithHandler =
 
 Notice that the first parameter to the `Choose()` method is the value to return if the input is unhandled - in this case, the step that just returns the current value of the state, as per the original `default` case in the switch statement.
 
-> There is an overload of this `Choose()` method that allows you to get a different input value from your state to pass into the handler pipeline - like the "wrap" function of the `Bind()` operation.
+> This is so useful, that we actually offer a set of overloads of operators of this type on `HandlerPipeline`. In addition to a `Choose()` method of this form, there are overloads that allows you to get a different input value from your state to pass into the handler pipeline, for both sync and async pipeline steps.
 
 ## Handling exceptions
 

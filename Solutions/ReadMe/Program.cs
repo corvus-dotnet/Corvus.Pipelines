@@ -150,8 +150,21 @@ productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't 
 
 Console.WriteLine(productPricingResult);
 
+static SyncPipelineStep<TState> ChooseWithHandlerPipeline<TState>(
+    SyncPipelineStep<TState> notHandled,
+    params SyncPipelineStep<HandlerState<TState, SyncPipelineStep<TState>>>[] handlers)
+    where TState : struct
+    => HandlerPipeline.Build(handlers)
+        .Bind(
+            (TState state)
+                => HandlerState<TState, SyncPipelineStep<TState>>.For(state),
+            (TState state, HandlerState<TState, SyncPipelineStep<TState>> handlerState)
+                => handlerState.WasHandled(out SyncPipelineStep<TState>? result)
+                    ? result(state)
+                    : notHandled(state));
+
 SyncPipelineStep<decimal> chooseDiscountWithHandler =
-    HandlerPipeline.Choose(
+    ChooseWithHandlerPipeline(
         Pipeline.CurrentSync<decimal>(),
         state => state.Input > 1000m ? state.Handled(InvoiceSteps.ApplyHighDiscount) : state.NotHandled(),
         state => state.Input > 500m ? state.Handled(InvoiceSteps.ApplyLowDiscount) : state.NotHandled());
