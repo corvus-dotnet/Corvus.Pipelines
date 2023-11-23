@@ -62,11 +62,6 @@ public readonly struct YarpPipelineState :
     public IFeatureCollection Features => this.RequestTransformContext.HttpContext.Features;
 
     /// <summary>
-    /// Gets a <see cref="RequestSignature"/> for the current request.
-    /// </summary>
-    public RequestSignature RequestSignature => RequestSignature.From(this.RequestTransformContext.HttpContext.Request);
-
-    /// <summary>
     /// Gets a value indicating whether the current request is authenticated.
     /// </summary>
     public bool IsAuthenticated => this.RequestTransformContext.HttpContext.User.Identity?.IsAuthenticated == true;
