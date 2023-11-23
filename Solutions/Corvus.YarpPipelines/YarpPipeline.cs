@@ -133,7 +133,7 @@ public static class YarpPipeline
         PipelineStep<YarpPipelineState> notHandled,
         params PipelineStep<HandlerState<RequestSignature, PipelineStep<YarpPipelineState>>>[] handlers)
         => HandlerPipeline.Choose(
-            state => state.RequestSignature,
+            state => state.GetNominalRequestSignature(),
             notHandled,
             handlers);
 
@@ -151,7 +151,7 @@ public static class YarpPipeline
         PipelineStep<YarpPipelineState> notHandled,
         params SyncPipelineStep<HandlerState<RequestSignature, PipelineStep<YarpPipelineState>>>[] handlers)
         => HandlerPipeline.Choose(
-            state => state.RequestSignature,
+            state => state.GetNominalRequestSignature(),
             notHandled,
             handlers);
 
@@ -169,7 +169,7 @@ public static class YarpPipeline
         SyncPipelineStep<YarpPipelineState> notHandled,
         params PipelineStep<HandlerState<RequestSignature, SyncPipelineStep<YarpPipelineState>>>[] handlers) =>
         HandlerPipeline.Choose(
-            state => state.RequestSignature,
+            state => state.GetNominalRequestSignature(),
             notHandled,
             handlers);
 
@@ -187,7 +187,7 @@ public static class YarpPipeline
         SyncPipelineStep<YarpPipelineState> notHandled,
         params SyncPipelineStep<HandlerState<RequestSignature, SyncPipelineStep<YarpPipelineState>>>[] handlers) =>
         HandlerPipeline.Choose(
-            state => state.RequestSignature,
+            state => state.GetNominalRequestSignature(),
             notHandled,
             handlers);
 }
