@@ -968,7 +968,7 @@ We can convert our hard-coded switch statements into handlers:
 static class DiscountHandlers
 {
     public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleHighDiscount =
-        state => state.Input > 1000m 
+        state => state.Input > 1000m
             ? state.Handled(InvoiceSteps.ApplyHighDiscount)
             : state.NotHandled();
 
@@ -1007,9 +1007,9 @@ SyncPipelineStep<decimal> chooseDiscountWithHandler =
 
 Notice that the first parameter to the `Choose()` method is the value to return if the input is unhandled - in this case, the step that just returns the current value of the state, as per the original `default` case in the switch statement.
 
-> This is so useful, that we actually offer a set of overloads of operators of this type on `HandlerPipeline`. In addition to a `Choose()` method of this form, there are overloads that allows you to get a different input value from your state to pass into the handler pipeline, for both sync and async pipeline steps.
+> This is so useful, that we actually offer a set of operators of this type on `HandlerPipeline`. In addition to a `Choose()` method of this form, there are overloads that allow you to get a different input value from your state to pass into the handler pipeline, for both sync and async pipeline steps.
 
-## Handling exceptions
+## Handling exceptions with `Catch()`
 
 Let's look back at our product pricing handler.
 
@@ -1098,4 +1098,221 @@ We get a `null` result, instead of a zero result, and we haven't passed the stat
 ProductPrice { ProductId = You won't find me!, Price =  }
 ```
 
+You'll notice that the `state` that is passed to the catch handler is that state as it was at the point at which it was *caught*, not the state at the point at which it was *thrown*.
+
+> Of course, you can send the state as it was at the point the exception was thrown as part of the exception payload itself, if you need to.
+
+One of the most powerful reasons for using immutable state in your pipeline is the fact that you can recover the state at the "last known good" point by positioning your `Catch()` appropriately, and then take appropriate action in your exception handler.
+
+If, on the other hand, your pipeline has side-effects (perhaps updating external state), you need to be cautious to take this into account in your exception handling.
+
+One such thing you can do in `Catch()` is to adapt the exception into the `Error()` handling mechanism.
+
 ## Handling Errors
+
+One of the (arguably best) design choices in the dotnet runtime is that exceptions are *extremely cheap* if you don't use them. Essentially, you don't pay any penalty at all for the *ability* to use exceptions.
+
+The trade off for that is that they are quite expensive when you *do* need to use them.
+
+And that should be fine - after all, exceptions are supposed to be "exceptional". They shouldn't happen in normal operation.
+
+Unfortunately, we all know that is not the case. Exceptions are anything but exceptional.
+
+Most modern applications live in the cloud, or other data centers, and orchestrate services from a variety of first- and third-party providers. Transient failures are common in these kinds of distributed systems. In fact, they are a normal part of flow control.
+
+There are two ways libraries commonly deal with those kinds of failures - and Microsoft's Azure Storage SDKs provide a case in point.
+
+1. Status codes
+
+    Some libraries (e.g. Cosmos DB) give you APIs that return status codes which you inspect to determine success or failure.
+
+2. Exceptions
+
+    Others (e.g. Azure Storage SDK) give you APIs that throw Exceptions corresponding to non-success scenarios, and status codes for success.
+
+While it is easy to understand the "convenience" of the second choice, there's a philosopical mismatch. The whole design concept behind dotnet exceptions is that they should be for *exceptional* circumstances.
+
+Is it really exceptional when a distributed resource is temporarily unavailable and asking you to back off before retrying? Or, perhaps even more obviously, is it exceptional when you ask to write a resource only if its ETag matches the one you read, and it has been updated?
+
+Both of those cases seem more like "ordinary flow control" in your application; they represent an "error" but not necessarily an "exception". And you are paying a high price.
+
+Take a look at the benchmarks here that compare an exception-handling pipeline with an error-handling pipeline:
+
+| Method               | Mean      | Ratio | Allocated |
+|---------------------:|----------:|------:|----------:|
+| UseErrorHandling     |    120 ns |     1 |         - |
+| UseExceptionHandling | 25,930 ns |   216 |    1720 B |
+
+As you can see, you get a lot of allocations when an exception is thrown, and it can be several orders of magnitude slower than a non-exceptional code path.
+
+So, in **Corvus.Pipelines** we offer a mechanism that has the ease of use of exception handling, with the efficiency of error handling.
+
+To do that, your pipeline state needs to opt in to a [capability](./docs/ubiquitous-language.md#capability) called `ICanFail`.
+
+## Capabilities
+
+As usual, we'll start with a definition. What is a capability?
+
+A _capability_ is a well-known pattern or semantic model implemented by some [state](#state), which an [operator](#operator) can rely on in its implementation.
+
+In **Corvus.Pipelines**, capabilities are defined by interfaces implemented by state types.
+
+In this case, the _CanFail_ capability is embodied in the (rather happily named) `ICanFail` interface.
+
+It is a very simple interface that exposes a single property called `ExecutionStatus`.
+
+```csharp
+public interface ICanFail
+{
+    /// <summary>
+    /// Gets the operation status.
+    /// </summary>
+    PipelineStepStatus ExecutionStatus { get; }
+}
+```
+
+This allows the state to expose a value which indicates the current status of the pipeline, for which there are 3 options:
+
+```csharp
+/// <summary>
+/// Determines the success status of the operation.
+/// </summary>
+public enum PipelineStepStatus
+{
+    /// <summary>
+    /// The operation succeeded.
+    /// </summary>
+    Success,
+
+    /// <summary>
+    /// The operation failed permanently and cannot be retried.
+    /// </summary>
+    PermanentFailure,
+
+    /// <summary>
+    /// The operation failed transiently and could be retried.
+    /// </summary>
+    TransientFailure,
+}
+```
+
+So what does an implementation of this interface typically look like?
+
+Let's define a generic type that wraps some arbitrary value in an `ICanFail` capability.
+
+> You would not typically use this directly in your own state types, except for the simplest of cases. Instead, we are demonstrating a general approach to implementing this capability.
+
+```csharp
+/// <summary>
+/// An ICanFail state over a value.
+/// </summary>
+/// <typeparam name="T">The type of the value.</typeparam>
+public readonly struct CanFailState<T> : ICanFail
+    where T : notnull, IEquatable<T>
+{
+    private CanFailState(T value, PipelineStepStatus executionStatus)
+    {
+        this.Value = value;
+        this.ExecutionStatus = executionStatus;
+    }
+
+    /// <summary>
+    /// Gets the value of the state.
+    /// </summary>
+    public T Value { get; }
+
+    /// <inheritdoc/>
+    public PipelineStepStatus ExecutionStatus { get; }
+
+    /// <summary>
+    /// Conversion to value.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    public static implicit operator T(CanFailState<T> value) => value.Value;
+
+    /// <summary>
+    /// Conversion from value.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    public static implicit operator CanFailState<T>(T value) => new(value, default);
+
+    public static CanFailState<T> For(T value)
+    {
+        return new(value, default);
+    }
+
+    public CanFailState<T> PermanentFailure()
+    {
+        return new(this.Value, PipelineStepStatus.PermanentFailure);
+    }
+
+    public CanFailState<T> TransientFailure()
+    {
+        return new(this.Value, PipelineStepStatus.TransientFailure);
+    }
+
+    public CanFailState<T> Success()
+    {
+        return new(this.Value, PipelineStepStatus.Success);
+    }
+
+    public CanFailState<T> WithValue(T value)
+    {
+        return new(value, this.ExecutionStatus);
+    }
+}
+```
+
+When we implement state objects, we usually encapsulate all the internal state behind a private constructor.
+
+In this case, it consists of the `value`, and the `executionStatus`.
+
+```csharp
+    private CanFailState(T value, PipelineStepStatus executionStatus)
+    {
+        this.Value = value;
+        this.ExecutionStatus = executionStatus;
+    }
+```
+We then provide a static factory method conventionally called `For())` which takes parameters for what might be considered the _value_ of the state.
+
+```csharp
+    public static CanFailState<T> For(T value)
+    {
+        return new(value, default);
+    }
+```
+
+Then we provide methods that can mutate the state in well known ways.
+
+In this case we provide a family of methods that update the `ExecutionStatus`, without altering the value.
+
+```csharp
+    public CanFailState<T> PermanentFailure()
+    {
+        return new(this.Value, PipelineStepStatus.PermanentFailure);
+    }
+
+    public CanFailState<T> TransientFailure()
+    {
+        return new(this.Value, PipelineStepStatus.TransientFailure);
+    }
+
+    public CanFailState<T> Success()
+    {
+        return new(this.Value, PipelineStepStatus.Success);
+    }
+```
+
+And one that updates the value, without updating the `ExecutionStatus`
+
+```csharp
+    public CanFailState<T> WithValue(T value)
+    {
+        return new(value, this.ExecutionStatus);
+    }
+```
+
+> Given that we encourage these conventions, you may be wondering why we don't add methods like `PermanantFailure()` to the `ICanFail` interface.
+>
+> This is because the capability *only* requires you to implement the members required to support the *consumers* of the capability (e.g. the operators that depend on the capability). Anything else is up to you - though we encourage these patterns for discoverability.

@@ -88,7 +88,7 @@ State has value semantics, and is generally immutable (although the processing p
 
 ## Step
 
-A step is a _function_ that takes some [state](#state), processses it, and returns a new [state](#state).
+A step is a _function_ that takes some [state](#state), processes it, and returns a new [state](#state).
 
 While this pattern allows [state](#state) to be immutable, we do not disallow side-effects, and, in fact, side-effects are very commonly the desired result of processing.
 

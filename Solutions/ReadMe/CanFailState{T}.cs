@@ -2,13 +2,15 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-namespace Corvus.Pipelines.Specs.Models;
+using Corvus.Pipelines;
+
+namespace ReadMe;
 
 /// <summary>
 /// An ICanFail state object over a value.
 /// </summary>
 /// <typeparam name="T">The type of the value.</typeparam>
-public readonly struct CanFailState<T> : ICanFail, IEquatable<CanFailState<T>>
+public readonly struct CanFailState<T> : ICanFail
     where T : notnull, IEquatable<T>
 {
     private CanFailState(T value, PipelineStepStatus executionStatus)
@@ -37,16 +39,6 @@ public readonly struct CanFailState<T> : ICanFail, IEquatable<CanFailState<T>>
     /// <param name="value">The value to convert.</param>
     public static implicit operator CanFailState<T>(T value) => new(value, default);
 
-    public static bool operator ==(CanFailState<T> left, CanFailState<T> right)
-    {
-        return left.Equals(right);
-    }
-
-    public static bool operator !=(CanFailState<T> left, CanFailState<T> right)
-    {
-        return !(left == right);
-    }
-
     public static CanFailState<T> For(T value)
     {
         return new(value, default);
@@ -70,25 +62,5 @@ public readonly struct CanFailState<T> : ICanFail, IEquatable<CanFailState<T>>
     public CanFailState<T> WithValue(T value)
     {
         return new(value, this.ExecutionStatus);
-    }
-
-    public bool Equals(CanFailState<T> other)
-    {
-        return this.Value.Equals(other.Value) && this.ExecutionStatus == other.ExecutionStatus;
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is CanFailState<T> cancellableInt32State && this.Equals(cancellableInt32State);
-    }
-
-    public override int GetHashCode()
-    {
-        return this.Value.GetHashCode();
-    }
-
-    public override string? ToString()
-    {
-        return this.Value.ToString();
     }
 }

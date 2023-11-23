@@ -29,16 +29,12 @@ public readonly struct YarpPipelineState :
     ICancellable<YarpPipelineState>,
     ILoggable
 {
-    private readonly NonForwardedResponseDetails responseDetails;
-    private readonly TransformState pipelineState;
-    private readonly YarpPipelineError errorDetails;
-
     private YarpPipelineState(RequestTransformContext requestTransformContext, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
         this.RequestTransformContext = requestTransformContext;
-        this.responseDetails = responseDetails;
-        this.pipelineState = pipelineState;
-        this.errorDetails = errorDetails;
+        this.ResponseDetails = responseDetails;
+        this.PipelineState = pipelineState;
+        this.ErrorDetails = errorDetails;
         this.ExecutionStatus = executionStatus;
         this.Logger = logger;
         this.CancellationToken = cancellationToken;
@@ -77,10 +73,10 @@ public readonly struct YarpPipelineState :
     public bool RequestHasFormContentType => this.RequestTransformContext.HttpContext.Request.HasFormContentType;
 
     /// <inheritdoc/>
-    public PipelineStepStatus ExecutionStatus { get; }
+    public PipelineStepStatus ExecutionStatus { get; init; }
 
     /// <inheritdoc/>
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken { get; init; }
 
     /// <inheritdoc/>
     public ILogger Logger { get; }
@@ -94,7 +90,13 @@ public readonly struct YarpPipelineState :
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
     /// terminate predicate for the <see cref="YarpPipeline"/>.
     /// </summary>
-    internal bool ShouldTerminatePipeline => this.pipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
+    internal bool ShouldTerminatePipeline => this.PipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
+
+    private YarpPipelineError ErrorDetails { get; init; }
+
+    private TransformState PipelineState { get; init; }
+
+    private NonForwardedResponseDetails ResponseDetails { get; init; }
 
     /// <summary>
     /// Gets an instance of the <see cref="YarpPipelineState"/> for a particular
@@ -123,7 +125,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState TerminateWith(NonForwardedResponseDetails responseDetails)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with");
-        return new(this.RequestTransformContext, responseDetails, TransformState.Terminate, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return this with { PipelineState = TransformState.Terminate, ResponseDetails = responseDetails };
     }
 
     /// <summary>
@@ -134,7 +136,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState TerminateAndForward()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-and-forward");
-        return new(this.RequestTransformContext, default, TransformState.TerminateAndForward, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return this with { PipelineState = TransformState.TerminateAndForward };
     }
 
     /// <summary>
@@ -150,7 +152,7 @@ public readonly struct YarpPipelineState :
     public YarpPipelineState Continue()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "continue");
-        return new(this.RequestTransformContext, default, TransformState.Continue, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return this with { PipelineState = TransformState.Continue };
     }
 
     /// <summary>
@@ -162,13 +164,13 @@ public readonly struct YarpPipelineState :
     /// the <paramref name="responseDetails"/> will be set an can be used to build a local response.</returns>
     public bool ShouldForward(out NonForwardedResponseDetails responseDetails)
     {
-        if (this.pipelineState == TransformState.Continue || this.pipelineState == TransformState.TerminateAndForward)
+        if (this.PipelineState == TransformState.Continue || this.PipelineState == TransformState.TerminateAndForward)
         {
             responseDetails = default;
             return true;
         }
 
-        responseDetails = this.responseDetails;
+        responseDetails = this.ResponseDetails;
         return false;
     }
 
@@ -179,7 +181,7 @@ public readonly struct YarpPipelineState :
     /// <returns><see langword="true"/> if error details were available, otherwise false.</returns>
     public bool TryGetErrorDetails([NotNullWhen(true)] out YarpPipelineError errorDetails)
     {
-        errorDetails = this.errorDetails;
+        errorDetails = this.ErrorDetails;
         return this.ExecutionStatus != PipelineStepStatus.Success;
     }
 
@@ -190,14 +192,7 @@ public readonly struct YarpPipelineState :
     /// <returns>The updated state.</returns>
     public YarpPipelineState PermanentFailure(YarpPipelineError errorDetails)
     {
-        return new YarpPipelineState(
-            this.RequestTransformContext,
-            this.responseDetails,
-            this.pipelineState,
-            PipelineStepStatus.PermanentFailure,
-            errorDetails,
-            this.Logger,
-            this.CancellationToken);
+        return this with { ExecutionStatus = PipelineStepStatus.PermanentFailure, ErrorDetails = errorDetails };
     }
 
     /// <summary>
@@ -207,14 +202,7 @@ public readonly struct YarpPipelineState :
     /// <returns>The updated state.</returns>
     public YarpPipelineState TransientFailure(YarpPipelineError errorDetails)
     {
-        return new YarpPipelineState(
-            this.RequestTransformContext,
-            this.responseDetails,
-            this.pipelineState,
-            PipelineStepStatus.TransientFailure,
-            errorDetails,
-            this.Logger,
-            this.CancellationToken);
+        return this with { ExecutionStatus = PipelineStepStatus.TransientFailure, ErrorDetails = errorDetails };
     }
 
     /// <summary>
@@ -223,26 +211,12 @@ public readonly struct YarpPipelineState :
     /// <returns>The updated state.</returns>
     public YarpPipelineState Success()
     {
-        return new YarpPipelineState(
-            this.RequestTransformContext,
-            this.responseDetails,
-            this.pipelineState,
-            PipelineStepStatus.Success,
-            default,
-            this.Logger,
-            this.CancellationToken);
+        return this with { ExecutionStatus = PipelineStepStatus.Success };
     }
 
     /// <inheritdoc/>
     public YarpPipelineState WithCancellationToken(CancellationToken cancellationToken)
     {
-        return new YarpPipelineState(
-            this.RequestTransformContext,
-            this.responseDetails,
-            this.pipelineState,
-            this.ExecutionStatus,
-            this.errorDetails,
-            this.Logger,
-            cancellationToken);
+        return this with { CancellationToken = cancellationToken };
     }
 }

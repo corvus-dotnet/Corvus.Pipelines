@@ -120,36 +120,6 @@ productPricingResult = lookupPriceAndDiscount(new ProductPrice("You won't find m
 
 Console.WriteLine(productPricingResult);
 
-SyncPipelineStep<ProductPrice> saferDiscountProductPrice =
-    invoicePipeline.Bind(
-        (ProductPrice state) => state.Price ?? throw new InvalidOperationException("The base price was null."),
-        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
-
-SyncPipelineStep<ProductPrice> saferLookupPriceAndDiscount =
-    lookupProductPrice.Bind(saferDiscountProductPrice);
-
-productPricingResult = saferLookupPriceAndDiscount(new ProductPrice(productId, null));
-
-Console.WriteLine(productPricingResult);
-
-try
-{
-    productPricingResult = saferLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
-}
-catch (Exception ex)
-{
-    Console.WriteLine(ex);
-}
-
-SyncPipelineStep<ProductPrice> safestLookupPriceAndDiscount =
-    saferLookupPriceAndDiscount.Catch(
-        (ProductPrice state, InvalidOperationException ex) => new(state.ProductId, null));
-
-
-productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
-
-Console.WriteLine(productPricingResult);
-
 static SyncPipelineStep<TState> ChooseWithHandlerPipeline<TState>(
     SyncPipelineStep<TState> notHandled,
     params SyncPipelineStep<HandlerState<TState, SyncPipelineStep<TState>>>[] handlers)
@@ -185,6 +155,36 @@ Console.WriteLine(value);
 value = invoicePipeline(100m);
 
 Console.WriteLine(value);
+
+SyncPipelineStep<ProductPrice> saferDiscountProductPrice =
+    invoicePipeline.Bind(
+        (ProductPrice state) => state.Price ?? throw new InvalidOperationException("The base price was null."),
+        (outerState, innerState) => new ProductPrice(outerState.ProductId, innerState));
+
+SyncPipelineStep<ProductPrice> saferLookupPriceAndDiscount =
+    lookupProductPrice.Bind(saferDiscountProductPrice);
+
+productPricingResult = saferLookupPriceAndDiscount(new ProductPrice(productId, null));
+
+Console.WriteLine(productPricingResult);
+
+try
+{
+    productPricingResult = saferLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex);
+}
+
+SyncPipelineStep<ProductPrice> safestLookupPriceAndDiscount =
+    saferLookupPriceAndDiscount.Catch(
+        (ProductPrice state, InvalidOperationException ex) => new(state.ProductId, null));
+
+
+productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+
+Console.WriteLine(productPricingResult);
 
 
 readonly record struct ProductPrice(string ProductId, decimal? Price);

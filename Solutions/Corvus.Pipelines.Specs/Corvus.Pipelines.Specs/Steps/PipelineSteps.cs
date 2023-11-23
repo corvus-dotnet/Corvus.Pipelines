@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+#pragma warning disable IDE0028 // Simplify collection initialization
+
 using System.Collections.Immutable;
 using System.Reflection;
 using System.Runtime.Loader;
