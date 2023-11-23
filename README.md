@@ -1159,7 +1159,6 @@ In **Corvus.Pipelines**, capabilities are defined by interfaces implemented by s
 
 In this case, the _CanFail_ capability is embodied in the (rather happily named) `ICanFail` interface.
 
-It is a very simple interface that exposes a single property called `ExecutionStatus`.
 
 ```csharp
 public interface ICanFail
@@ -1167,7 +1166,6 @@ public interface ICanFail
     /// <summary>
     /// Gets the operation status.
     /// </summary>
-    PipelineStepStatus ExecutionStatus { get; }
 }
 ```
 
@@ -1200,15 +1198,92 @@ So what does an implementation of this interface typically look like?
 
 Let's define a generic type that wraps some arbitrary value in an `ICanFail` capability.
 
+```csharp
+public readonly struct CanFailState<T> : ICanFail
+    where T : notnull
+{
+    public CanFailState(T value, PipelineStepStatus executionStatus)
+    {
+        this.Value = value;
+    }
+
+    /// <summary>
+    /// Gets the value of the state.
+    /// </summary>
+    public T Value { get; init; }
+
+    /// <inheritdoc/>
+    public PipelineStepStatus ExecutionStatus { get; init; }
+}
+```
+
 > You would not typically use this directly in your own state types, except for the simplest of cases. Instead, we are demonstrating a general approach to implementing this capability.
+
+That's the bare minimum to implement the capability, but it isn't very useful yet.
+
+Let's add some more functionality.
+
+First, when we implement state objects, we usually encapsulate all the internal state behind a private constructor. So, let's change that.
+
+```csharp
+    private CanFailState(T value, PipelineStepStatus executionStatus)
+    {
+        this.Value = value;
+    }
+```
+
+Now we can't use the type at all!
+
+So, we provide a static factory method conventionally called `For())` which takes parameters for what might be considered the _value_ of the state, and initializes the internals appropriately.
+
+```csharp
+    public static CanFailState<T> For(T value)
+    {
+        return new(value, default);
+    }
+```
+
+Typically, you want to update the `value` in the state, so let's provide a method that will return us an updated instance of the state with a new value.
+
+```csharp
+    public CanFailState<T> WithValue(T value)
+    {
+        return this with { Value = value };
+    }
+```
+
+And then we want to provide a means of updating the execution status, without changing the value.
+
+```csharp
+    public CanFailState<T> PermanentFailure()
+    {
+        return this with { ExecutionStatus = PipelineStepStatus.PermanentFailure };
+    }
+
+    public CanFailState<T> TransientFailure()
+    {
+        return this with { ExecutionStatus = PipelineStepStatus.TransientFailure };
+    }
+
+    public CanFailState<T> Success()
+    {
+        return this with { ExecutionStatus = PipelineStepStatus.Success };
+    }
+```
+
+> Given that we encourage these conventions, you may be wondering why we don't add methods like `PermanantFailure()` to the `ICanFail` interface.
+>
+> This is because the capability *only* requires you to implement the members required to support the *consumers* of the capability (e.g. the operators that depend on the capability). Anything else is up to you - though we encourage these patterns for discoverability.
+
+If we put all that together, we end up with a type like this:
 
 ```csharp
 /// <summary>
-/// An ICanFail state over a value.
+/// An ICanFail state object over a value.
 /// </summary>
 /// <typeparam name="T">The type of the value.</typeparam>
 public readonly struct CanFailState<T> : ICanFail
-    where T : notnull, IEquatable<T>
+    where T : notnull
 {
     private CanFailState(T value, PipelineStepStatus executionStatus)
     {
@@ -1219,22 +1294,10 @@ public readonly struct CanFailState<T> : ICanFail
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public T Value { get; }
+    public T Value { get; init;  }
 
     /// <inheritdoc/>
-    public PipelineStepStatus ExecutionStatus { get; }
-
-    /// <summary>
-    /// Conversion to value.
-    /// </summary>
-    /// <param name="value">The value to convert.</param>
-    public static implicit operator T(CanFailState<T> value) => value.Value;
-
-    /// <summary>
-    /// Conversion from value.
-    /// </summary>
-    /// <param name="value">The value to convert.</param>
-    public static implicit operator CanFailState<T>(T value) => new(value, default);
+    public PipelineStepStatus ExecutionStatus { get; init; }
 
     public static CanFailState<T> For(T value)
     {
@@ -1243,76 +1306,22 @@ public readonly struct CanFailState<T> : ICanFail
 
     public CanFailState<T> PermanentFailure()
     {
-        return new(this.Value, PipelineStepStatus.PermanentFailure);
+        return this with { ExecutionStatus = PipelineStepStatus.PermanentFailure };
     }
 
     public CanFailState<T> TransientFailure()
     {
-        return new(this.Value, PipelineStepStatus.TransientFailure);
+        return this with { ExecutionStatus = PipelineStepStatus.TransientFailure };
     }
 
     public CanFailState<T> Success()
     {
-        return new(this.Value, PipelineStepStatus.Success);
+        return this with { ExecutionStatus = PipelineStepStatus.Success };
     }
 
     public CanFailState<T> WithValue(T value)
     {
-        return new(value, this.ExecutionStatus);
+        return this with { Value = value };
     }
 }
 ```
-
-When we implement state objects, we usually encapsulate all the internal state behind a private constructor.
-
-In this case, it consists of the `value`, and the `executionStatus`.
-
-```csharp
-    private CanFailState(T value, PipelineStepStatus executionStatus)
-    {
-        this.Value = value;
-        this.ExecutionStatus = executionStatus;
-    }
-```
-We then provide a static factory method conventionally called `For())` which takes parameters for what might be considered the _value_ of the state.
-
-```csharp
-    public static CanFailState<T> For(T value)
-    {
-        return new(value, default);
-    }
-```
-
-Then we provide methods that can mutate the state in well known ways.
-
-In this case we provide a family of methods that update the `ExecutionStatus`, without altering the value.
-
-```csharp
-    public CanFailState<T> PermanentFailure()
-    {
-        return new(this.Value, PipelineStepStatus.PermanentFailure);
-    }
-
-    public CanFailState<T> TransientFailure()
-    {
-        return new(this.Value, PipelineStepStatus.TransientFailure);
-    }
-
-    public CanFailState<T> Success()
-    {
-        return new(this.Value, PipelineStepStatus.Success);
-    }
-```
-
-And one that updates the value, without updating the `ExecutionStatus`
-
-```csharp
-    public CanFailState<T> WithValue(T value)
-    {
-        return new(value, this.ExecutionStatus);
-    }
-```
-
-> Given that we encourage these conventions, you may be wondering why we don't add methods like `PermanantFailure()` to the `ICanFail` interface.
->
-> This is because the capability *only* requires you to implement the members required to support the *consumers* of the capability (e.g. the operators that depend on the capability). Anything else is up to you - though we encourage these patterns for discoverability.

@@ -21,10 +21,10 @@ public readonly struct LoggableInt32State : ILoggable, IEquatable<LoggableInt32S
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public int Value { get; }
+    public int Value { get; init; }
 
     /// <inheritdoc/>
-    public ILogger Logger { get; }
+    public ILogger Logger { get; init; }
 
     /// <summary>
     /// Conversion to int.
@@ -55,12 +55,12 @@ public readonly struct LoggableInt32State : ILoggable, IEquatable<LoggableInt32S
 
     public LoggableInt32State WithILogger(ILogger logger)
     {
-        return new(this.Value, logger);
+        return this with { Logger = logger };
     }
 
     public LoggableInt32State WithValue(int value)
     {
-        return new(value, this.Logger);
+        return this with { Value = value };
     }
 
     public bool Equals(LoggableInt32State other)

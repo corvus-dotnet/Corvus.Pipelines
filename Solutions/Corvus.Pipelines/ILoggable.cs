@@ -14,5 +14,5 @@ public interface ILoggable
     /// <summary>
     /// Gets the logger for the state.
     /// </summary>
-    ILogger Logger { get; }
+    ILogger Logger { get; init; }
 }

@@ -15,5 +15,5 @@ public interface ICanFail
     /// <summary>
     /// Gets the operation status.
     /// </summary>
-    PipelineStepStatus ExecutionStatus { get; }
+    PipelineStepStatus ExecutionStatus { get; init; }
 }

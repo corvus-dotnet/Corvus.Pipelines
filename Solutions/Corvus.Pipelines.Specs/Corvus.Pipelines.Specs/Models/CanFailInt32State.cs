@@ -18,9 +18,9 @@ public readonly struct CanFailInt32State : ICanFail, IEquatable<CanFailInt32Stat
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public int Value { get; }
+    public int Value { get; init; }
 
-    public PipelineStepStatus ExecutionStatus { get; }
+    public PipelineStepStatus ExecutionStatus { get; init;  }
 
     /// <summary>
     /// Conversion to int.
@@ -49,24 +49,9 @@ public readonly struct CanFailInt32State : ICanFail, IEquatable<CanFailInt32Stat
         return new(value, default);
     }
 
-    public CanFailInt32State PermanentFailure()
-    {
-        return new(this.Value, PipelineStepStatus.PermanentFailure);
-    }
-
-    public CanFailInt32State TransientFailure()
-    {
-        return new(this.Value, PipelineStepStatus.TransientFailure);
-    }
-
-    public CanFailInt32State Success()
-    {
-        return new(this.Value, PipelineStepStatus.Success);
-    }
-
     public CanFailInt32State WithValue(int value)
     {
-        return new(value, this.ExecutionStatus);
+        return this with { Value = value };
     }
 
     public bool Equals(CanFailInt32State other)

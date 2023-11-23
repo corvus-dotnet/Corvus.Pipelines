@@ -90,26 +90,6 @@ public class ExceptionVersusErrorBenchmark
 
     private readonly struct ErrorState : ICanFail
     {
-        private ErrorState(PipelineStepStatus executionStatus)
-        {
-            this.ExecutionStatus = executionStatus;
-        }
-
-        public PipelineStepStatus ExecutionStatus { get; }
-
-        public ErrorState PermanentFailure()
-        {
-            return new(PipelineStepStatus.PermanentFailure);
-        }
-
-        public ErrorState Success()
-        {
-            return new(PipelineStepStatus.Success);
-        }
-
-        public ErrorState TransientFailure()
-        {
-            return new(PipelineStepStatus.TransientFailure);
-        }
+        public PipelineStepStatus ExecutionStatus { get; init; }
     }
 }

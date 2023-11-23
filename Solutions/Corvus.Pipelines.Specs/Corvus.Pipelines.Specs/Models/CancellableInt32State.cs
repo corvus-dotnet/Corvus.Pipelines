@@ -18,9 +18,9 @@ public readonly struct CancellableInt32State : ICancellable<CancellableInt32Stat
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public int Value { get; }
+    public int Value { get; init;  }
 
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken { get; init;  }
 
     /// <summary>
     /// Conversion to int.
@@ -51,12 +51,12 @@ public readonly struct CancellableInt32State : ICancellable<CancellableInt32Stat
 
     public CancellableInt32State WithCancellationToken(CancellationToken cancellationToken)
     {
-        return new(this.Value, cancellationToken);
+        return this with { CancellationToken = cancellationToken };
     }
 
     public CancellableInt32State WithValue(int value)
     {
-        return new(value, this.CancellationToken);
+        return this with { Value = value };
     }
 
     public bool Equals(CancellableInt32State other)

@@ -2,8 +2,6 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Diagnostics.CodeAnalysis;
-
 using Corvus.Pipelines;
 
 using Microsoft.AspNetCore.Http;
@@ -25,9 +23,9 @@ namespace Corvus.YarpPipelines;
 /// <see cref="TerminateWith(NonForwardedResponseDetails)"/> a specific response code, headers and/or body.
 /// </remarks>
 public readonly struct YarpPipelineState :
-    ICanFail,
     ICancellable<YarpPipelineState>,
-    ILoggable
+    ILoggable,
+    IErrorDetails<YarpPipelineError>
 {
     private YarpPipelineState(RequestTransformContext requestTransformContext, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
@@ -79,20 +77,21 @@ public readonly struct YarpPipelineState :
     public CancellationToken CancellationToken { get; init; }
 
     /// <inheritdoc/>
-    public ILogger Logger { get; }
+    public ILogger Logger { get; init; }
+
+    /// <inheritdoc/>
+    public YarpPipelineError ErrorDetails { get; init; }
 
     /// <summary>
     /// Gets the YARP <see cref="RequestTransformContext"/>.
     /// </summary>
-    internal RequestTransformContext RequestTransformContext { get; }
+    internal RequestTransformContext RequestTransformContext { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
     /// terminate predicate for the <see cref="YarpPipeline"/>.
     /// </summary>
     internal bool ShouldTerminatePipeline => this.PipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
-
-    private YarpPipelineError ErrorDetails { get; init; }
 
     private TransformState PipelineState { get; init; }
 
@@ -172,51 +171,5 @@ public readonly struct YarpPipelineState :
 
         responseDetails = this.ResponseDetails;
         return false;
-    }
-
-    /// <summary>
-    /// Try to get the error details for the current state.
-    /// </summary>
-    /// <param name="errorDetails">The error details, if any.</param>
-    /// <returns><see langword="true"/> if error details were available, otherwise false.</returns>
-    public bool TryGetErrorDetails([NotNullWhen(true)] out YarpPipelineError errorDetails)
-    {
-        errorDetails = this.ErrorDetails;
-        return this.ExecutionStatus != PipelineStepStatus.Success;
-    }
-
-    /// <summary>
-    /// Update the state with a permanent failure.
-    /// </summary>
-    /// <param name="errorDetails">The error details associated with the failure.</param>
-    /// <returns>The updated state.</returns>
-    public YarpPipelineState PermanentFailure(YarpPipelineError errorDetails)
-    {
-        return this with { ExecutionStatus = PipelineStepStatus.PermanentFailure, ErrorDetails = errorDetails };
-    }
-
-    /// <summary>
-    /// Update the state with a transient failure.
-    /// </summary>
-    /// <param name="errorDetails">The error details associated with the failure.</param>
-    /// <returns>The updated state.</returns>
-    public YarpPipelineState TransientFailure(YarpPipelineError errorDetails)
-    {
-        return this with { ExecutionStatus = PipelineStepStatus.TransientFailure, ErrorDetails = errorDetails };
-    }
-
-    /// <summary>
-    /// Update the state for a successful execution.
-    /// </summary>
-    /// <returns>The updated state.</returns>
-    public YarpPipelineState Success()
-    {
-        return this with { ExecutionStatus = PipelineStepStatus.Success };
-    }
-
-    /// <inheritdoc/>
-    public YarpPipelineState WithCancellationToken(CancellationToken cancellationToken)
-    {
-        return this with { CancellationToken = cancellationToken };
     }
 }

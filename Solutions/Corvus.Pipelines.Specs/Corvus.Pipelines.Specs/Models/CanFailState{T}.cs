@@ -20,10 +20,10 @@ public readonly struct CanFailState<T> : ICanFail, IEquatable<CanFailState<T>>
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public T Value { get; }
+    public T Value { get; init; }
 
     /// <inheritdoc/>
-    public PipelineStepStatus ExecutionStatus { get; }
+    public PipelineStepStatus ExecutionStatus { get; init; }
 
     /// <summary>
     /// Conversion to value.
@@ -52,24 +52,9 @@ public readonly struct CanFailState<T> : ICanFail, IEquatable<CanFailState<T>>
         return new(value, default);
     }
 
-    public CanFailState<T> PermanentFailure()
-    {
-        return new(this.Value, PipelineStepStatus.PermanentFailure);
-    }
-
-    public CanFailState<T> TransientFailure()
-    {
-        return new(this.Value, PipelineStepStatus.TransientFailure);
-    }
-
-    public CanFailState<T> Success()
-    {
-        return new(this.Value, PipelineStepStatus.Success);
-    }
-
     public CanFailState<T> WithValue(T value)
     {
-        return new(value, this.ExecutionStatus);
+        return this with { Value = value };
     }
 
     public bool Equals(CanFailState<T> other)

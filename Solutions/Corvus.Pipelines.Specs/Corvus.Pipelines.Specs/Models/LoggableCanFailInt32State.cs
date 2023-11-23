@@ -21,13 +21,13 @@ public readonly struct LoggableCanFailInt32State : ICanFail, ILoggable, IEquatab
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public int Value { get; }
+    public int Value { get; init; }
 
     /// <inheritdoc/>
-    public PipelineStepStatus ExecutionStatus { get; }
+    public PipelineStepStatus ExecutionStatus { get; init; }
 
     /// <inheritdoc/>
-    public ILogger Logger { get; }
+    public ILogger Logger { get; init; }
 
     /// <summary>
     /// Conversion to int.

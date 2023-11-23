@@ -71,7 +71,7 @@ public static class ExampleYarpPipeline
                                 : AddMessageToHttpContext;
 
     private static readonly Func<YarpPipelineState, Exception, YarpPipelineState> CatchPipelineException =
-        static (state, exception) => state.TransientFailure(new("Unable to execute the pipeline.", exception));
+        static (state, exception) => state.TransientFailure(new YarpPipelineError("Unable to execute the pipeline.", exception));
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleRoot =
         static state => state.RequestSignature.Path == "/" // You can write in this style where we execute steps directly

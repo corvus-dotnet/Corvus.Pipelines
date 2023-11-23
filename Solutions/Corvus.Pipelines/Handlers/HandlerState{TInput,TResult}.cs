@@ -27,15 +27,13 @@ namespace Corvus.Pipelines.Handlers;
 /// On termination, you can inspect the resulting value using <see cref="WasHandled(out TResult)"/>.
 /// </para>
 /// </remarks>
-public readonly struct HandlerState<TInput, TResult> : ILoggable
+public readonly struct HandlerState<TInput, TResult>
+    : ILoggable
 {
-    private readonly TResult? result;
-    private readonly bool handled;
-
     private HandlerState(TInput input, TResult? result, bool handled, ILogger? logger)
     {
-        this.result = result;
-        this.handled = handled;
+        this.Result = result;
+        this.HandledIndicated = handled;
         this.Input = input;
         this.Logger = logger ?? NullLogger<HandlerState<TInput, TResult>>.Instance;
     }
@@ -43,10 +41,14 @@ public readonly struct HandlerState<TInput, TResult> : ILoggable
     /// <summary>
     /// Gets the input value for the handler.
     /// </summary>
-    public TInput Input { get; }
+    public TInput Input { get; init; }
 
     /// <inheritdoc/>
-    public ILogger Logger { get; }
+    public ILogger Logger { get; init; }
+
+    private TResult? Result { get; init; }
+
+    private bool HandledIndicated { get; init; }
 
     /// <summary>
     /// Creates an instance of the handler state for the given input value.
@@ -68,7 +70,7 @@ public readonly struct HandlerState<TInput, TResult> : ILoggable
     public HandlerState<TInput, TResult> Handled(TResult result)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "handled");
-        return new(this.Input, result, true, this.Logger);
+        return this with { Result = result, HandledIndicated = true };
     }
 
     /// <summary>
@@ -90,13 +92,13 @@ public readonly struct HandlerState<TInput, TResult> : ILoggable
     /// <returns><see langword="true"/> if the input value has been handled, otherwise <see langword="false"/>.</returns>
     public bool WasHandled([MaybeNullWhen(false)] out TResult result)
     {
-        result = this.result;
-        return this.handled;
+        result = this.Result;
+        return this.HandledIndicated;
     }
 
     /// <summary>
     /// Gets a value indicating whether the <see cref="HandlerPipeline"/> should terminate.
     /// </summary>
     /// <returns><see langword="true"/> if the pipeline should terminate.</returns>
-    internal bool ShouldTerminate() => this.handled;
+    internal bool ShouldTerminate() => this.HandledIndicated;
 }

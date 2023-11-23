@@ -95,7 +95,7 @@ public static class ExampleYarpPipelineWithLogging
                 }
             }
 
-            return state.TransientFailure(new("Unable to execute the pipeline.", exception));
+            return state.TransientFailure(new YarpPipelineError("Unable to execute the pipeline.", exception));
         };
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleRoot =

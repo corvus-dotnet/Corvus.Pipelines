@@ -18,18 +18,15 @@ namespace Corvus.Pipelines.AspNetCore;
 /// then choose to either <see cref="Continue()"/> processing, or <see cref="Complete()"/> the request.
 /// </remarks>
 public readonly struct HttpContextPipelineState :
-    ICanFail,
+    IErrorDetails<HttpContextPipelineError>,
     ICancellable<HttpContextPipelineState>,
     ILoggable
 {
-    private readonly RequestState pipelineState;
-    private readonly HttpContextPipelineError errorDetails;
-
     private HttpContextPipelineState(HttpContext httpContext, RequestState pipelineState, PipelineStepStatus executionStatus, HttpContextPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
         this.HttpContext = httpContext;
-        this.pipelineState = pipelineState;
-        this.errorDetails = errorDetails;
+        this.PipelineState = pipelineState;
+        this.ErrorDetails = errorDetails;
         this.ExecutionStatus = executionStatus;
         this.Logger = logger;
         this.CancellationToken = cancellationToken;
@@ -44,22 +41,27 @@ public readonly struct HttpContextPipelineState :
     /// <summary>
     /// Gets the <see cref="HttpContext"/> for the current request.
     /// </summary>
-    public HttpContext HttpContext { get; }
+    public HttpContext HttpContext { get; init; }
 
     /// <inheritdoc/>
-    public PipelineStepStatus ExecutionStatus { get; }
+    public PipelineStepStatus ExecutionStatus { get; init; }
 
     /// <inheritdoc/>
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken { get; init; }
 
     /// <inheritdoc/>
-    public ILogger Logger { get; }
+    public ILogger Logger { get; init; }
+
+    /// <inheritdoc/>
+    public HttpContextPipelineError ErrorDetails { get; init; }
 
     /// <summary>
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
     /// terminate predicate for the <see cref="HttpContextPipeline"/>.
     /// </summary>
-    internal bool ShouldTerminatePipeline => this.pipelineState != RequestState.Continue || this.CancellationToken.IsCancellationRequested;
+    internal bool ShouldTerminatePipeline => this.PipelineState != RequestState.Continue || this.CancellationToken.IsCancellationRequested;
+
+    private RequestState PipelineState { get; init; }
 
     /// <summary>
     /// Gets an instance of the <see cref="HttpContextPipelineState"/> for a particular
@@ -86,7 +88,7 @@ public readonly struct HttpContextPipelineState :
     public HttpContextPipelineState Complete()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "complete");
-        return new(this.HttpContext, RequestState.Terminate, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
+        return this with { PipelineState = RequestState.Terminate };
     }
 
     /// <summary>
@@ -96,76 +98,6 @@ public readonly struct HttpContextPipelineState :
     public HttpContextPipelineState Continue()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "continue");
-        return new(this.HttpContext, RequestState.Continue, this.ExecutionStatus, this.errorDetails, this.Logger, this.CancellationToken);
-    }
-
-    /// <summary>
-    /// Try to get the error details for the current state.
-    /// </summary>
-    /// <param name="errorDetails">The error details, if any.</param>
-    /// <returns><see langword="true"/> if error details were available, otherwise false.</returns>
-    public bool TryGetErrorDetails([NotNullWhen(true)] out HttpContextPipelineError errorDetails)
-    {
-        errorDetails = this.errorDetails;
-        return this.ExecutionStatus != PipelineStepStatus.Success;
-    }
-
-    /// <summary>
-    /// Update the state with a permanent failure.
-    /// </summary>
-    /// <param name="errorDetails">The error details associated with the failure.</param>
-    /// <returns>The updated state.</returns>
-    public HttpContextPipelineState PermanentFailure(HttpContextPipelineError errorDetails)
-    {
-        return new HttpContextPipelineState(
-            this.HttpContext,
-            this.pipelineState,
-            PipelineStepStatus.PermanentFailure,
-            errorDetails,
-            this.Logger,
-            this.CancellationToken);
-    }
-
-    /// <summary>
-    /// Update the state with a transient failure.
-    /// </summary>
-    /// <param name="errorDetails">The error details associated with the failure.</param>
-    /// <returns>The updated state.</returns>
-    public HttpContextPipelineState TransientFailure(HttpContextPipelineError errorDetails)
-    {
-        return new HttpContextPipelineState(
-            this.HttpContext,
-            this.pipelineState,
-            PipelineStepStatus.TransientFailure,
-            errorDetails,
-            this.Logger,
-            this.CancellationToken);
-    }
-
-    /// <summary>
-    /// Update the state for a successful execution.
-    /// </summary>
-    /// <returns>The updated state.</returns>
-    public HttpContextPipelineState Success()
-    {
-        return new HttpContextPipelineState(
-            this.HttpContext,
-            this.pipelineState,
-            PipelineStepStatus.Success,
-            default,
-            this.Logger,
-            this.CancellationToken);
-    }
-
-    /// <inheritdoc/>
-    public HttpContextPipelineState WithCancellationToken(CancellationToken cancellationToken)
-    {
-        return new HttpContextPipelineState(
-            this.HttpContext,
-            this.pipelineState,
-            this.ExecutionStatus,
-            this.errorDetails,
-            this.Logger,
-            cancellationToken);
+        return this with { PipelineState = RequestState.Continue };
     }
 }
