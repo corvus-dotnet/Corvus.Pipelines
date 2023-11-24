@@ -1,11 +1,19 @@
 ﻿using Corvus.Pipelines;
 using Corvus.Pipelines.Handlers;
+using ReadMe;
+
+// ## What are steps?
+Console.WriteLine("## What are steps?");
 
 SyncPipelineStep<int> addOne = static state => state + 1;
 
 int result = addOne(1);
 
 Console.WriteLine(result);
+
+// ## Composing steps into a pipeline
+Console.WriteLine();
+Console.WriteLine("## Composing steps into a pipeline");
 
 SyncPipelineStep<int> syncPipeline = Pipeline.Build<int>(
     static state => state + 1,
@@ -15,6 +23,10 @@ SyncPipelineStep<int> syncPipeline = Pipeline.Build<int>(
 result = syncPipeline(1);
 
 Console.WriteLine(result);
+
+// ## Sync and Async steps
+Console.WriteLine();
+Console.WriteLine("## Sync and Async steps");
 
 PipelineStep<int> asyncPipeline = Pipeline.Build<int>(
     static async state =>
@@ -34,6 +46,10 @@ result = await asyncPipeline(1);
 
 Console.WriteLine(result);
 
+// ## Termination
+Console.WriteLine();
+Console.WriteLine("## Termination");
+
 SyncPipelineStep<int> terminatingPipeline = Pipeline.Build(
     shouldTerminate: state => state > 25,
     CommonSteps.MultiplyBy5,
@@ -48,6 +64,9 @@ result = terminatingPipeline(6);
 
 Console.WriteLine(result);
 
+// ## Branching
+Console.WriteLine();
+Console.WriteLine("## Branching");
 
 SyncPipelineStep<decimal> chooseDiscount =
     Pipeline.Choose(
@@ -76,6 +95,22 @@ value = invoicePipeline(100m);
 
 Console.WriteLine(value);
 
+// ### Bind: a simple but powerful operator
+Console.WriteLine();
+Console.WriteLine("### Bind: a simple but powerful operator");
+
+SyncPipelineStep<decimal> applyHighDiscountAndSalesTax =
+       InvoiceSteps.ApplyHighDiscount.Bind(InvoiceSteps.ApplySalesTax);
+
+value = applyHighDiscountAndSalesTax(1000);
+
+Console.WriteLine(value);
+
+
+// ## Pipelines and Handlers
+Console.WriteLine();
+Console.WriteLine("## Pipelines and Handlers");
+
 string productId = "Catalog2_Product2";
 
 HandlerState<string, decimal> pricingResult =
@@ -93,6 +128,10 @@ else
 {
     Console.WriteLine("was not priced");
 }
+
+// ### Example: binding to a handler pipeline
+Console.WriteLine();
+Console.WriteLine("### Example: binding to a handler pipeline");
 
 SyncPipelineStep<ProductPrice> lookupProductPrice =
     PricingCatalogs.PricingHandler.Bind(
@@ -119,6 +158,10 @@ Console.WriteLine(productPricingResult);
 productPricingResult = lookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
 
 Console.WriteLine(productPricingResult);
+
+// ### When to use Bind(), and when to build custom operators?
+Console.WriteLine();
+Console.WriteLine("### When to use Bind(), and when to build custom operators?");
 
 static SyncPipelineStep<TState> ChooseWithHandlerPipeline<TState>(
     SyncPipelineStep<TState> notHandled,
@@ -156,6 +199,14 @@ value = invoicePipeline(100m);
 
 Console.WriteLine(value);
 
+// ## Handling exceptions with Catch()
+Console.WriteLine();
+Console.WriteLine("## Handling exceptions with Catch()");
+
+productPricingResult = lookupPriceAndDiscount(new ProductPrice("You won't find me!", null));
+
+Console.WriteLine(productPricingResult);
+
 SyncPipelineStep<ProductPrice> saferDiscountProductPrice =
     invoicePipeline.Bind(
         (ProductPrice state) => state.Price ?? throw new InvalidOperationException("The base price was null."),
@@ -186,76 +237,40 @@ productPricingResult = safestLookupPriceAndDiscount(new ProductPrice("You won't 
 
 Console.WriteLine(productPricingResult);
 
+// ## Value Provider
+Console.WriteLine();
+Console.WriteLine("## Value Provider");
 
-readonly record struct ProductPrice(string ProductId, decimal? Price);
 
-static class CommonSteps
-{
-    public static SyncPipelineStep<int> MultiplyBy5 =
-        state => state * 5;
-}
+var stateWithValue = StateWithValue.For(12m);
 
-static class InvoiceSteps
-{
-    public static SyncPipelineStep<decimal> ApplyLowDiscount =
-        state => Math.Ceiling(state * 100 * 0.8m) / 100;
-    public static SyncPipelineStep<decimal> ApplyHighDiscount =
-        state => Math.Ceiling(state * 100 * 0.7m) / 100;
-    public static SyncPipelineStep<decimal> ApplySalesTax =
-        state => Math.Ceiling(state * 100 * 1.2m) / 100;
-}
+Console.WriteLine(stateWithValue.Value);
 
-static class DiscountHandlers
-{
-    public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleHighDiscount =
-        state => state.Input > 1000m ? state.Handled(InvoiceSteps.ApplyHighDiscount) : state.NotHandled();
+stateWithValue = stateWithValue.WithValue(20m);
 
-    public static SyncPipelineStep<HandlerState<decimal, SyncPipelineStep<decimal>>> HandleLowDiscount =
-        state => state.Input > 500m ? state.Handled(InvoiceSteps.ApplyLowDiscount) : state.NotHandled();
-}
+Console.WriteLine(stateWithValue.Value);
 
-static class PricingCatalogs
-{
-    public static SyncPipelineStep<HandlerState<string, decimal>>
-        PricingCatalog1 =
-            state =>
-            {
-                return state.Input switch
-                {
-                    "Catalog1_Product1" => state.Handled(99.99m),
-                    "Catalog1_Product2" => state.Handled(20.99m),
-                    _ => state.NotHandled(),
-                };
-            };
+stateWithValue = stateWithValue with { Value = 25m };
 
-    public static SyncPipelineStep<HandlerState<string, decimal>>
-        PricingCatalog2 =
-            state =>
-            {
-                return state.Input switch
-                {
-                    "Catalog2_Product1" => state.Handled(1.99m),
-                    "Catalog2_Product2" => state.Handled(3.99m),
-                    _ => state.NotHandled(),
-                };
-            };
+Console.WriteLine(stateWithValue.Value);
 
-    public static SyncPipelineStep<HandlerState<string, decimal>>
-        PricingCatalog3 =
-            state =>
-            {
-                return state.Input switch
-                {
-                    "Catalog3_ProductA" => state.Handled(12.99m),
-                    "Catalog3_ProductB" => state.Handled(21.99m),
-                    _ => state.NotHandled(),
-                };
-            };
+// ## Can Fail
+Console.WriteLine();
+Console.WriteLine("## Can Fail");
 
-    public static SyncPipelineStep<HandlerState<string, decimal>>
-        PricingHandler =
-            HandlerPipeline.Build(
-                PricingCatalog1,
-                PricingCatalog2,
-                PricingCatalog3);
-}
+
+var stateCanFail = CanFailState.For(12m);
+
+Console.WriteLine($"{stateCanFail.Value} : {stateCanFail.ExecutionStatus}");
+
+stateCanFail = stateCanFail.PermanentFailure();
+
+Console.WriteLine($"{stateCanFail.Value} : {stateCanFail.ExecutionStatus}");
+
+stateCanFail = stateCanFail.TransientFailure();
+
+Console.WriteLine($"{stateCanFail.Value} : {stateCanFail.ExecutionStatus}");
+
+stateCanFail = stateCanFail.Success();
+
+Console.WriteLine($"{stateCanFail.Value} : {stateCanFail.ExecutionStatus}");

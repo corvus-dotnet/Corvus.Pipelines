@@ -13,7 +13,6 @@ namespace ReadMe;
 public readonly struct CanFailState<T> :
     IValueProvider<T>,
     ICanFail
-    where T : notnull
 {
     private CanFailState(T value, PipelineStepStatus executionStatus)
     {
@@ -21,16 +20,22 @@ public readonly struct CanFailState<T> :
         this.ExecutionStatus = executionStatus;
     }
 
-    /// <summary>
-    /// Gets the value of the state.
-    /// </summary>
+    /// <inheritdoc/>
     public T Value { get; init;  }
 
     /// <inheritdoc/>
     public PipelineStepStatus ExecutionStatus { get; init; }
 
-    public static CanFailState<T> For(T value)
+    internal static CanFailState<T> For(T value)
     {
         return new(value, default);
+    }
+}
+
+public static class CanFailState
+{
+    public static CanFailState<T> For<T>(T value)
+    {
+        return CanFailState<T>.For(value);
     }
 }
