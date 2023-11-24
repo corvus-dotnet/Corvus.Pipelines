@@ -69,7 +69,7 @@ public readonly struct HandlerState<TInput, TResult>
     /// <returns>The <see cref="HandlerState{TInput, TResult}"/> with the given result value.</returns>
     public HandlerState<TInput, TResult> Handled(TResult result)
     {
-        this.Logger.LogInformation(Pipeline.EventIds.Result, "{handlerStatus}", "handled");
+        this.Logger.LogInformation(Pipeline.EventIds.Result, "handled");
         return this with { Result = result, HandledIndicated = true };
     }
 
@@ -80,7 +80,7 @@ public readonly struct HandlerState<TInput, TResult>
     /// <returns>The unchanged <see cref="HandlerState{TInput, TResult}"/>.</returns>
     public HandlerState<TInput, TResult> NotHandled()
     {
-        this.Logger.LogInformation(Pipeline.EventIds.Result, "{handlerStatus}", "not-handled");
+        this.Logger.LogInformation(Pipeline.EventIds.Result, "not-handled");
         return this;
     }
 

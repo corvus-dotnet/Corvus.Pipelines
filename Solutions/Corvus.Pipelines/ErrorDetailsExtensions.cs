@@ -38,7 +38,7 @@ public static class ErrorDetailsExtensions
     /// <param name="errorDetails">The error details, if any.</param>
     /// <returns>The updated state.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TState TransientFailure<TState, TErrorDetails>(this TState capability, TErrorDetails errorDetails)
+    public static TState TransientFailure<TState, TErrorDetails>(this TState capability, in TErrorDetails errorDetails)
         where TState : struct, IErrorDetails<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
@@ -54,7 +54,7 @@ public static class ErrorDetailsExtensions
     /// <param name="errorDetails">The error details, if any.</param>
     /// <returns>The updated state.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TState PermanentFailure<TState, TErrorDetails>(this TState capability, TErrorDetails errorDetails)
+    public static TState PermanentFailure<TState, TErrorDetails>(this TState capability, in TErrorDetails errorDetails)
         where TState : struct, IErrorDetails<TState, TErrorDetails>
         where TErrorDetails : notnull
     {

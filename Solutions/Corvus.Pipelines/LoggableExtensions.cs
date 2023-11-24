@@ -22,7 +22,7 @@ public static class LoggableExtensions
     /// <param name="message">The message format for the log event.</param>
     /// <param name="args">The arguments to format with the message.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Log<TState>(this TState state, LogLevel level, EventId eventId, string message, params object?[] args)
+    public static void Log<TState>(this TState state, LogLevel level, in EventId eventId, string message, params object?[] args)
         where TState : struct, ILoggable<TState>
     {
 #pragma warning disable CA2254 // Template should be a static expression
