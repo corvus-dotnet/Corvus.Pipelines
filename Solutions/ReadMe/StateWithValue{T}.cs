@@ -7,7 +7,7 @@ using Corvus.Pipelines;
 namespace ReadMe;
 
 public readonly struct StateWithValue<T> :
-    IValueProvider<T>
+    IValueProvider<StateWithValue<T>, T>
 {
     private StateWithValue(T value)
     {

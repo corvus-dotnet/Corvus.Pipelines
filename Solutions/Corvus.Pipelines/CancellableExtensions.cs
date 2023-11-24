@@ -14,14 +14,14 @@ public static class CancellableExtensions
     /// <summary>
     /// Returns a version of the state augmented with a cancellation token.
     /// </summary>
-    /// <typeparam name="TCapability">The type of the <see cref="ICancellable{TState}"/> capability.</typeparam>
-    /// <param name="capability">The cancellable state.</param>
+    /// <typeparam name="TState">The type of the <see cref="ICancellable{TState}"/> capability.</typeparam>
+    /// <param name="state">The cancellable state.</param>
     /// <param name="cancellationToken">The cancellation token which will be used to signal cancellation.</param>
     /// <returns>The state, with the cancellation token set.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static TCapability WithCancellationToken<TCapability>(this TCapability capability, CancellationToken cancellationToken)
-        where TCapability : struct, ICancellable<TCapability>
+    public static TState WithCancellationToken<TState>(this TState state, CancellationToken cancellationToken)
+        where TState : struct, ICancellable<TState>
     {
-        return capability with { CancellationToken = cancellationToken };
+        return state with { CancellationToken = cancellationToken };
     }
 }

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Corvus.Pipelines;
 
 /// <summary>
-/// Extensions for <see cref="ILoggable"/>.
+/// Extensions for <see cref="ILoggable{TSelf}"/>.
 /// </summary>
 public static class LoggableExtensions
 {
@@ -23,7 +23,7 @@ public static class LoggableExtensions
     /// <param name="args">The arguments to format with the message.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Log<TState>(this TState state, LogLevel level, EventId eventId, string message, params object?[] args)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
 #pragma warning disable CA2254 // Template should be a static expression
         if (state.Logger.IsEnabled(level))

@@ -251,7 +251,7 @@ public static class PipelineStepExtensions
     /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
-    /// <see cref="ICanFail"/> step with permanent or transient failure handling via
+    /// <see cref="ICanFail{TSelf}"/> step with permanent or transient failure handling via
     /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
     /// <see cref="OnError{TState}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
@@ -282,7 +282,7 @@ public static class PipelineStepExtensions
     /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
-    /// <see cref="ICanFail"/> step with permanent or transient failure handling via
+    /// <see cref="ICanFail{TSelf}"/> step with permanent or transient failure handling via
     /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
     /// <see cref="OnError{TState}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
@@ -313,7 +313,7 @@ public static class PipelineStepExtensions
     /// <returns>A step which wraps the input step, and provides the exception handling capability.</returns>
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
-    /// <see cref="ICanFail"/> step with permanent or transient failure handling via
+    /// <see cref="ICanFail{TSelf}"/> step with permanent or transient failure handling via
     /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
     /// <see cref="OnError{TState}(SyncPipelineStep{TState}, SyncPipelineStep{TState})"/>.
     /// </remarks>
@@ -345,7 +345,7 @@ public static class PipelineStepExtensions
     /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
     /// and execute it using the result.</returns>
     public static PipelineStep<TState> Retry<TState>(this PipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, PipelineStep<RetryContext<TState>>? beforeRetry = null)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return async state =>
         {
@@ -390,7 +390,7 @@ public static class PipelineStepExtensions
     /// <returns>A <see cref="SyncPipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
     /// and execute it using the result.</returns>
     public static SyncPipelineStep<TState> Retry<TState>(this SyncPipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, SyncPipelineStep<RetryContext<TState>>? beforeRetry = null)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return state =>
         {
@@ -435,7 +435,7 @@ public static class PipelineStepExtensions
     public static PipelineStep<TState> OnError<TState>(
         this PipelineStep<TState> step,
         PipelineStep<TState> onError)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return step.Bind(state =>
         {
@@ -459,7 +459,7 @@ public static class PipelineStepExtensions
     public static PipelineStep<TState> OnError<TState>(
         this PipelineStep<TState> step,
         SyncPipelineStep<TState> onError)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return step.Bind(state =>
         {
@@ -483,7 +483,7 @@ public static class PipelineStepExtensions
     public static SyncPipelineStep<TState> OnError<TState>(
         this SyncPipelineStep<TState> step,
         SyncPipelineStep<TState> onError)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return step.Bind(state =>
         {

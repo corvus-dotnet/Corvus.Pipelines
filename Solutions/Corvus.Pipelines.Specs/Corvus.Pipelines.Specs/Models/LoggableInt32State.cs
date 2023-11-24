@@ -11,8 +11,8 @@ namespace Corvus.Pipelines.Specs.Models;
 /// A loggable state object over an <see langword="int"/>.
 /// </summary>
 public readonly struct LoggableInt32State :
-    IValueProvider<int>,
-    ILoggable,
+    IValueProvider<LoggableInt32State, int>,
+    ILoggable<LoggableInt32State>,
     IEquatable<LoggableInt32State>
 {
     private LoggableInt32State(int value, ILogger logger)

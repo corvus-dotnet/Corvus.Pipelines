@@ -17,7 +17,7 @@ public static class Retry
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <returns>A <see cref="Predicate{RetryContext}"/> which returns <see langword="true"/> if the operation can be retried.</returns>
     public static Predicate<RetryContext<TState>> TransientPolicy<TState>()
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return retryContext => retryContext.State.ExecutionStatus == PipelineStepStatus.TransientFailure;
     }
@@ -29,7 +29,7 @@ public static class Retry
     /// <param name="maxTotalDuration">The maximum total duration of the retry.</param>
     /// <returns>A <see cref="Predicate{RetryContext}"/> which returns <see langword="true"/> if the operation can be retried.</returns>
     public static Predicate<RetryContext<TState>> DurationPolicy<TState>(TimeSpan maxTotalDuration)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return retryContext => retryContext.RetryDuration < maxTotalDuration;
     }
@@ -41,7 +41,7 @@ public static class Retry
     /// <param name="count">The number of times to retry.</param>
     /// <returns>A <see cref="Predicate{RetryContext}"/> which returns <see langword="true"/> if the operation can be retried.</returns>
     public static Predicate<RetryContext<TState>> CountPolicy<TState>(int count)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
     {
         return retryContext => retryContext.FailureCount < count;
     }
@@ -52,7 +52,7 @@ public static class Retry
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <returns>A <see cref="SyncPipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
     public static PipelineStep<RetryContext<TState>> LogStrategy<TState>()
-        where TState : struct, ILoggable, ICanFail
+        where TState : struct, ILoggable<TState>, ICanFail<TState>
         => static retryContext =>
             {
                 if (retryContext.State.Logger.IsEnabled(LogLevel.Information))
@@ -69,7 +69,7 @@ public static class Retry
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <returns>A <see cref="SyncPipelineStep{RetryContext}"/> that can log the details of a retry operation.</returns>
     public static SyncPipelineStep<RetryContext<TState>> LogStrategySync<TState>()
-        where TState : struct, ILoggable, ICanFail
+        where TState : struct, ILoggable<TState>, ICanFail<TState>
         => static retryContext =>
         {
             if (retryContext.State.Logger.IsEnabled(LogLevel.Information))
@@ -87,7 +87,7 @@ public static class Retry
     /// <param name="duration">The fixed duration to delay before retrying.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<TState>> FixedDelayStrategy<TState>(TimeSpan duration)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
         => async retryContext =>
         {
             await Task.Delay(duration).ConfigureAwait(false);
@@ -103,7 +103,7 @@ public static class Retry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<TState>> LinearDelayStrategy<TState>(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
         => async retryContext =>
         {
             TimeSpan desiredIncrement = initialDuration + ((retryContext.FailureCount - 1) * increment);
@@ -126,7 +126,7 @@ public static class Retry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
     public static PipelineStep<RetryContext<TState>> ExponentialDelayStrategy<TState>(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
         => async retryContext =>
         {
             TimeSpan desiredIncrement = initialDuration + (Math.Pow(2, retryContext.FailureCount - 1) * increment);
@@ -148,7 +148,7 @@ public static class Retry
     /// <param name="rhs">The rhs of the AND operator.</param>
     /// <returns>A <see cref="Predicate{RetryContext}"/> that represents <c>lhs AND rhs</c>.</returns>
     public static Predicate<RetryContext<TState>> And<TState>(this Predicate<RetryContext<TState>> lhs, Predicate<RetryContext<TState>> rhs)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
         => retryContext => lhs(retryContext) && rhs(retryContext);
 
     /// <summary>
@@ -159,7 +159,7 @@ public static class Retry
     /// <param name="rhs">The rhs of the AND operator.</param>
     /// <returns>A <see cref="Predicate{RetryContext}"/> that represents <c>lhs AND rhs</c>.</returns>
     public static Predicate<RetryContext<TState>> Or<TState>(this Predicate<RetryContext<TState>> lhs, Predicate<RetryContext<TState>> rhs)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
         => retryContext => lhs(retryContext) || rhs(retryContext);
 
     /// <summary>
@@ -169,6 +169,6 @@ public static class Retry
     /// <param name="predicate">The predicate to NOT.</param>
     /// <returns>A <see cref="Predicate{RetryContext}"/> that represents <c>NOT lhs</c>.</returns>
     public static Predicate<RetryContext<TState>> Not<TState>(this Predicate<RetryContext<TState>> predicate)
-        where TState : struct, ICanFail
+        where TState : struct, ICanFail<TState>
         => retryContext => !predicate(retryContext);
 }

@@ -11,8 +11,8 @@ namespace ReadMe;
 /// </summary>
 /// <typeparam name="T">The type of the value.</typeparam>
 public readonly struct CanFailState<T> :
-    IValueProvider<T>,
-    ICanFail
+    IValueProvider<CanFailState<T>, T>,
+    ICanFail<CanFailState<T>>
 {
     private CanFailState(T value, PipelineStepStatus executionStatus)
     {

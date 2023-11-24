@@ -12,4 +12,4 @@ namespace Corvus.Pipelines;
 /// <param name="RetryDuration">The total duration of the retried operation.</param>
 /// <param name="FailureCount">The total number of failures experienced during the retry operation.</param>
 public readonly record struct RetryContext<TState>(TState State, TimeSpan RetryDuration, int FailureCount)
-    where TState : struct, ICanFail;
+    where TState : struct, ICanFail<TState>;

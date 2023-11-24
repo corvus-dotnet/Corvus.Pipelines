@@ -28,7 +28,7 @@ namespace Corvus.Pipelines.Handlers;
 /// </para>
 /// </remarks>
 public readonly struct HandlerState<TInput, TResult>
-    : ILoggable
+    : ILoggable<HandlerState<TInput, TResult>>
 {
     private HandlerState(TInput input, TResult? result, bool handled, ILogger? logger)
     {
@@ -54,7 +54,7 @@ public readonly struct HandlerState<TInput, TResult>
     /// Creates an instance of the handler state for the given input value.
     /// </summary>
     /// <param name="input">The input value.</param>
-    /// <param name="logger">The (optional) <see cref="ILoggable"/> instance.</param>
+    /// <param name="logger">The (optional) <see cref="ILoggable{TSelf}"/> instance.</param>
     /// <returns>The <see cref="HandlerState{TInput, TResult}"/> for the input value.</returns>
     public static HandlerState<TInput, TResult> For(TInput input, ILogger? logger = null)
     {

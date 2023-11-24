@@ -88,7 +88,7 @@ public class ExceptionVersusErrorBenchmark
         return result.ExecutionStatus == PipelineStepStatus.Success;
     }
 
-    private readonly struct ErrorState : ICanFail
+    private readonly struct ErrorState : ICanFail<ErrorState>
     {
         public PipelineStepStatus ExecutionStatus { get; init; }
     }

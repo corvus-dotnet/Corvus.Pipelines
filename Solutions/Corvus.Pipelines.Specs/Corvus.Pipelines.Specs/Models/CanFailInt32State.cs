@@ -8,8 +8,8 @@ namespace Corvus.Pipelines.Specs.Models;
 /// A loggable state object over an <see langword="int"/>.
 /// </summary>
 public readonly struct CanFailInt32State :
-    IValueProvider<int>,
-    ICanFail,
+    IValueProvider<CanFailInt32State, int>,
+    ICanFail<CanFailInt32State>,
     IEquatable<CanFailInt32State>
 {
     private CanFailInt32State(int value, PipelineStepStatus executionStatus)

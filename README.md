@@ -18,7 +18,7 @@ The library helps you to build programs dynamically (i.e. at runtime) out of pre
 
 Those functional components are themselves stateless, and so can be reused without dynamic (re-)compilation/allocations etc.
 
-It is useful when you want to be able to be able declaratively define the way in which a system responds to input, while dynamically adapating the processing to both the input state, and/or other environmental conditions.
+It is useful when you want to be able to be able declaratively define the way in which a system responds to input, while dynamically adapting the processing to both the input state, and/or other environmental conditions.
 
 It also supports moving (relatively) seamlessly from synchronous to asynchronous contexts, with minimal overhead, making it ideal for request processing and data scenarios where we frequently mix async processing (e.g. calling external services to augment our state) with synchronous processing (operating on our in-memory domain model).
 
@@ -77,7 +77,7 @@ This is what ensures, as with LINQ-to-objects, that TPL Dataflow (and [Parallel 
 
 ### A: Probably not, no...
 
-This is not intended for coarse-grained, highly parallizable data processing, where you are trying to execute large, in-memory workloads that consume all the resources on multi-processor machines.
+This is not intended for coarse-grained, highly parallelizable data processing, where you are trying to execute large, in-memory workloads that consume all the resources on multi-processor machines.
 
 Instead, it is geared towards executing many pipelines:
 
@@ -347,7 +347,7 @@ step3-->step4
 
 ```
 
-> I've not illustrated the state in this daigram; you can assume it flows in and out of the steps in the usual way, along the arrows.
+> I've not illustrated the state in this diagram; you can assume it flows in and out of the steps in the usual way, along the arrows.
 
 This diagram illustrates a case where we execute `step1`  and `step2`, then, based on the state at that point (and maybe other things available to us in our execution environment), we choose to execute either `path1`, `path2`, or `path3`, the result of which is fed into step 3.
 
@@ -448,7 +448,7 @@ We call this kind of a function an [operator](./docs/ubiquitous-language.md#oper
 
 ## Applying operators
 
-We'll start with a definition, introduce some new notation for our digrams, then move on to an example.
+We'll start with a definition, introduce some new notation for our diagrams, then move on to an example.
 
 ### Definition
 
@@ -505,14 +505,15 @@ flowchart LR
 Here's an example using our invoicing steps.
 
 ```csharp
-SyncPipelineStep<decimal> applyHighDiscountAndSalesTax = InvoiceSteps.ApplyHighDiscount.Bind(InvoiceSteps.ApplySalesTax);
+SyncPipelineStep<decimal> applyHighDiscountAndSalesTax =
+    InvoiceSteps.ApplyHighDiscount.Bind(InvoiceSteps.ApplySalesTax);
 ```
 
 We can now execute this step and it is the equivalent of executing each of the previous steps in turn.
 
 ```csharp
 // (1000 * 0.7) * 1.2 = 840
-var result = InvoiceSteps.ApplyHighDiscountAndSalesTax(1000);
+value = applyHighDiscountAndSalesTax(1000);
 ```
 
 Notice that `Bind()` *does not* execute the step there and then. It produces a step which _can be_ executed as part of a pipeline. That is the essential distinction between an operator, and a step.
@@ -811,7 +812,7 @@ style unwrap stroke-dasharray: 5 5
 
 ```
 
-> We've used a dashed rectangle to indicate a function that is neither a step, nor a predictate/conditional.
+> We've used a dashed rectangle to indicate a function that is neither a step, nor a predicate/conditional.
 
 The first function (`wrap`) takes the value return by `step1` (an instance of `TState`), and returns an instance of the type required by `step2` (`TInnerState`).
 
@@ -843,7 +844,7 @@ Let's consider a type representing a product and its price
 public readonly record struct ProductPrice(string ProductId, decimal? Price);
 ```
 
-You'll remember that we have our invoice pipleline that can apply a discount and add sales tax to a price:
+You'll remember that we have our invoice pipeline that can apply a discount and add sales tax to a price:
 
 ```csharp
 SyncPipelineStep<decimal> invoicePipeline =
@@ -1076,7 +1077,7 @@ Fortunately, we have an operator that can deal with that: `Catch()`
 
 This operator can be attached to the pipeline at any point, and it can catch an exception of any given type.
 
-Here's an example attatching the exception handler at the top of the pipeline:
+Here's an example attaching the exception handler at the top of the pipeline:
 
 ```csharp
 SyncPipelineStep<ProductPrice> safestLookupPriceAndDiscount =
@@ -1130,7 +1131,7 @@ There are two ways libraries commonly deal with those kinds of failures - and Mi
 
     Others (e.g. Azure Storage SDK) give you APIs that throw Exceptions corresponding to non-success scenarios, and status codes for success.
 
-While it is easy to understand the "convenience" of the second choice, there's a philosopical mismatch. The whole design concept behind dotnet exceptions is that they should be for *exceptional* circumstances.
+While it is easy to understand the "convenience" of the second choice, there's a philosophical mismatch. The whole design concept behind dotnet exceptions is that they should be for *exceptional* circumstances.
 
 Is it really exceptional when a distributed resource is temporarily unavailable and asking you to back off before retrying? Or, perhaps even more obviously, is it exceptional when you ask to write a resource only if its ETag matches the one you read, and it has been updated?
 
@@ -1149,6 +1150,8 @@ So, in **Corvus.Pipelines** we offer a mechanism that has the ease of use of exc
 
 To do that, your pipeline state needs to opt in to a [capability](./docs/ubiquitous-language.md#capability) called `ICanFail`.
 
+We've mentioned capabilities before, but this is the first time we get to explore them in detail.
+
 ## Capabilities
 
 As usual, we'll start with a definition. What is a capability?
@@ -1162,11 +1165,8 @@ In **Corvus.Pipelines**, capabilities are defined by interfaces implemented by s
 One very simple capability is the _value provider_, exposed through the `IValueProvider` interface.
 
 ```csharp
-/// <summary>
-/// Add a single value to a state.
-/// </summary>
-/// <typeparam name="TValue">The type of the value to provide.</typeparam>
-public interface IValueProvider<TValue>
+public interface IValueProvider<TSelf, TValue>
+    where TSelf : struct, IValueProvider<TSelf, TValue>
 {
     /// <summary>
     /// Gets the value.
@@ -1175,17 +1175,11 @@ public interface IValueProvider<TValue>
 }
 ```
 
+> You may notice that we are declaring an `init` property in our interface, which is somewhat unusual! We do this because our capability interface is *always* applied to a `readonly struct` and applying this constraint ensures that our property participates in the clone-ability/`with` semantics we use later.
+
 Capabilities are usually accompanied by either extension methods that update the state, or operators that use the capability, and `IValueProvider` is no exception.
 
 ```csharp
-    /// <summary>
-    /// Updates the value of the state.
-    /// </summary>
-    /// <typeparam name="TState">The type of the <see cref="IValueProvider{TValue}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of the value in the state.</typeparam>
-    /// <param name="state">The state to update.</param>
-    /// <param name="value">The new value for the state.</param>
-    /// <returns>The value of the state.</returns>
     public static TState WithValue<TState, TValue>(this TState state, TValue value)
         where TState : struct, IValueProvider<TValue>
     {
@@ -1201,7 +1195,7 @@ So, if we want a state that exposes a Value, this is a good place to start.
 
 ```csharp
 public readonly struct StateWithValue<T> :
-    IValueProvider<T>
+    IValueProvider<StateWithValue<T>, T>
 {
     public StateWithValue(T value)
     {
@@ -1215,11 +1209,13 @@ public readonly struct StateWithValue<T> :
 }
 ```
 
+> Notice that the `IValueProvider` interface requires the implementing type as its first parameter. This is common to all capabilities.
+
 Conventionally, we don't expose our primary constructor directly - we make it private, and expose a `For(...)` method that only includes publicly visible elements of the state. You'll see why we do this later, but for now, let's make those changes.
 
 ```csharp
 public readonly struct StateWithValue<T> :
-    IValueProvider<T>
+    IValueProvider<StateWithValue<T>, T>
 {
     private StateWithValue(T value)
     {
@@ -1270,16 +1266,17 @@ stateWithValue = stateWithValue with { Value = 25m };
 
 This is more verbose, and less semantically specific: we are trying to conceptually constrain the actions you carry out on the state. However, you can choose according to your own preferences.
 
-So, that's a very simple (almost trivial!) capabilty.
+So, that's a very simple (almost trivial!) capability.
 
-What about the _CanFail_ capability?
+What about the _can fail_ capability?
 
 ## Can Fail
 
-The _CanFail_ capability is embodied in the (rather happily named) `ICanFail` interface.
+The _can fail_ capability is embodied in the (rather happily named) `ICanFail` interface.
 
 ```csharp
-public interface ICanFail
+public interface ICanFail<TSelf>
+    where TSelf : struct, ICanFail<TSelf>
 {
     /// <summary>
     /// Gets the operation status.
@@ -1316,13 +1313,9 @@ public enum PipelineStepStatus
 So what does an implementation of this interface typically look like? Let's build on our value provider example to provide some state that exposes a value, and also an execution status.
 
 ```csharp
-/// <summary>
-/// An ICanFail state object over a value.
-/// </summary>
-/// <typeparam name="T">The type of the value.</typeparam>
 public readonly struct CanFailState<T> :
-    IValueProvider<T>,
-    ICanFail
+    IValueProvider<CanFailState<T>, T>,
+    ICanFail<CanFailState<T>>
 {
     private CanFailState(T value, PipelineStepStatus executionStatus)
     {
@@ -1371,7 +1364,7 @@ internal static CanFailState<T> For(T value)
 }
 ```
 
-So - having added that capability, what funcionality have we lit up?
+So - having added that capability, what functionality have we lit up?
 
 First, we have a set of extension methods that allow us to set the failure state:
 
@@ -1403,3 +1396,23 @@ If you run this you will see the following output:
 ```
 
 Notice how the `Value` is maintained, and just the `ExecutionStatus` is changed.
+
+So now we know how to indicate that our pipeline has had a problem. What can we do about that? Well - maybe we can retry the operation.
+
+## The `Retry()` Operator
+
+`Retry()` is an example of an operator that requires a step whose state provides a particular capability - in this case `ICanFail`.
+
+First, let's build a step that can fail.
+
+```csharp
+SyncPipelineStep<CanFailState<int>> stepCanFail =
+    state =>
+        state.Value == 0 && state.ExecutionStatus == PipelineStepStatus.Success
+            ? state.TransientFailure()
+            : CanFailState.For(state.Value + 1);
+```
+
+This looks at the `Value` of our state, and, under normal circumstance, just returns a state with the value incremented by one.
+
+However, *if* the current `Value` is `0`, *and* the `ExecutionStatus` indicates a success state, then it will produce a `TransientFailure()` - otherwise it will return a 

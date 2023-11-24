@@ -382,6 +382,87 @@ public class NonNullableStringSteps(ScenarioContext scenarioContext)
         }
     }
 
+    [Then("the NonNullableString.Value (.*) < (.*)")]
+    public void TheNonNullableStringValueShouldBeLessThanOperator(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            // No assertion for default
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut < expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut < string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut < string.Empty);
+        }
+        else
+        {
+            Assert.IsTrue(sut < expected);
+        }
+    }
+
+    [Then("the NonNullableString.Value (.*) > (.*)")]
+    public void TheNonNullableStringValueShouldBeGreaterThanOperator(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            // No assertion for default
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut > expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut > string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut > string.Empty);
+        }
+        else
+        {
+            Assert.IsTrue(sut > expected);
+        }
+    }
+
+    [Then("the NonNullableString.Value (.*) >= (.*)")]
+    public void TheNonNullableStringValueShouldBeGreaterThanOrEqualOperator(string name, string expected)
+    {
+        NonNullableString sut = this.scenarioContext.Get<NonNullableString>(name);
+
+        if (expected == "default(NonNullableString)")
+        {
+            // No assertion for default
+        }
+        else if (expected.StartsWith('"') && expected.EndsWith('"'))
+        {
+            Assert.IsTrue(sut >= expected[1..^1]);
+        }
+        else if (expected == "String.Empty")
+        {
+            Assert.IsTrue(sut >= string.Empty);
+        }
+        else if (expected == "new NonNullableString(String.Empty)")
+        {
+            Assert.IsTrue(sut >= string.Empty);
+        }
+        else
+        {
+            Assert.IsTrue(sut >= expected);
+        }
+    }
+
     [Then("the NonNullableString (.*) >= (.*)")]
     public void TheNonNullableStringShouldBeGreaterThanOrEqual(string name, string expected)
     {

@@ -9,7 +9,9 @@ namespace Corvus.Pipelines;
 /// <summary>
 /// State that supports logging.
 /// </summary>
-public interface ILoggable
+/// <typeparam name="TSelf">The type implementing the capability.</typeparam>
+public interface ILoggable<TSelf>
+    where TSelf : struct, ILoggable<TSelf>
 {
     /// <summary>
     /// Gets the logger for the state.

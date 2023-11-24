@@ -8,7 +8,7 @@ namespace Corvus.Pipelines.Specs.Models;
 /// A cancellable state object over an <see langword="int"/>.
 /// </summary>
 public readonly struct CancellableInt32State :
-    IValueProvider<int>,
+    IValueProvider<CancellableInt32State, int>,
     ICancellable<CancellableInt32State>,
     IEquatable<CancellableInt32State>
 {

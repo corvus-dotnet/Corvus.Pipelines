@@ -214,7 +214,7 @@ public static class Pipeline
     /// </para>
     /// </remarks>
     public static PipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params PipelineStepProvider<TState>[] steps)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         EnsureNames(steps);
 
@@ -255,7 +255,7 @@ public static class Pipeline
     /// </para>
     /// </remarks>
     public static SyncPipelineStep<TState> Build<TState>(string scopeName, LogLevel level, params SyncPipelineStepProvider<TState>[] steps)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         EnsureNames(steps);
 
@@ -300,7 +300,7 @@ public static class Pipeline
     /// </para>
     /// </remarks>
     public static PipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params PipelineStepProvider<TState>[] steps)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         EnsureNames(steps);
 
@@ -350,7 +350,7 @@ public static class Pipeline
     /// </para>
     /// </remarks>
     public static SyncPipelineStep<TState> Build<TState>(Predicate<TState> shouldTerminate, string scopeName, LogLevel level, params SyncPipelineStepProvider<TState>[] steps)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         EnsureNames(steps);
 
@@ -470,7 +470,7 @@ public static class Pipeline
     }
 
     private static void EnsureNames<TState>(SyncPipelineStepProvider<TState>[] steps)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         for (int i = 0; i < steps.Length; ++i)
         {
@@ -482,7 +482,7 @@ public static class Pipeline
     }
 
     private static void EnsureNames<TState>(PipelineStepProvider<TState>[] steps)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         for (int i = 0; i < steps.Length; ++i)
         {
@@ -495,21 +495,21 @@ public static class Pipeline
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogTerminated<TState>(LogLevel level, in TState state)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         state.Log(level, EventIds.TerminatedAtStep, "terminated");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogEntry<TState>(LogLevel level, in TState state)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         state.Log(level, EventIds.EnteredStep, "entered");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogExit<TState>(LogLevel level, in TState state)
-        where TState : struct, ILoggable
+        where TState : struct, ILoggable<TState>
     {
         state.Log(level, EventIds.ExitedStep, "exited");
     }

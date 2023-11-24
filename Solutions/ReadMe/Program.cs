@@ -274,3 +274,15 @@ Console.WriteLine($"{stateCanFail.Value} : {stateCanFail.ExecutionStatus}");
 stateCanFail = stateCanFail.Success();
 
 Console.WriteLine($"{stateCanFail.Value} : {stateCanFail.ExecutionStatus}");
+
+// ## The `Retry()` Operator
+Console.WriteLine();
+Console.WriteLine("## The `Retry()` Operator");
+
+SyncPipelineStep<CanFailState<int>> stepCanFail =
+    state =>
+        state.Value == 0 && state.ExecutionStatus == PipelineStepStatus.Success
+            ? state.TransientFailure()
+            : CanFailState.For(state.Value + 1);
+
+var canFailInt = stepCanFail(CanFailState.For(1));
