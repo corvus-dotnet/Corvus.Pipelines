@@ -10,7 +10,9 @@ namespace ReadMe;
 /// An ICanFail state object over a value.
 /// </summary>
 /// <typeparam name="T">The type of the value.</typeparam>
-public readonly struct CanFailState<T> : ICanFail
+public readonly struct CanFailState<T> :
+    IValueProvider<T>,
+    ICanFail
     where T : notnull
 {
     private CanFailState(T value, PipelineStepStatus executionStatus)
@@ -30,10 +32,5 @@ public readonly struct CanFailState<T> : ICanFail
     public static CanFailState<T> For(T value)
     {
         return new(value, default);
-    }
-
-    public CanFailState<T> WithValue(T value)
-    {
-        return this with { Value = value };
     }
 }

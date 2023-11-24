@@ -7,7 +7,10 @@ namespace Corvus.Pipelines.Specs.Models;
 /// <summary>
 /// A loggable state object over an <see langword="int"/>.
 /// </summary>
-public readonly struct CanFailInt32State : ICanFail, IEquatable<CanFailInt32State>
+public readonly struct CanFailInt32State :
+    IValueProvider<int>,
+    ICanFail,
+    IEquatable<CanFailInt32State>
 {
     private CanFailInt32State(int value, PipelineStepStatus executionStatus)
     {
@@ -20,7 +23,7 @@ public readonly struct CanFailInt32State : ICanFail, IEquatable<CanFailInt32Stat
     /// </summary>
     public int Value { get; init; }
 
-    public PipelineStepStatus ExecutionStatus { get; init;  }
+    public PipelineStepStatus ExecutionStatus { get; init; }
 
     /// <summary>
     /// Conversion to int.
@@ -47,11 +50,6 @@ public readonly struct CanFailInt32State : ICanFail, IEquatable<CanFailInt32Stat
     public static CanFailInt32State For(int value)
     {
         return new(value, default);
-    }
-
-    public CanFailInt32State WithValue(int value)
-    {
-        return this with { Value = value };
     }
 
     public bool Equals(CanFailInt32State other)

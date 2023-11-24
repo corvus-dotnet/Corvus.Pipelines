@@ -7,7 +7,10 @@ namespace Corvus.Pipelines.Specs.Models;
 /// <summary>
 /// A cancellable state object over an <see langword="int"/>.
 /// </summary>
-public readonly struct CancellableInt32State : ICancellable<CancellableInt32State>, IEquatable<CancellableInt32State>
+public readonly struct CancellableInt32State :
+    IValueProvider<int>,
+    ICancellable<CancellableInt32State>,
+    IEquatable<CancellableInt32State>
 {
     private CancellableInt32State(int value, CancellationToken cancellationToken)
     {
@@ -18,9 +21,9 @@ public readonly struct CancellableInt32State : ICancellable<CancellableInt32Stat
     /// <summary>
     /// Gets the value of the state.
     /// </summary>
-    public int Value { get; init;  }
+    public int Value { get; init; }
 
-    public CancellationToken CancellationToken { get; init;  }
+    public CancellationToken CancellationToken { get; init; }
 
     /// <summary>
     /// Conversion to int.
@@ -47,16 +50,6 @@ public readonly struct CancellableInt32State : ICancellable<CancellableInt32Stat
     public static CancellableInt32State For(int value, CancellationToken cancellationToken = default)
     {
         return new(value, cancellationToken);
-    }
-
-    public CancellableInt32State WithCancellationToken(CancellationToken cancellationToken)
-    {
-        return this with { CancellationToken = cancellationToken };
-    }
-
-    public CancellableInt32State WithValue(int value)
-    {
-        return this with { Value = value };
     }
 
     public bool Equals(CancellableInt32State other)

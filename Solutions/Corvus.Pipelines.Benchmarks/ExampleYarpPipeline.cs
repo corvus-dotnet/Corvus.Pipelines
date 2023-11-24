@@ -15,12 +15,12 @@ namespace PipelineExamples;
 public static class ExampleYarpPipeline
 {
     private static readonly SyncPipelineStep<YarpPipelineState> HandleFizz =
-        static state => state.RequestSignature.Path == "/fizz"
+        static state => state.GetNominalRequestSignature().Path == "/fizz"
                     ? state.TerminateAndForward()
                     : state.Continue();
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleBuzz =
-        static state => state.RequestSignature.Path == "/buzz"
+        static state => state.GetNominalRequestSignature().Path == "/buzz"
                     ? throw new InvalidOperationException("Something's gone wrong!")
                     : state.Continue();
 
@@ -47,7 +47,7 @@ public static class ExampleYarpPipeline
     private static readonly SyncPipelineStep<YarpPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
             .Bind(
-                wrap: static (YarpPipelineState state) => HandlerState<PathString, string?>.For(state.RequestSignature.Path, state.Logger),
+                wrap: static (YarpPipelineState state) => HandlerState<PathString, string?>.For(state.GetNominalRequestSignature().Path, state.Logger),
                 unwrap: static (state, innerState) =>
                 {
                     if (innerState.WasHandled(out string? message))
@@ -66,7 +66,7 @@ public static class ExampleYarpPipeline
                 });
 
     private static readonly Func<YarpPipelineState, SyncPipelineStep<YarpPipelineState>> ChooseMessageContextHandler =
-            static state => state.RequestSignature.QueryString.HasValue
+            static state => state.GetNominalRequestSignature().QueryString.HasValue
                                 ? state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400))
                                 : AddMessageToHttpContext;
 
@@ -74,7 +74,7 @@ public static class ExampleYarpPipeline
         static (state, exception) => state.TransientFailure(new YarpPipelineError("Unable to execute the pipeline.", exception));
 
     private static readonly SyncPipelineStep<YarpPipelineState> HandleRoot =
-        static state => state.RequestSignature.Path == "/" // You can write in this style where we execute steps directly
+        static state => state.GetNominalRequestSignature().Path == "/" // You can write in this style where we execute steps directly
                 ? state.TerminateAndForward()
                 : InnerPipelineInstance(state);
 

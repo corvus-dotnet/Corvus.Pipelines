@@ -10,7 +10,10 @@ namespace Corvus.Pipelines.Specs.Models;
 /// <summary>
 /// A loggable state object over an <see langword="int"/>.
 /// </summary>
-public readonly struct LoggableInt32State : ILoggable, IEquatable<LoggableInt32State>
+public readonly struct LoggableInt32State :
+    IValueProvider<int>,
+    ILoggable,
+    IEquatable<LoggableInt32State>
 {
     private LoggableInt32State(int value, ILogger logger)
     {
@@ -51,16 +54,6 @@ public readonly struct LoggableInt32State : ILoggable, IEquatable<LoggableInt32S
     public static LoggableInt32State For(int value, ILogger? logger = null)
     {
         return new(value, logger ?? NullLogger.Instance);
-    }
-
-    public LoggableInt32State WithILogger(ILogger logger)
-    {
-        return this with { Logger = logger };
-    }
-
-    public LoggableInt32State WithValue(int value)
-    {
-        return this with { Value = value };
     }
 
     public bool Equals(LoggableInt32State other)
