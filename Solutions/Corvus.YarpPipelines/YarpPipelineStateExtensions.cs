@@ -73,7 +73,7 @@ public static class YarpPipelineStateExtensions
     /// </param>
     /// <param name="returnUrl">The URL to which to redirect the user.</param>
     /// <param name="cookiePath">
-    /// The cookie path, typically limited to work only for the login callback URL.
+    /// The cookie path, typically limited to work only for the login call-back URL.
     /// </param>
     /// <param name="cookieName">
     /// The name of the login cookie to remove. This cookie is used to validate the login.
@@ -107,7 +107,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="state">The pipeline state.</param>
     /// <param name="requestSignature">The nominal request signature.</param>
     /// <remarks>
-    /// Used in login callback scenarios where we have a single callback endpoint but need
+    /// Used in login call-back scenarios where we have a single call-back endpoint but need
     /// to select endpoint configuration based on the page the user was originally
     /// attempting to access.
     /// </remarks>

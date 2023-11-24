@@ -497,90 +497,21 @@ public static class Pipeline
     private static void LogTerminated<TState>(LogLevel level, in TState state)
         where TState : struct, ILoggable
     {
-        if (state.Logger.IsEnabled(level))
-        {
-            switch (level)
-            {
-                case LogLevel.Debug:
-                    state.Logger.LogDebug(EventIds.TerminatedAtStep, "terminated");
-                    break;
-                case LogLevel.Trace:
-                    state.Logger.LogTrace(EventIds.TerminatedAtStep, "terminated");
-                    break;
-                case LogLevel.Information:
-                    state.Logger.LogInformation(EventIds.TerminatedAtStep, "terminated");
-                    break;
-                case LogLevel.Warning:
-                    state.Logger.LogWarning(EventIds.TerminatedAtStep, "terminated");
-                    break;
-                case LogLevel.Error:
-                    state.Logger.LogError(EventIds.TerminatedAtStep, "terminated");
-                    break;
-                case LogLevel.Critical:
-                    state.Logger.LogCritical(EventIds.TerminatedAtStep, "terminated");
-                    break;
-            }
-        }
+        state.Log(level, EventIds.TerminatedAtStep, "terminated");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogEntry<TState>(LogLevel level, in TState state)
         where TState : struct, ILoggable
     {
-        if (state.Logger.IsEnabled(level))
-        {
-            switch (level)
-            {
-                case LogLevel.Debug:
-                    state.Logger.LogDebug(EventIds.EnteredStep, "entered");
-                    break;
-                case LogLevel.Trace:
-                    state.Logger.LogTrace(EventIds.EnteredStep, "entered");
-                    break;
-                case LogLevel.Information:
-                    state.Logger.LogInformation(EventIds.EnteredStep, "entered");
-                    break;
-                case LogLevel.Warning:
-                    state.Logger.LogWarning(EventIds.EnteredStep, "entered");
-                    break;
-                case LogLevel.Error:
-                    state.Logger.LogError(EventIds.EnteredStep, "entered");
-                    break;
-                case LogLevel.Critical:
-                    state.Logger.LogCritical(EventIds.EnteredStep, "entered");
-                    break;
-            }
-        }
+        state.Log(level, EventIds.EnteredStep, "entered");
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogExit<TState>(LogLevel level, in TState state)
         where TState : struct, ILoggable
     {
-        if (state.Logger.IsEnabled(level))
-        {
-            switch (level)
-            {
-                case LogLevel.Debug:
-                    state.Logger.LogDebug(EventIds.ExitedStep, "exited");
-                    break;
-                case LogLevel.Trace:
-                    state.Logger.LogTrace(EventIds.ExitedStep, "exited");
-                    break;
-                case LogLevel.Information:
-                    state.Logger.LogInformation(EventIds.ExitedStep, "exited");
-                    break;
-                case LogLevel.Warning:
-                    state.Logger.LogWarning(EventIds.ExitedStep, "exited");
-                    break;
-                case LogLevel.Error:
-                    state.Logger.LogError(EventIds.ExitedStep, "exited");
-                    break;
-                case LogLevel.Critical:
-                    state.Logger.LogCritical(EventIds.ExitedStep, "exited");
-                    break;
-            }
-        }
+        state.Log(level, EventIds.ExitedStep, "exited");
     }
 
     /// <summary>
