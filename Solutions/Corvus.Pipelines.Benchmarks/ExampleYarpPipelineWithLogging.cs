@@ -15,8 +15,6 @@ namespace PipelineExamples;
 /// </summary>
 public static class ExampleYarpPipelineWithLogging
 {
-    private static readonly LogLevel LogLevel = LogLevel.Information;
-
     private static readonly SyncPipelineStep<YarpPipelineState> HandleFizz =
         static state => state.GetNominalRequestSignature().Path == "/fizz"
                     ? state.TerminateAndForward()
@@ -29,10 +27,8 @@ public static class ExampleYarpPipelineWithLogging
 
     private static readonly SyncPipelineStep<YarpPipelineState> InnerPipelineInstance =
         YarpPipeline.Build(
-            "InnerPipeline",
-            LogLevel,
-            HandleFizz.WithName(),
-            HandleBuzz.WithName());
+            HandleFizz.Log(),
+            HandleBuzz.Log()).Log(name: "InnerPipeline");
 
     private static readonly SyncPipelineStep<HandlerState<PathString, string?>> HandleFoo =
         static state => state.Input == "/foo"
@@ -46,10 +42,8 @@ public static class ExampleYarpPipelineWithLogging
 
     private static readonly SyncPipelineStep<HandlerState<PathString, string?>> MessageHandlerPipelineInstance =
         HandlerPipeline.Build(
-            "MessageHandlerPipeline",
-            LogLevel,
-            HandleFoo.WithName(),
-            HandleBar.WithName());
+            HandleFoo.Log(),
+            HandleBar.Log()).Log(name: "MessageHandlerPipeline");
 
     private static readonly SyncPipelineStep<YarpPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
@@ -115,10 +109,8 @@ public static class ExampleYarpPipelineWithLogging
     /// </summary>
     public static SyncPipelineStep<YarpPipelineState> Instance { get; } =
         YarpPipeline.Build(
-            "MainPipeline",
-            LogLevel,
             HandleRoot,
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).WithName())
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).Log()).Log(name: "MainPipeline")
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5)) // YarpRetry automatically logs
@@ -129,11 +121,9 @@ public static class ExampleYarpPipelineWithLogging
     /// </summary>
     public static PipelineStep<YarpPipelineState> ForceAsyncInstance { get; } =
         YarpPipeline.Build(
-            "MainAsyncPipeline",
-            LogLevel,
-            HandleRoot.WithName().ToAsync(), // You can make the named item async
+            HandleRoot.Log().ToAsync(), // You can make the named item async
             AsyncDelay,
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync().WithName())
+            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync().Log()).Log(name: "MainAsyncPipeline")
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5),

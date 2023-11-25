@@ -201,7 +201,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             return string.Join(
                 ", ",
                 table.Rows.Select(
-                    s => $"(LogLevel.{s["Log level"]}, \"{Escape(s["Message"])}\")"));
+                    s => $"(LogLevel.{s["Log level"]}, \"{Escape(s["Message"])}\", \"{Escape(s["Scope"])}\")"));
         }
 
         static string Escape(string v)

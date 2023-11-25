@@ -94,11 +94,11 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	When I execute the async step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
 	Then the async output of "TestStep" should be <Expected output>
 	And the log Services.Logger should contain the following entries
-		| Log level   | Message     |
-		| Information | Retrying: 1 |
-		| Information | Retrying: 2 |
-		| Information | Retrying: 3 |
-		| Information | Retrying: 4 |
+		| Log level   | Message     | Scope |
+		| Information | Retrying: 1 |       |
+		| Information | Retrying: 2 |       |
+		| Information | Retrying: 3 |       |
+		| Information | Retrying: 4 |       |
 
 Examples:
 	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                 |
@@ -116,11 +116,11 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	When I execute the sync step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
 	Then the sync output of "TestStep" should be <Expected output>
 	And the log Services.Logger should contain the following entries
-		| Log level   | Message     |
-		| Information | Retrying: 1 |
-		| Information | Retrying: 2 |
-		| Information | Retrying: 3 |
-		| Information | Retrying: 4 |
+		| Log level   | Message     | Scope |
+		| Information | Retrying: 1 |       |
+		| Information | Retrying: 2 |       |
+		| Information | Retrying: 3 |       |
+		| Information | Retrying: 4 |       |
 
 Examples:
 	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                     |

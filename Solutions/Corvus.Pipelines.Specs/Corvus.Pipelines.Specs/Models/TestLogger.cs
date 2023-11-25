@@ -12,17 +12,24 @@ public class TestLogger : ILogger, IDisposable
 {
     public ConcurrentQueue<LogEntry> Entries { get; } = new();
 
+    private ConcurrentStack<string> Scopes { get; } = new();
+
     public IDisposable? BeginScope<TState>(TState state)
         where TState : notnull
     {
+        this.Scopes.Push(state.ToString() ?? string.Empty);
         return this;
     }
 
+#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
     public void Dispose()
     {
+        this.Scopes.TryPop(out _);
     }
 
-    public void Validate(params (LogLevel LogLevel, string Message)[] expectedEntries)
+#pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
+
+    public void Validate(params (LogLevel LogLevel, string Message, string Scope)[] expectedEntries)
     {
         var loggedItems = this.Entries.ToList();
 
@@ -32,6 +39,7 @@ public class TestLogger : ILogger, IDisposable
         {
             Assert.AreEqual(expectedEntries[i].LogLevel, loggedItems[i].LogLevel);
             Assert.AreEqual(expectedEntries[i].Message, loggedItems[i].Message);
+            Assert.AreEqual(expectedEntries[i].Scope, loggedItems[i].Scope);
         }
     }
 
@@ -42,8 +50,14 @@ public class TestLogger : ILogger, IDisposable
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        this.Entries.Enqueue(new(logLevel, eventId, exception, formatter(state, exception)));
+        string scope = string.Empty;
+        if (this.Scopes.TryPeek(out string? currentScope))
+        {
+            scope = currentScope;
+        }
+
+        this.Entries.Enqueue(new(logLevel, eventId, exception, formatter(state, exception), scope));
     }
 
-    public readonly record struct LogEntry(LogLevel LogLevel, EventId EventId, Exception? Exception, string Message);
+    public readonly record struct LogEntry(LogLevel LogLevel, EventId EventId, Exception? Exception, string? Message, string? Scope);
 }

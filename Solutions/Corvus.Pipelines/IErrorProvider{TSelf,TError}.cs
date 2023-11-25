@@ -1,4 +1,4 @@
-﻿// <copyright file="IErrorDetails{TSelf,TError}.cs" company="Endjin Limited">
+﻿// <copyright file="IErrorProvider{TSelf,TError}.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
@@ -9,9 +9,9 @@ namespace Corvus.Pipelines;
 /// </summary>
 /// <typeparam name="TSelf">The type implementing the capability.</typeparam>
 /// <typeparam name="TError">The type of the error details.</typeparam>
-public interface IErrorDetails<TSelf, TError> : ICanFail<TSelf>
+public interface IErrorProvider<TSelf, TError> : ICanFail<TSelf>
     where TError : notnull
-    where TSelf : struct, IErrorDetails<TSelf, TError>
+    where TSelf : struct, IErrorProvider<TSelf, TError>
 {
     /// <summary>
     /// Gets the error details if available.

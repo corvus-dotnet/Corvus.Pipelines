@@ -13,110 +13,6 @@ namespace Corvus.Pipelines;
 /// </summary>
 public static class PipelineStepExtensions
 {
-    private const string NameFeature = "Name";
-
-    /// <summary>
-    /// Create a named step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="step">The step.</param>
-    /// <param name="name">The name of the step.</param>
-    /// <returns>A named step.</returns>
-    public static SyncPipelineStepProvider<TState> WithName<TState>(this SyncPipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
-        where TState : struct
-        => new SyncPipelineStepProvider<TState>(step).AddFeature(NameFeature, name!);
-
-    /// <summary>
-    /// Create a named step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="step">The step.</param>
-    /// <param name="name">The name of the step.</param>
-    /// <returns>A named step.</returns>
-    public static SyncPipelineStepProvider<TState> WithName<TState>(this SyncPipelineStepProvider<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
-        where TState : struct
-        => step.AddFeature(NameFeature, name!);
-
-    /// <summary>
-    /// Gets the name of the step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state for the step.</typeparam>
-    /// <param name="step">The step provider.</param>
-    /// <returns>the name of the step, or <see cref="string.Empty"/> if the step has no name.</returns>
-    public static string Name<TState>(this SyncPipelineStepProvider<TState> step)
-        where TState : struct
-    {
-        if (step.TryGetFeature(NameFeature, out string? name))
-        {
-            return name;
-        }
-
-        return string.Empty;
-    }
-
-    /// <summary>
-    /// Gets the name of the step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state for the step.</typeparam>
-    /// <param name="step">The step provider.</param>
-    /// <returns>the name of the step, or <see cref="string.Empty"/> if the step has no name.</returns>
-    public static bool HasName<TState>(this SyncPipelineStepProvider<TState> step)
-        where TState : struct
-    {
-        return step.HasFeature<string>(NameFeature);
-    }
-
-    /// <summary>
-    /// Create a named step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="step">The step.</param>
-    /// <param name="name">The name of the step.</param>
-    /// <returns>A named step.</returns>
-    public static PipelineStepProvider<TState> WithName<TState>(this PipelineStep<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
-        where TState : struct
-        => new PipelineStepProvider<TState>(step).AddFeature(NameFeature, name!);
-
-    /// <summary>
-    /// Create a named step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="step">The step.</param>
-    /// <param name="name">The name of the step.</param>
-    /// <returns>A named step.</returns>
-    public static PipelineStepProvider<TState> WithName<TState>(this PipelineStepProvider<TState> step, [CallerArgumentExpression(nameof(step))] string? name = null)
-        where TState : struct
-        => step.AddFeature(NameFeature, name!);
-
-    /// <summary>
-    /// Gets the name of the step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state for the step.</typeparam>
-    /// <param name="step">The step provider.</param>
-    /// <returns>the name of the step, or <see cref="string.Empty"/> if the step has no name.</returns>
-    public static string Name<TState>(this PipelineStepProvider<TState> step)
-        where TState : struct
-    {
-        if (step.TryGetFeature(NameFeature, out string? name))
-        {
-            return name;
-        }
-
-        return string.Empty;
-    }
-
-    /// <summary>
-    /// Gets the name of the step.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state for the step.</typeparam>
-    /// <param name="step">The step provider.</param>
-    /// <returns>the name of the step, or <see cref="string.Empty"/> if the step has no name.</returns>
-    public static bool HasName<TState>(this PipelineStepProvider<TState> step)
-        where TState : struct
-    {
-        return step.HasFeature<string>(NameFeature);
-    }
-
     /// <summary>
     /// An operator which returns a step which executes an action on entry to and exit from the input step.
     /// </summary>
@@ -542,17 +438,6 @@ public static class PipelineStepExtensions
         (state) => ValueTask.FromResult(step(state));
     }
 
-    /// <summary>
-    /// Convert a synchronous named pipeline step to an asynchronous one.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="step">The step to be converted to an async step.</param>
-    /// <returns>An async version of the synchronous step.</returns>
-    public static PipelineStepProvider<TState> ToAsync<TState>(this SyncPipelineStepProvider<TState> step)
-        where TState : struct
-    {
-        return new PipelineStepProvider<TState>(step);
-    }
 #pragma warning restore RCS1047 // Non-asynchronous method name should not end with 'Async'.
 
     /// <summary>

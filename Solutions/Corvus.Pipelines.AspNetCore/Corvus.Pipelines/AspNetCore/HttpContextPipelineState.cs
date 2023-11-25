@@ -17,7 +17,7 @@ namespace Corvus.Pipelines.AspNetCore;
 /// then choose to either <see cref="Continue()"/> processing, or <see cref="Complete()"/> the request.
 /// </remarks>
 public readonly struct HttpContextPipelineState :
-    IErrorDetails<HttpContextPipelineState, HttpContextPipelineError>,
+    IErrorProvider<HttpContextPipelineState, HttpContextPipelineError>,
     ICancellable<HttpContextPipelineState>,
     ILoggable<HttpContextPipelineState>
 {

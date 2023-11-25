@@ -25,7 +25,7 @@ namespace Corvus.YarpPipelines;
 public readonly struct YarpPipelineState :
     ICancellable<YarpPipelineState>,
     ILoggable<YarpPipelineState>,
-    IErrorDetails<YarpPipelineState, YarpPipelineError>
+    IErrorProvider<YarpPipelineState, YarpPipelineError>
 {
     private YarpPipelineState(RequestTransformContext requestTransformContext, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {

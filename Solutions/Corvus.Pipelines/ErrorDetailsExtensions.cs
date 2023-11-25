@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 namespace Corvus.Pipelines;
 
 /// <summary>
-/// Extensions for the <see cref="IErrorDetails{TSelf, TError}"/> interface.
+/// Extensions for the <see cref="IErrorProvider{TSelf, TError}"/> interface.
 /// </summary>
 public static class ErrorDetailsExtensions
 {
@@ -17,12 +17,12 @@ public static class ErrorDetailsExtensions
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <typeparam name="TErrorDetails">The error details.</typeparam>
-    /// <param name="capability">The <see cref="IErrorDetails{TSelf, TError}"/> capable state.</param>
+    /// <param name="capability">The <see cref="IErrorProvider{TSelf, TError}"/> capable state.</param>
     /// <param name="errorDetails">The error details, if any.</param>
     /// <returns><see langword="true"/> if error details were available, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryGetErrorDetails<TState, TErrorDetails>(this TState capability, [NotNullWhen(true)] out TErrorDetails errorDetails)
-        where TState : struct, IErrorDetails<TState, TErrorDetails>
+        where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
         errorDetails = capability.ErrorDetails;
@@ -34,12 +34,12 @@ public static class ErrorDetailsExtensions
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <typeparam name="TErrorDetails">The error details.</typeparam>
-    /// <param name="capability">The <see cref="IErrorDetails{TSelf, TError}"/> capable state.</param>
+    /// <param name="capability">The <see cref="IErrorProvider{TSelf, TError}"/> capable state.</param>
     /// <param name="errorDetails">The error details, if any.</param>
     /// <returns>The updated state.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TState TransientFailure<TState, TErrorDetails>(this TState capability, in TErrorDetails errorDetails)
-        where TState : struct, IErrorDetails<TState, TErrorDetails>
+        where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
         return capability with { ErrorDetails = errorDetails, ExecutionStatus = PipelineStepStatus.TransientFailure };
@@ -50,12 +50,12 @@ public static class ErrorDetailsExtensions
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <typeparam name="TErrorDetails">The error details.</typeparam>
-    /// <param name="capability">The <see cref="IErrorDetails{TSelf, TError}"/> capable state.</param>
+    /// <param name="capability">The <see cref="IErrorProvider{TSelf, TError}"/> capable state.</param>
     /// <param name="errorDetails">The error details, if any.</param>
     /// <returns>The updated state.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TState PermanentFailure<TState, TErrorDetails>(this TState capability, in TErrorDetails errorDetails)
-        where TState : struct, IErrorDetails<TState, TErrorDetails>
+        where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
         return capability with { ErrorDetails = errorDetails, ExecutionStatus = PipelineStepStatus.PermanentFailure };
