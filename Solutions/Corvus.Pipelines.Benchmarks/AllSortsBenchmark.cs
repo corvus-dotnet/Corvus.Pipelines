@@ -53,12 +53,31 @@ public class AllSortsBenchmark
     /// A result, to ensure that the code under test does not get optimized out of existence.
     /// </returns>
     [Benchmark]
-    public bool RunPipelineWithLogging()
+    public bool RunPipelineWithLoggingAndNullLogger()
     {
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
             YarpPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(context));
+            shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+        }
+
+        return shouldForward;
+    }
+
+    /// <summary>
+    /// Run a pipeline.
+    /// </summary>
+    /// <returns>
+    /// A result, to ensure that the code under test does not get optimized out of existence.
+    /// </returns>
+    [Benchmark]
+    public bool RunPipelineWithLoggingAndNopLogger()
+    {
+        bool shouldForward = true;
+        foreach (RequestTransformContext context in Contexts)
+        {
+            YarpPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(context, NopLogger.Instance));
             shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
         }
 
@@ -91,12 +110,31 @@ public class AllSortsBenchmark
     /// A result, to ensure that the code under test does not get optimized out of existence.
     /// </returns>
     [Benchmark]
-    public async Task<bool> RunPipelineWithLoggingAsync()
+    public async Task<bool> RunPipelineWithLoggingAndNulLoggerAsync()
     {
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
             YarpPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpPipelineState.For(context)).ConfigureAwait(false);
+            shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+        }
+
+        return shouldForward;
+    }
+
+    /// <summary>
+    /// Run a pipeline.
+    /// </summary>
+    /// <returns>
+    /// A result, to ensure that the code under test does not get optimized out of existence.
+    /// </returns>
+    [Benchmark]
+    public async Task<bool> RunPipelineWithLoggingAndNopLoggerAsync()
+    {
+        bool shouldForward = true;
+        foreach (RequestTransformContext context in Contexts)
+        {
+            YarpPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpPipelineState.For(context, NopLogger.Instance)).ConfigureAwait(false);
             shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
         }
 

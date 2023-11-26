@@ -25,11 +25,18 @@ public static class LoggableExtensions
     {
         return async state =>
         {
-            using IDisposable? scope = name is string scopeName ? state.Logger.BeginScope(scopeName) : null;
-            LogEntry(logLevel, state);
-            TState result = await step(state).ConfigureAwait(false);
-            LogExit(logLevel, result);
-            return result;
+            if (state.Logger.IsEnabled(logLevel))
+            {
+                using IDisposable? scope = name is string scopeName ? state.Logger.BeginScope(scopeName) : null;
+                LogEntry(logLevel, state);
+                TState result = await step(state).ConfigureAwait(false);
+                LogExit(logLevel, result);
+                return result;
+            }
+            else
+            {
+                return await step(state).ConfigureAwait(false);
+            }
         };
     }
 
@@ -46,11 +53,18 @@ public static class LoggableExtensions
     {
         return state =>
         {
-            using IDisposable? scope = name is string scopeName ? state.Logger.BeginScope(scopeName) : null;
-            LogEntry(logLevel, state);
-            TState result = step(state);
-            LogExit(logLevel, state);
-            return result;
+            if (state.Logger.IsEnabled(logLevel))
+            {
+                using IDisposable? scope = name is string scopeName ? state.Logger.BeginScope(scopeName) : null;
+                LogEntry(logLevel, state);
+                TState result = step(state);
+                LogExit(logLevel, state);
+                return result;
+            }
+            else
+            {
+                return step(state);
+            }
         };
     }
 
@@ -71,32 +85,29 @@ public static class LoggableExtensions
         where TState : struct, ILoggable<TState>
     {
 #pragma warning disable CA2254 // Template should be a static expression
-        if (state.Logger.IsEnabled(level))
+        switch (level)
         {
-            switch (level)
-            {
-                case LogLevel.Debug:
-                    state.Logger.LogDebug(eventId, message);
-                    break;
-                case LogLevel.Trace:
-                    state.Logger.LogTrace(eventId, message);
-                    break;
-                case LogLevel.Information:
-                    state.Logger.LogInformation(eventId, message);
-                    break;
-                case LogLevel.Warning:
-                    state.Logger.LogWarning(eventId, message);
-                    break;
-                case LogLevel.Error:
-                    state.Logger.LogError(eventId, message);
-                    break;
-                case LogLevel.Critical:
-                    state.Logger.LogCritical(eventId, message);
-                    break;
-            }
+            case LogLevel.Debug:
+                state.Logger.LogDebug(eventId, message);
+                break;
+            case LogLevel.Trace:
+                state.Logger.LogTrace(eventId, message);
+                break;
+            case LogLevel.Information:
+                state.Logger.LogInformation(eventId, message);
+                break;
+            case LogLevel.Warning:
+                state.Logger.LogWarning(eventId, message);
+                break;
+            case LogLevel.Error:
+                state.Logger.LogError(eventId, message);
+                break;
+            case LogLevel.Critical:
+                state.Logger.LogCritical(eventId, message);
+                break;
         }
-#pragma warning restore CA2254 // Template should be a static expression
     }
+#pragma warning restore CA2254 // Template should be a static expression
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogEntry<TState>(LogLevel level, in TState state)
