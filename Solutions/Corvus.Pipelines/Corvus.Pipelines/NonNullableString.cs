@@ -11,6 +11,12 @@ namespace Corvus.Pipelines;
 /// Initializes a new instance of the <see cref="NonNullableString"/> struct.
 /// </remarks>
 /// <param name="value">The string from which to create the value.</param>
+/// <remarks>
+/// The <see cref="PipelineStep{TState}"/> requires the state to be a struct,
+/// which precludes the use of a string as the state type. While you are unlikely
+/// to want to use a string as the state in a production pipeline, it is a useful
+/// thing to be able to do in e.g. testing and exploration.
+/// </remarks>
 public readonly struct NonNullableString(string value)
         : IComparable<NonNullableString>, IEquatable<NonNullableString>
 {
