@@ -99,12 +99,14 @@ We have a suite of benchmarks that verify we have a low-overhead, low-allocation
 
 These are typical results for [an example YARP HTTP transform processing pipeline](./Solutions/Corvus.Pipelines.Benchmarks/AllSortsBenchmark.cs).
 
-| Method                      | Mean       | Error    | StdDev   | Ratio | RatioSD | Allocated |
-|---------------------------- |-----------:|---------:|---------:|------:|--------:|----------:|
-| RunPipeline                 |   794.1 ns |  2.46 ns |  2.30 ns |  1.00 |    0.00 |         - |
-| RunPipelineWithLogging      | 1,117.0 ns |  3.91 ns |  3.66 ns |  1.41 |    0.01 |         - |
-| RunPipelineAsync            | 2,163.9 ns |  9.37 ns |  8.77 ns |  2.72 |    0.01 |         - |
-| RunPipelineWithLoggingAsync | 2,524.0 ns | 17.29 ns | 15.33 ns |  3.18 |    0.02 |         - |
+| Method                                  | Mean     | Error     | StdDev    | Ratio | RatioSD | Allocated | Alloc Ratio |
+|---------------------------------------- |---------:|----------:|----------:|------:|--------:|----------:|------------:|
+| RunPipeline                             | 1.859 us | 0.0096 us | 0.0080 us |  1.00 |    0.00 |         - |          NA |
+| RunPipelineWithLoggingAndNullLogger     | 1.858 us | 0.0367 us | 0.0464 us |  1.01 |    0.03 |         - |          NA |
+| RunPipelineWithLoggingAndNopLogger      | 3.247 us | 0.0250 us | 0.0209 us |  1.75 |    0.01 |         - |          NA |
+| RunPipelineAsync                        | 5.289 us | 0.0748 us | 0.0663 us |  2.85 |    0.04 |         - |          NA |
+| RunPipelineWithLoggingAndNulLoggerAsync | 6.230 us | 0.0507 us | 0.0450 us |  3.35 |    0.03 |         - |          NA |
+| RunPipelineWithLoggingAndNopLoggerAsync | 7.597 us | 0.0883 us | 0.0826 us |  4.10 |    0.05 |         - |          NA |
 
 Here's [another example](./Solutions/Corvus.Pipelines.Benchmarks/ExceptionVersusErrorBenchmark.cs) that compares the railway-oriented approach for error handling, with an exception-based process:
 

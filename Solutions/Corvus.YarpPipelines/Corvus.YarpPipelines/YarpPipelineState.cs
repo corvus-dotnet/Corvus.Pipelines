@@ -27,7 +27,9 @@ public readonly struct YarpPipelineState :
     ILoggable<YarpPipelineState>,
     IErrorProvider<YarpPipelineState, YarpPipelineError>
 {
-    private YarpPipelineState(RequestTransformContext requestTransformContext, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
+    private readonly RequestSignature nominalRequestSignature;
+
+    private YarpPipelineState(RequestTransformContext requestTransformContext, in RequestSignature nominalRequestSignature, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
     {
         this.RequestTransformContext = requestTransformContext;
         this.ResponseDetails = responseDetails;
@@ -36,6 +38,7 @@ public readonly struct YarpPipelineState :
         this.ExecutionStatus = executionStatus;
         this.Logger = logger;
         this.CancellationToken = cancellationToken;
+        this.nominalRequestSignature = nominalRequestSignature;
     }
 
     private enum TransformState
@@ -107,7 +110,7 @@ public readonly struct YarpPipelineState :
     /// </remarks>
     public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        return new(requestTransformContext, default, TransformState.Continue, default, default, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, cancellationToken);
+        return new(requestTransformContext, RequestSignature.From(requestTransformContext.HttpContext.Request), default, TransformState.Continue, default, default, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, cancellationToken);
     }
 
     /// <summary>
@@ -166,5 +169,41 @@ public readonly struct YarpPipelineState :
 
         responseDetails = this.ResponseDetails;
         return false;
+    }
+
+    /// <summary>
+    /// Sets the nominal request signature something other than the actual one.
+    /// </summary>
+    /// <param name="requestSignature">The nominal request signature.</param>
+    /// <returns>The updated state.</returns>
+    /// <remarks>
+    /// Used in login call-back scenarios where we have a single call-back endpoint but need
+    /// to select endpoint configuration based on the page the user was originally
+    /// attempting to access.
+    /// </remarks>
+    public YarpPipelineState OverrideNominalRequestSignature(RequestSignature requestSignature)
+    {
+        return new YarpPipelineState(
+            this.RequestTransformContext,
+            requestSignature,
+            this.ResponseDetails,
+            this.PipelineState,
+            this.ExecutionStatus,
+            this.ErrorDetails,
+            this.Logger,
+            this.CancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the nominal request signature.
+    /// </summary>
+    /// <returns>The nominal request signature.</returns>
+    /// <remarks>
+    /// This is normally the signature for the request being processed, but can
+    /// be changed by calling <see cref="OverrideNominalRequestSignature(RequestSignature)"/>.
+    /// </remarks>
+    public RequestSignature GetNominalRequestSignature()
+    {
+        return this.nominalRequestSignature;
     }
 }

@@ -6,8 +6,6 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 
-using Corvus.YarpPipelines.Internal;
-
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
@@ -99,42 +97,6 @@ public static class YarpPipelineStateExtensions
             returnUrl,
             cookiePath,
             cookieName));
-    }
-
-    /// <summary>
-    /// Sets the nominal request signature something other than the actual one.
-    /// </summary>
-    /// <param name="state">The pipeline state.</param>
-    /// <param name="requestSignature">The nominal request signature.</param>
-    /// <remarks>
-    /// Used in login call-back scenarios where we have a single call-back endpoint but need
-    /// to select endpoint configuration based on the page the user was originally
-    /// attempting to access.
-    /// </remarks>
-    public static void OverrideNominalRequestSignature(
-        this YarpPipelineState state, RequestSignature requestSignature)
-    {
-        state.Features.Set(new RequestSignatureOverrideFeature(requestSignature));
-    }
-
-    /// <summary>
-    /// Gets the nominal request signature.
-    /// </summary>
-    /// <param name="state">The pipeline state.</param>
-    /// <returns>The nominal request signature.</returns>
-    /// <remarks>
-    /// This is normally the signature for the request being processed, but can
-    /// be changed by calling <see cref="OverrideNominalRequestSignature(YarpPipelineState, RequestSignature)"/>.
-    /// </remarks>
-    public static RequestSignature GetNominalRequestSignature(
-        this YarpPipelineState state)
-    {
-        if (state.Features.Get<RequestSignatureOverrideFeature>() is RequestSignatureOverrideFeature signatureOverrideFeature)
-        {
-            return signatureOverrideFeature.RequestSignature;
-        }
-
-        return RequestSignature.From(state.RequestTransformContext.HttpContext.Request);
     }
 
     /// <summary>

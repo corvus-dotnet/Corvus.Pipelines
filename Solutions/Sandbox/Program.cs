@@ -22,10 +22,13 @@ foreach (RequestTransformContext context in Contexts)
 }
 
 
-Thread.Sleep(2000);
+await Task.Delay(10000);
 
-foreach (RequestTransformContext context in Contexts)
+for (int i = 0; i < 8912; ++i)
 {
-    YarpPipelineState result = ExampleYarpPipeline.Instance(YarpPipelineState.For(context));
-    shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+    foreach (RequestTransformContext context in Contexts)
+    {
+        YarpPipelineState result = ExampleYarpPipeline.Instance(YarpPipelineState.For(context));
+        shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+    }
 }
