@@ -18,7 +18,7 @@ bool shouldForward = true;
 foreach (RequestTransformContext context in Contexts)
 {
     YarpPipelineState result = ExampleYarpPipeline.Instance(YarpPipelineState.For(context));
-    shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+    shouldForward &= result.ShouldForward(out ForwardedRequestDetails? requestDetails, out NonForwardedResponseDetails? responseDetails);
 }
 
 
@@ -29,6 +29,6 @@ for (int i = 0; i < 8912; ++i)
     foreach (RequestTransformContext context in Contexts)
     {
         YarpPipelineState result = ExampleYarpPipeline.Instance(YarpPipelineState.For(context));
-        shouldForward &= result.ShouldForward(out NonForwardedResponseDetails responseDetails);
+        shouldForward &= result.ShouldForward(out ForwardedRequestDetails? requestDetails, out NonForwardedResponseDetails? responseDetails);
     }
 }
