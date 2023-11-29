@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Diagnostics.CodeAnalysis;
+
 using Corvus.Pipelines;
 
 using Microsoft.AspNetCore.Http;
@@ -18,7 +20,7 @@ namespace Corvus.YarpPipelines;
 /// </summary>
 /// <remarks>
 /// The steps in the pipe can inspect and modify the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>,
-/// then choose to either <see cref="Continue()"/> processing, <see cref="TerminateAndForward()"/> - passing
+/// then choose to either <see cref="Continue()"/> processing, <see cref="TerminateWith(ForwardedRequestDetails)"/> - passing
 /// the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/> on to YARP for forwarding to the appropriate endpoint, or
 /// <see cref="TerminateWith(NonForwardedResponseDetails)"/> a specific response code, headers and/or body.
 /// </remarks>
@@ -27,20 +29,6 @@ public readonly struct YarpPipelineState :
     ILoggable<YarpPipelineState>,
     IErrorProvider<YarpPipelineState, YarpPipelineError>
 {
-    private readonly RequestSignature nominalRequestSignature;
-
-    private YarpPipelineState(RequestTransformContext requestTransformContext, in RequestSignature nominalRequestSignature, in NonForwardedResponseDetails responseDetails, TransformState pipelineState, PipelineStepStatus executionStatus, in YarpPipelineError errorDetails, ILogger logger, CancellationToken cancellationToken)
-    {
-        this.RequestTransformContext = requestTransformContext;
-        this.ResponseDetails = responseDetails;
-        this.PipelineState = pipelineState;
-        this.ErrorDetails = errorDetails;
-        this.ExecutionStatus = executionStatus;
-        this.Logger = logger;
-        this.CancellationToken = cancellationToken;
-        this.nominalRequestSignature = nominalRequestSignature;
-    }
-
     private enum TransformState
     {
         Continue,
@@ -91,9 +79,28 @@ public readonly struct YarpPipelineState :
     /// </summary>
     internal bool ShouldTerminatePipeline => this.PipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
 
+    // TODO: an experiment. We are wondering whether changing YarpPipelineState
+    // to contain a small number of reference type fields, and pooling the memory
+    // that those fields point to. If we partition the information carefully,
+    // this might minimize the number of times we need to copy data to enable
+    // modification while retaining immutability. For example, there are values
+    // passed in at startup that are immutable, so if those moved into a separate
+    // object, that might reduce the amount of work expended copying the YarpPipelineState
+    // every time we want to create a modified version.
+    // However, we're not doing that for now...
+    // It is an open question as to whether this would make any kind of measurable
+    // improvement, because .NET 8 seems to do a pretty good job of minimizing
+    // copies when types are immutable.
+    // (The motivation for this note was worry over adding "just one more" property
+    // into this struct. Specifically, the cluster id and possibly the final request
+    // signature.)
+    private RequestSignature NominalRequestSignature { get; init; }
+
     private TransformState PipelineState { get; init; }
 
-    private NonForwardedResponseDetails ResponseDetails { get; init; }
+    private ForwardedRequestDetails ForwardedRequestDetails { get; init; }
+
+    private NonForwardedResponseDetails NonForwardedResponseDetails { get; init; }
 
     /// <summary>
     /// Gets an instance of the <see cref="YarpPipelineState"/> for a particular
@@ -110,7 +117,25 @@ public readonly struct YarpPipelineState :
     /// </remarks>
     public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
-        return new(requestTransformContext, RequestSignature.From(requestTransformContext.HttpContext.Request), default, TransformState.Continue, default, default, logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance, cancellationToken);
+        return new()
+        {
+            RequestTransformContext = requestTransformContext,
+            NominalRequestSignature = RequestSignature.From(requestTransformContext.HttpContext.Request),
+            Logger = logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance,
+            CancellationToken = cancellationToken,
+        };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpPipelineState"/> instance which will terminate the pipeline
+    /// with the given request forwarding details. The request will be forwarded to the endpoint.
+    /// </summary>
+    /// <param name="forwardedRequestDetails">The details of the response to return.</param>
+    /// <returns>The terminating <see cref="YarpPipelineState"/>.</returns>
+    public YarpPipelineState TerminateWith(ForwardedRequestDetails forwardedRequestDetails)
+    {
+        this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-forward");
+        return this with { PipelineState = TransformState.TerminateAndForward, ForwardedRequestDetails = forwardedRequestDetails };
     }
 
     /// <summary>
@@ -121,19 +146,8 @@ public readonly struct YarpPipelineState :
     /// <returns>The terminating <see cref="YarpPipelineState"/>.</returns>
     public YarpPipelineState TerminateWith(NonForwardedResponseDetails responseDetails)
     {
-        this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with");
-        return this with { PipelineState = TransformState.Terminate, ResponseDetails = responseDetails };
-    }
-
-    /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance which will terminate the pipeline
-    /// and allow the request to be forwarded to the appropriate endpoint.
-    /// </summary>
-    /// <returns>The terminating <see cref="YarpPipelineState"/>.</returns>
-    public YarpPipelineState TerminateAndForward()
-    {
-        this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-and-forward");
-        return this with { PipelineState = TransformState.TerminateAndForward };
+        this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-nonforward");
+        return this with { PipelineState = TransformState.Terminate, NonForwardedResponseDetails = responseDetails };
     }
 
     /// <summary>
@@ -156,18 +170,29 @@ public readonly struct YarpPipelineState :
     /// Determines whether the result should be forwarded through YARP,
     /// or whether we should build a local response using the resulting response details.
     /// </summary>
-    /// <param name="responseDetails">The response details to use if the result should not be forwarded.</param>
-    /// <returns><see langword="true"/> if the result should be forwarded. If <see langword="false"/> then
-    /// the <paramref name="responseDetails"/> will be set an can be used to build a local response.</returns>
-    public bool ShouldForward(out NonForwardedResponseDetails responseDetails)
+    /// <param name="forwardedRequestDetails">The response details to use if the result should be forwarded.</param>
+    /// <param name="nonForwardedResponseDetails">The response details to use if the result should not be forwarded.</param>
+    /// <returns><see langword="true"/> if the result should be forwarded, and the
+    /// <paramref name="forwardedRequestDetails"/> will be set, and will describe how to proxy the request. If <see langword="false"/> then
+    /// the <paramref name="nonForwardedResponseDetails"/> will be set and can be used to build a local response.</returns>
+    public bool ShouldForward(
+        [NotNullWhen(true)] out ForwardedRequestDetails? forwardedRequestDetails,
+        [NotNullWhen(false)] out NonForwardedResponseDetails? nonForwardedResponseDetails)
     {
-        if (this.PipelineState == TransformState.Continue || this.PipelineState == TransformState.TerminateAndForward)
+        if (this.PipelineState == TransformState.Continue)
         {
-            responseDetails = default;
+            throw new InvalidOperationException($"The pipeline did not call {nameof(this.TerminateWith)}");
+        }
+
+        if (this.PipelineState == TransformState.TerminateAndForward)
+        {
+            forwardedRequestDetails = this.ForwardedRequestDetails;
+            nonForwardedResponseDetails = default;
             return true;
         }
 
-        responseDetails = this.ResponseDetails;
+        forwardedRequestDetails = default;
+        nonForwardedResponseDetails = this.NonForwardedResponseDetails;
         return false;
     }
 
@@ -183,15 +208,7 @@ public readonly struct YarpPipelineState :
     /// </remarks>
     public YarpPipelineState OverrideNominalRequestSignature(RequestSignature requestSignature)
     {
-        return new YarpPipelineState(
-            this.RequestTransformContext,
-            requestSignature,
-            this.ResponseDetails,
-            this.PipelineState,
-            this.ExecutionStatus,
-            this.ErrorDetails,
-            this.Logger,
-            this.CancellationToken);
+        return this with { NominalRequestSignature = requestSignature };
     }
 
     /// <summary>
@@ -204,6 +221,6 @@ public readonly struct YarpPipelineState :
     /// </remarks>
     public RequestSignature GetNominalRequestSignature()
     {
-        return this.nominalRequestSignature;
+        return this.NominalRequestSignature;
     }
 }

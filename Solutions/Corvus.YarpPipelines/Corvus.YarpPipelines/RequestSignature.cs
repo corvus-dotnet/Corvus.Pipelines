@@ -37,7 +37,7 @@ public readonly struct RequestSignature
 
     /// <summary>
     /// Gets the host.
-    /// </summary>B
+    /// </summary>
     public string Host => this.request?.Host.Host ?? this.requestSignatureOverride?.Host ?? throw new InvalidOperationException();
 
     /// <summary>
@@ -66,6 +66,15 @@ public readonly struct RequestSignature
         // retrieving the Query property, or does it not do anything until we ask it questions?
         return new RequestSignature(request);
     }
+
+    /// <summary>
+    /// Returns a new <see cref="RequestSignature"/> which copies all but the
+    /// <see cref="QueryString"/> property, replacing that with the specified value.
+    /// </summary>
+    /// <param name="queryString">The value for <see cref="QueryString"/>.</param>
+    /// <returns>A <see cref="RequestSignature"/>.</returns>
+    public RequestSignature WithQueryString(QueryString queryString)
+        => new(this.Host, this.Path, queryString, this.Method);
 
     private record RequestSignatureOverride(string Host, string Path, QueryString QueryString, string Method);
 }
