@@ -285,4 +285,19 @@ SyncPipelineStep<CanFailState<int>> stepCanFail =
             ? state.TransientFailure()
             : CanFailState.For(state.Value + 1);
 
-var canFailInt = stepCanFail(CanFailState.For(1));
+CanFailState<int> canFailInt = stepCanFail(CanFailState.For(1));
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+canFailInt = stepCanFail(CanFailState.For(0));
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+canFailInt = stepCanFail(canFailInt);
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+SyncPipelineStep<CanFailState<int>> retryingTransientFailure =
+        stepCanFail.Retry(Retry.TransientPolicy<CanFailState<int>>());
+
+canFailInt = retryingTransientFailure(CanFailState.For(0));
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");

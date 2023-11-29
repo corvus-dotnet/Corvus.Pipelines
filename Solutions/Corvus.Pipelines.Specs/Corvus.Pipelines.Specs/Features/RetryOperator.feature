@@ -35,7 +35,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 
 	Given I produce the steps
 		| Step name   | State type                                                 | Sync or async | Step definition                                                                                                                                                                                                                                 |
-		| BeforeRetry | RetryContext<CanFailState<(int Computed, int RetryCount)>> | async         | context => ValueTask.FromResult<RetryContext<CanFailState<(int Computed, int RetryCount)>>>(new (context.State.WithValue((context.State.Value.Computed, context.FailureCount)), default, default))                                              |
+		| BeforeRetry | RetryContext<CanFailState<(int Computed, int RetryCount)>> | async         | context => ValueTask.FromResult<RetryContext<CanFailState<(int Computed, int RetryCount)>>>(context.WithState(context.State.WithValue((context.State.Value.Computed, context.FailureCount))))                                                   |
 		| Step1       | CanFailState<(int Computed, int RetryCount)>               | async         | state => ValueTask.FromResult(state.Value.Computed == 0 && state.ExecutionStatus == PipelineStepStatus.Success ? state.<Failure type>() : CanFailState<(int Computed, int RetryCount)>.For((state.Value.Computed + 1, state.Value.RetryCount))) |
 		| TestStep    | CanFailState<(int Computed, int RetryCount)>               | async         | Steps.Step1.Retry(context => context.State.ExecutionStatus == PipelineStepStatus.TransientFailure, BeforeRetry)                                                                                                                                 |
 	When I execute the async step "TestStep" with the input of type "CanFailState<(int Computed, int RetryCount)>" <Input>
@@ -51,7 +51,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 
 	Given I produce the steps
 		| Step name   | State type                                                 | Sync or async | Step definition                                                                                                                                                                                                           |
-		| BeforeRetry | RetryContext<CanFailState<(int Computed, int RetryCount)>> | sync          | context => new (context.State.WithValue((context.State.Value.Computed, context.FailureCount)), default, default)                                                                                                          |
+		| BeforeRetry | RetryContext<CanFailState<(int Computed, int RetryCount)>> | sync          | context => context.WithState(context.State.WithValue((context.State.Value.Computed, context.FailureCount)))                                                                                                               |
 		| Step1       | CanFailState<(int Computed, int RetryCount)>               | sync          | state => state.Value.Computed == 0 && state.ExecutionStatus == PipelineStepStatus.Success ? state.<Failure type>() : CanFailState<(int Computed, int RetryCount)>.For((state.Value.Computed + 1, state.Value.RetryCount)) |
 		| TestStep    | CanFailState<(int Computed, int RetryCount)>               | sync          | Steps.Step1.Retry(context => context.State.ExecutionStatus == PipelineStepStatus.TransientFailure, BeforeRetry)                                                                                                           |
 	When I execute the sync step "TestStep" with the input of type "CanFailState<(int Computed, int RetryCount)>" <Input>
@@ -94,11 +94,11 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	When I execute the async step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
 	Then the async output of "TestStep" should be <Expected output>
 	And the log Services.Logger should contain the following entries
-		| Log level   | Message     | Scope |
-		| Information | Retrying: 1 |       |
-		| Information | Retrying: 2 |       |
-		| Information | Retrying: 3 |       |
-		| Information | Retrying: 4 |       |
+		| Log level   | Message               | Scope |
+		| Information | Retrying: 1 {anytime} |       |
+		| Information | Retrying: 2 {anytime} |       |
+		| Information | Retrying: 3 {anytime} |       |
+		| Information | Retrying: 4 {anytime} |       |
 
 Examples:
 	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                 |
@@ -116,11 +116,11 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	When I execute the sync step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
 	Then the sync output of "TestStep" should be <Expected output>
 	And the log Services.Logger should contain the following entries
-		| Log level   | Message     | Scope |
-		| Information | Retrying: 1 |       |
-		| Information | Retrying: 2 |       |
-		| Information | Retrying: 3 |       |
-		| Information | Retrying: 4 |       |
+		| Log level   | Message               | Scope |
+		| Information | Retrying: 1 {anytime} |       |
+		| Information | Retrying: 2 {anytime} |       |
+		| Information | Retrying: 3 {anytime} |       |
+		| Information | Retrying: 4 {anytime} |       |
 
 Examples:
 	| Input                                             | Expected output                                                      | Failure type     | Delay         | Retry policy                                    | Retry strategy                                     |
@@ -140,7 +140,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 	And the timer Services.Timer should show <Expected time> within <Timing delta>
 
 Examples:
-	| Input                    | Expected output                             | Failure type     | Retry strategy                                                                                                                                  | Expected time                  | Timing delta                  |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.FixedDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50))                                                                      | TimeSpan.FromMilliseconds(250) | TimeSpan.FromMilliseconds(50) |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.LinearDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150))      | TimeSpan.FromMilliseconds(450) | TimeSpan.FromMilliseconds(50) |
-	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.ExponentialDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150)) | TimeSpan.FromMilliseconds(550) | TimeSpan.FromMilliseconds(50) |
+	| Input                    | Expected output                             | Failure type     | Retry strategy                                                                                                   | Expected time                  | Timing delta                  |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.FixedDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50))                                       | TimeSpan.FromMilliseconds(250) | TimeSpan.FromMilliseconds(50) |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.LinearDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150))      | TimeSpan.FromMilliseconds(450) | TimeSpan.FromMilliseconds(50) |
+	| CanFailInt32State.For(0) | CanFailInt32State.For(5).TransientFailure() | TransientFailure | Retry.ExponentialDelayStrategy<CanFailInt32State>(TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(150)) | TimeSpan.FromMilliseconds(550) | TimeSpan.FromMilliseconds(50) |

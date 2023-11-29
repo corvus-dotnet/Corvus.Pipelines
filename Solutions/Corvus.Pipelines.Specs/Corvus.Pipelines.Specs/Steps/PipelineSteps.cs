@@ -206,7 +206,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
         static string Escape(string v)
         {
-            return v.Replace("\"", "\\\"").Replace("{", "\\{").Replace("}", "\\}");
+            return v.Replace("\"", "\\\"");
         }
     }
 

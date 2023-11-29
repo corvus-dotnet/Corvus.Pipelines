@@ -38,7 +38,7 @@ public class TestLogger : ILogger, IDisposable
         for (int i = 0; i < loggedItems.Count; ++i)
         {
             Assert.AreEqual(expectedEntries[i].LogLevel, loggedItems[i].LogLevel);
-            Assert.AreEqual(expectedEntries[i].Message, loggedItems[i].Message);
+            ValidateMessage(expectedEntries[i].Message, loggedItems[i].Message);
             Assert.AreEqual(expectedEntries[i].Scope, loggedItems[i].Scope);
         }
     }
@@ -57,6 +57,21 @@ public class TestLogger : ILogger, IDisposable
         }
 
         this.Entries.Enqueue(new(logLevel, eventId, exception, formatter(state, exception), scope));
+    }
+
+    private static void ValidateMessage(string expected, string? actual)
+    {
+        Assert.IsNotNull(actual);
+        int indexOfAnyTime = expected.IndexOf("{anytime}");
+        if (indexOfAnyTime >= 0)
+        {
+            Assert.AreEqual(expected[..indexOfAnyTime], actual![..indexOfAnyTime]);
+            Assert.IsTrue(DateTime.TryParse(actual.AsSpan()[indexOfAnyTime..], out DateTime _));
+        }
+        else
+        {
+            Assert.AreEqual(expected, actual);
+        }
     }
 
     public readonly record struct LogEntry(LogLevel LogLevel, EventId EventId, Exception? Exception, string? Message, string? Scope);

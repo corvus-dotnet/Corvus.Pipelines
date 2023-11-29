@@ -58,26 +58,31 @@ public static class YarpRetry
     /// Gets a pipeline step that delays for a fixed period.
     /// </summary>
     /// <param name="duration">The fixed duration to delay before retrying.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<YarpPipelineState>> FixedDelayStrategy(TimeSpan duration) => LogStrategy().Bind(Retry.FixedDelayStrategy<YarpPipelineState>(duration));
+    public static PipelineStep<RetryContext<YarpPipelineState>> FixedDelayStrategy(TimeSpan duration, bool jitter = false, Func<double>? randomGenerator = null)
+        => LogStrategy().Bind(Retry.FixedDelayStrategy<YarpPipelineState>(duration, jitter, randomGenerator));
 
     /// <summary>
     /// Gets a pipeline step that delays with a linear backoff.
     /// </summary>
-    /// <param name="initialDuration">The initial duration for the linear retry delay.</param>
-    /// <param name="increment">The increment for the linear retry delay.</param>
+    /// <param name="baseDuration">The initial duration for the linear retry delay.</param>
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
     /// <returns>A <see cref="PipelineStep{YarpPipelineState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<YarpPipelineState>> LinearDelayStrategy(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        => LogStrategy().Bind(Retry.LinearDelayStrategy<YarpPipelineState>(initialDuration, increment, maximumDuration));
+    public static PipelineStep<RetryContext<YarpPipelineState>> LinearDelayStrategy(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
+        => LogStrategy().Bind(Retry.LinearDelayStrategy<YarpPipelineState>(baseDuration, maximumDuration, jitter, randomGenerator));
 
     /// <summary>
     /// Gets a pipeline step that delays with an exponential backoff.
     /// </summary>
-    /// <param name="initialDuration">The initial duration for the linear retry delay.</param>
-    /// <param name="increment">The increment for the linear retry delay.</param>
+    /// <param name="baseDuration">The initial duration for the linear retry delay.</param>
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<YarpPipelineState>> ExponentialDelayStrategy(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
-        => LogStrategy().Bind(Retry.ExponentialDelayStrategy<YarpPipelineState>(initialDuration, increment, maximumDuration));
+    public static PipelineStep<RetryContext<YarpPipelineState>> ExponentialDelayStrategy(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
+        => LogStrategy().Bind(Retry.ExponentialDelayStrategy<YarpPipelineState>(baseDuration, maximumDuration, jitter, randomGenerator));
 }

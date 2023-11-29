@@ -1417,4 +1417,52 @@ SyncPipelineStep<CanFailState<int>> stepCanFail =
 
 This looks at the `Value` of our state, and, under normal circumstance, just returns a state with the value incremented by one.
 
-However, *if* the current `Value` is `0`, *and* the `ExecutionStatus` indicates a success state, then it will produce a `TransientFailure()` - otherwise it will return a 
+However, *if* the current `Value` is `0`, *and* the `ExecutionStatus` indicates a success state, then it will produce a `TransientFailure()`.
+
+Essentially, this gives us a means of conditionally failing exactly once (if the value of the state is `0`).
+
+Why is that? Well, once the step has failed, its `ExecutionStatus` will no longer be `PipelineStepState.Success` and so on a second call to the step with the updated state, it will produce the incremented value with the default (`Success`) execution status.
+
+Or, to put it another way, if we had some means of trying again, we would succeed the second time.
+
+Let's test that out.
+
+```csharp
+CanFailState<int> canFailInt = stepCanFail(CanFailState.For(1));
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+```
+
+Passing in 1 produces
+
+```
+2 : Success
+```
+
+However, passing in 0:
+
+```csharp
+canFailInt = stepCanFail(CanFailState.For(0));
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+```
+
+produces:
+
+```
+0 : TransientFailure
+```
+
+But if we call that again, passing back the state we previously used:
+
+```csharp
+canFailInt = stepCanFail(canFailInt);
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+```
+
+The second time, it produces:
+
+```
+1 : Success
+```
+
+So now, we can apply our `Retry()` operator to this step, and have it automatically retry on transient failures.
+

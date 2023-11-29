@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System;
 using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -148,7 +149,7 @@ public static class PipelineStepExtensions
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
     /// <see cref="ICanFail{TSelf}"/> step with permanent or transient failure handling via
-    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
+    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?, TimeProvider?)"/> and
     /// <see cref="OnError{TState}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
     public static PipelineStep<TState> Catch<TState, TException>(this PipelineStep<TState> step, Func<TState, TException, ValueTask<TState>> exceptionHandler)
@@ -179,7 +180,7 @@ public static class PipelineStepExtensions
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
     /// <see cref="ICanFail{TSelf}"/> step with permanent or transient failure handling via
-    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
+    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?, TimeProvider?)"/> and
     /// <see cref="OnError{TState}(PipelineStep{TState}, PipelineStep{TState})"/>.
     /// </remarks>
     public static PipelineStep<TState> Catch<TState, TException>(this PipelineStep<TState> step, Func<TState, TException, TState> exceptionHandler)
@@ -210,7 +211,7 @@ public static class PipelineStepExtensions
     /// <remarks>
     /// This is commonly used in conjunction with the termination capability of a <see cref="Pipeline"/>, and/or a
     /// <see cref="ICanFail{TSelf}"/> step with permanent or transient failure handling via
-    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?)"/> and
+    /// operators like <see cref="Retry{TState}(PipelineStep{TState}, Predicate{RetryContext{TState}}, PipelineStep{RetryContext{TState}}?, TimeProvider?)"/> and
     /// <see cref="OnError{TState}(SyncPipelineStep{TState}, SyncPipelineStep{TState})"/>.
     /// </remarks>
     public static SyncPipelineStep<TState> Catch<TState, TException>(this SyncPipelineStep<TState> step, Func<TState, TException, TState> exceptionHandler)
@@ -238,17 +239,22 @@ public static class PipelineStepExtensions
     /// <param name="shouldRetry">A predicate which determines if the step should be retried.</param>
     /// <param name="beforeRetry">An step to carry out before retrying. This is commonly an asynchronous delay, but can be used to return
     /// an updated version of the state before retyring the action (e.g. incrementing an execution count.</param>
+    /// <param name="timeProvider">A time provider to use for the retry operation.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
     /// and execute it using the result.</returns>
-    public static PipelineStep<TState> Retry<TState>(this PipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, PipelineStep<RetryContext<TState>>? beforeRetry = null)
+    public static PipelineStep<TState> Retry<TState>(this PipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, PipelineStep<RetryContext<TState>>? beforeRetry = null, TimeProvider? timeProvider = null)
         where TState : struct, ICanFail<TState>
     {
+        timeProvider ??= TimeProvider.System;
+
         return async state =>
         {
             TState currentState = state;
-            DateTimeOffset initialTime = DateTimeOffset.UtcNow;
+            long initialTime = timeProvider.GetTimestamp();
 
             int tryCount = 1;
+
+            double correlationBase = 0;
 
             while (true)
             {
@@ -258,7 +264,7 @@ public static class PipelineStepExtensions
                     return currentState;
                 }
 
-                RetryContext<TState> retryContext = new(currentState, DateTimeOffset.UtcNow - initialTime, tryCount);
+                RetryContext<TState> retryContext = new(currentState, timeProvider.GetElapsedTime(initialTime), tryCount, correlationBase);
 
                 if (!shouldRetry(retryContext))
                 {
@@ -267,7 +273,7 @@ public static class PipelineStepExtensions
 
                 if (beforeRetry is not null)
                 {
-                    (currentState, TimeSpan _, int _) = await beforeRetry(retryContext).ConfigureAwait(false);
+                    (currentState, TimeSpan _, int _, correlationBase) = await beforeRetry(retryContext).ConfigureAwait(false);
                 }
 
                 tryCount++;
@@ -283,17 +289,22 @@ public static class PipelineStepExtensions
     /// <param name="shouldRetry">A predicate which determines if the step should be retried.</param>
     /// <param name="beforeRetry">An step to carry out before retrying. This is commonly an asynchronous delay, but can be used to return
     /// an updated version of the state before retyring the action (e.g. incrementing an execution count.</param>
+    /// <param name="timeProvider">A time provider to use for the retry operation.</param>
     /// <returns>A <see cref="SyncPipelineStep{TState}"/> which, when executed, will execute the step, choose the appropriate pipeline, based on the result,
     /// and execute it using the result.</returns>
-    public static SyncPipelineStep<TState> Retry<TState>(this SyncPipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, SyncPipelineStep<RetryContext<TState>>? beforeRetry = null)
+    public static SyncPipelineStep<TState> Retry<TState>(this SyncPipelineStep<TState> step, Predicate<RetryContext<TState>> shouldRetry, SyncPipelineStep<RetryContext<TState>>? beforeRetry = null, TimeProvider? timeProvider = null)
         where TState : struct, ICanFail<TState>
     {
+        timeProvider ??= TimeProvider.System;
+
         return state =>
         {
             TState currentState = state;
-            DateTimeOffset initialTime = DateTimeOffset.UtcNow;
+            long initialTime = timeProvider.GetTimestamp();
 
             int tryCount = 1;
+
+            double correlationBase = 0;
 
             while (true)
             {
@@ -303,7 +314,7 @@ public static class PipelineStepExtensions
                     return currentState;
                 }
 
-                RetryContext<TState> retryContext = new(currentState, DateTimeOffset.UtcNow - initialTime, tryCount);
+                RetryContext<TState> retryContext = new(currentState, timeProvider.GetElapsedTime(initialTime), tryCount, correlationBase);
 
                 if (!shouldRetry(retryContext))
                 {
@@ -312,7 +323,7 @@ public static class PipelineStepExtensions
 
                 if (beforeRetry is not null)
                 {
-                    (currentState, TimeSpan _, int _) = beforeRetry(retryContext);
+                    (currentState, TimeSpan _, int _, correlationBase) = beforeRetry(retryContext);
                 }
 
                 tryCount++;

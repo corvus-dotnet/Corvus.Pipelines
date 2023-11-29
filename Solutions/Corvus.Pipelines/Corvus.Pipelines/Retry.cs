@@ -57,7 +57,7 @@ public static class Retry
             {
                 if (retryContext.State.Logger.IsEnabled(LogLevel.Information))
                 {
-                    retryContext.State.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount}", retryContext.FailureCount);
+                    retryContext.State.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount} {duration}", retryContext.FailureCount, retryContext.RetryDuration);
                 }
 
                 return ValueTask.FromResult(retryContext);
@@ -74,7 +74,7 @@ public static class Retry
         {
             if (retryContext.State.Logger.IsEnabled(LogLevel.Information))
             {
-                retryContext.State.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount}", retryContext.FailureCount);
+                retryContext.State.Logger.LogInformation(Pipeline.EventIds.Retrying, message: "Retrying: {failureCount} {duration}", retryContext.FailureCount, retryContext.RetryDuration);
             }
 
             return retryContext;
@@ -85,60 +85,90 @@ public static class Retry
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
     /// <param name="duration">The fixed duration to delay before retrying.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<TState>> FixedDelayStrategy<TState>(TimeSpan duration)
+    public static PipelineStep<RetryContext<TState>> FixedDelayStrategy<TState>(TimeSpan duration, bool jitter = false, Func<double>? randomGenerator = null)
         where TState : struct, ICanFail<TState>
-        => async retryContext =>
+    {
+        Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
+
+        return async retryContext =>
         {
-            await Task.Delay(duration).ConfigureAwait(false);
-            return retryContext;
+            double basis = retryContext.CorrelationBase;
+            TimeSpan retryDelay = RetryDelayHelper.GetRetryDelay(
+                RetryDelayHelper.DelayBackoffType.Constant,
+                jitter,
+                retryContext.FailureCount,
+                duration,
+                null,
+                ref basis,
+                rg);
+            await Task.Delay(retryDelay).ConfigureAwait(false);
+            return retryContext with { CorrelationBase = basis };
         };
+    }
 
     /// <summary>
     /// Gets a pipeline step that delays with a linear backoff.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="initialDuration">The initial duration for the linear retry delay.</param>
-    /// <param name="increment">The increment for the linear retry delay.</param>
+    /// <param name="baseDuration">The base duration for the linear retry delay.</param>
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<TState>> LinearDelayStrategy<TState>(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
+    public static PipelineStep<RetryContext<TState>> LinearDelayStrategy<TState>(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
         where TState : struct, ICanFail<TState>
-        => async retryContext =>
-        {
-            TimeSpan desiredIncrement = initialDuration + ((retryContext.FailureCount - 1) * increment);
+    {
+        Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
 
-            if (desiredIncrement > maximumDuration)
-            {
-                desiredIncrement = maximumDuration;
-            }
+        return async retryContext =>
+         {
+             double basis = retryContext.CorrelationBase;
+             TimeSpan retryDelay = RetryDelayHelper.GetRetryDelay(
+                 RetryDelayHelper.DelayBackoffType.Linear,
+                 jitter,
+                 retryContext.FailureCount,
+                 baseDuration,
+                 maximumDuration,
+                 ref basis,
+                 rg);
 
-            await Task.Delay(desiredIncrement).ConfigureAwait(false);
-            return retryContext;
-        };
+             await Task.Delay(retryDelay).ConfigureAwait(false);
+             return retryContext with { CorrelationBase = basis };
+         };
+    }
 
     /// <summary>
     /// Gets a pipeline step that delays with an exponential backoff.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>
-    /// <param name="initialDuration">The initial duration for the linear retry delay.</param>
-    /// <param name="increment">The increment for the linear retry delay.</param>
+    /// <param name="baseDuration">The initial duration for the linear retry delay.</param>
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<TState>> ExponentialDelayStrategy<TState>(TimeSpan initialDuration, TimeSpan increment, TimeSpan maximumDuration)
+    public static PipelineStep<RetryContext<TState>> ExponentialDelayStrategy<TState>(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
         where TState : struct, ICanFail<TState>
-        => async retryContext =>
+    {
+        Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
+
+        return async retryContext =>
         {
-            TimeSpan desiredIncrement = initialDuration + (Math.Pow(2, retryContext.FailureCount - 1) * increment);
-
-            if (desiredIncrement > maximumDuration)
-            {
-                desiredIncrement = maximumDuration;
-            }
-
-            await Task.Delay(desiredIncrement).ConfigureAwait(false);
-            return retryContext;
+            double basis = retryContext.CorrelationBase;
+            TimeSpan retryDelay = RetryDelayHelper.GetRetryDelay(
+                RetryDelayHelper.DelayBackoffType.Exponential,
+                jitter,
+                retryContext.FailureCount,
+                baseDuration,
+                maximumDuration,
+                ref basis,
+                rg);
+            await Task.Delay(retryDelay).ConfigureAwait(false);
+            return retryContext with { CorrelationBase = basis };
         };
+    }
 
     /// <summary>
     /// A binary operator that produces a predicate that is the logical AND of two retry policy predicates.
