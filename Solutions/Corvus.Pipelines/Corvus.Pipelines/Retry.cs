@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System;
 using Microsoft.Extensions.Logging;
 
 namespace Corvus.Pipelines;
@@ -87,8 +88,10 @@ public static class Retry
     /// <param name="duration">The fixed duration to delay before retrying.</param>
     /// <param name="jitter">Include jitter.</param>
     /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<TState>> FixedDelayStrategy<TState>(TimeSpan duration, bool jitter = false, Func<double>? randomGenerator = null)
+    public static PipelineStep<RetryContext<TState>> FixedDelayStrategy<TState>(TimeSpan duration, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null, CancellationToken cancellationToken = default)
         where TState : struct, ICanFail<TState>
     {
         Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
@@ -104,7 +107,16 @@ public static class Retry
                 null,
                 ref basis,
                 rg);
-            await Task.Delay(retryDelay).ConfigureAwait(false);
+
+            if (timeProvider is TimeProvider tp)
+            {
+                await Task.Delay(retryDelay, tp, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+            }
+
             return retryContext with { CorrelationBase = basis };
         };
     }
@@ -117,8 +129,10 @@ public static class Retry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <param name="jitter">Include jitter.</param>
     /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<TState>> LinearDelayStrategy<TState>(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
+    public static PipelineStep<RetryContext<TState>> LinearDelayStrategy<TState>(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null, CancellationToken cancellationToken = default)
         where TState : struct, ICanFail<TState>
     {
         Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
@@ -135,7 +149,15 @@ public static class Retry
                  ref basis,
                  rg);
 
-             await Task.Delay(retryDelay).ConfigureAwait(false);
+             if (timeProvider is TimeProvider tp)
+             {
+                 await Task.Delay(retryDelay, tp, cancellationToken).ConfigureAwait(false);
+             }
+             else
+             {
+                 await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+             }
+
              return retryContext with { CorrelationBase = basis };
          };
     }
@@ -148,8 +170,10 @@ public static class Retry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <param name="jitter">Include jitter.</param>
     /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<TState>> ExponentialDelayStrategy<TState>(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
+    public static PipelineStep<RetryContext<TState>> ExponentialDelayStrategy<TState>(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null, CancellationToken cancellationToken = default)
         where TState : struct, ICanFail<TState>
     {
         Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
@@ -165,7 +189,16 @@ public static class Retry
                 maximumDuration,
                 ref basis,
                 rg);
-            await Task.Delay(retryDelay).ConfigureAwait(false);
+
+            if (timeProvider is TimeProvider tp)
+            {
+                await Task.Delay(retryDelay, tp, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await Task.Delay(retryDelay, cancellationToken).ConfigureAwait(false);
+            }
+
             return retryContext with { CorrelationBase = basis };
         };
     }

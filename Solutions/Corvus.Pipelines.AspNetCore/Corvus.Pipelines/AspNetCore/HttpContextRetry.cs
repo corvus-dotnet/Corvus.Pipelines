@@ -58,9 +58,11 @@ public static class HttpContextRetry
     /// <param name="duration">The fixed duration to delay before retrying.</param>
     /// <param name="jitter">Include jitter.</param>
     /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<HttpContextPipelineState>> FixedDelayStrategy(TimeSpan duration, bool jitter = false, Func<double>? randomGenerator = null)
-        => LogStrategy().Bind(Retry.FixedDelayStrategy<HttpContextPipelineState>(duration, jitter, randomGenerator));
+    public static PipelineStep<RetryContext<HttpContextPipelineState>> FixedDelayStrategy(TimeSpan duration, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null, CancellationToken cancellationToken = default)
+        => LogStrategy().Bind(Retry.FixedDelayStrategy<HttpContextPipelineState>(duration, jitter, randomGenerator, timeProvider, cancellationToken));
 
     /// <summary>
     /// Gets a pipeline step that delays with a linear backoff.
@@ -69,9 +71,11 @@ public static class HttpContextRetry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <param name="jitter">Include jitter.</param>
     /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="PipelineStep{HttpContextPipelineState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<HttpContextPipelineState>> LinearDelayStrategy(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
-        => LogStrategy().Bind(Retry.LinearDelayStrategy<HttpContextPipelineState>(baseDuration, maximumDuration, jitter, randomGenerator));
+    public static PipelineStep<RetryContext<HttpContextPipelineState>> LinearDelayStrategy(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null, CancellationToken cancellationToken = default)
+        => LogStrategy().Bind(Retry.LinearDelayStrategy<HttpContextPipelineState>(baseDuration, maximumDuration, jitter, randomGenerator, timeProvider, cancellationToken));
 
     /// <summary>
     /// Gets a pipeline step that delays with an exponential backoff.
@@ -80,7 +84,9 @@ public static class HttpContextRetry
     /// <param name="maximumDuration">The maximum duration the linear retry delay.</param>
     /// <param name="jitter">Include jitter.</param>
     /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A <see cref="PipelineStep{TState}"/> that will delay before retrying the operation.</returns>
-    public static PipelineStep<RetryContext<HttpContextPipelineState>> ExponentialDelayStrategy(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null)
-        => LogStrategy().Bind(Retry.ExponentialDelayStrategy<HttpContextPipelineState>(baseDuration, maximumDuration, jitter, randomGenerator));
+    public static PipelineStep<RetryContext<HttpContextPipelineState>> ExponentialDelayStrategy(TimeSpan baseDuration, TimeSpan maximumDuration, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null, CancellationToken cancellationToken = default)
+        => LogStrategy().Bind(Retry.ExponentialDelayStrategy<HttpContextPipelineState>(baseDuration, maximumDuration, jitter, randomGenerator, timeProvider, cancellationToken));
 }

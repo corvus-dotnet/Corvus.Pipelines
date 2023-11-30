@@ -1466,3 +1466,9 @@ The second time, it produces:
 
 So now, we can apply our `Retry()` operator to this step, and have it automatically retry on transient failures.
 
+```csharp
+SyncPipelineStep<CanFailState<int>> retryingTransientFailure =
+        stepCanFail.Retry(Retry.TransientPolicy<CanFailState<int>>());
+
+canFailInt = retryingTransientFailure(CanFailState.For(0));
+```
