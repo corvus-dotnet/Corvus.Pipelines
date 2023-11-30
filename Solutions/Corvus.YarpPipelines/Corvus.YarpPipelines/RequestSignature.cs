@@ -56,6 +56,14 @@ public readonly struct RequestSignature
     public string Method => this.request?.Method ?? this.requestSignatureOverride?.Method ?? throw new InvalidOperationException();
 
     /// <summary>
+    /// Creates a <see cref="RequestSignature"/> representing a specific path, not specifying any particular
+    /// host or method.
+    /// </summary>
+    /// <param name="path">The <see cref="Path"/>.</param>
+    /// <returns>A <see cref="RequestSignature"/>.</returns>
+    public static RequestSignature ForPath(string path) => new(string.Empty, path, QueryString.Empty, string.Empty);
+
+    /// <summary>
     /// Creates a <see cref="RequestSignature"/> from the elements of an <see cref="HttpRequest"/>.
     /// </summary>
     /// <param name="request">The request.</param>
