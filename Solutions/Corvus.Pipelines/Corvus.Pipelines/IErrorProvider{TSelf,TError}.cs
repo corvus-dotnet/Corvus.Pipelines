@@ -10,8 +10,8 @@ namespace Corvus.Pipelines;
 /// <typeparam name="TSelf">The type implementing the capability.</typeparam>
 /// <typeparam name="TError">The type of the error details.</typeparam>
 public interface IErrorProvider<TSelf, TError> : ICanFail<TSelf>
-    where TError : notnull
     where TSelf : struct, IErrorProvider<TSelf, TError>
+    where TError : notnull
 {
     /// <summary>
     /// Gets the error details if available.

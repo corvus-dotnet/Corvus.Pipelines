@@ -9,7 +9,7 @@ namespace Corvus.YarpPipelines;
 /// <summary>
 /// The information required to build a local response for a non-forwarded pipeline result.
 /// </summary>
-/// <remarks><see cref="YarpPipelineState.TerminateWith(NonForwardedResponseDetails)"/> for more details.</remarks>
+/// <remarks><see cref="YarpRequestPipelineState.TerminateWith(NonForwardedResponseDetails)"/> for more details.</remarks>
 public readonly struct NonForwardedResponseDetails
 {
     private readonly string? redirectLocation;
