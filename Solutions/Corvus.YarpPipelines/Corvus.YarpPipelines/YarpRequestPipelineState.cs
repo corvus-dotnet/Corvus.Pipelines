@@ -16,7 +16,7 @@ using Yarp.ReverseProxy.Transforms;
 namespace Corvus.YarpPipelines;
 
 /// <summary>
-/// The state for processing a YARP transform.
+/// The state for processing a YARP request transform.
 /// </summary>
 /// <remarks>
 /// The steps in the pipe can inspect and modify the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>,
