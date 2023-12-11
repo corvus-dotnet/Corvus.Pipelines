@@ -57,22 +57,31 @@ public static class CookieRescoping
 
             foreach ((string cookieName, string cookieValue) in cookies)
             {
-                ReadOnlySpan<char> cookNameRos = cookieName;
+                ReadOnlyMemory<char> cookNameRos = cookieName.AsMemory();
 
                 if (cookieName.StartsWith(scopePrefix))
                 {
-                    ReadOnlySpan<char> originalCookieName = cookieName[scopePrefix.Length..].AsSpan();
+                    ReadOnlySpan<char> originalCookieName = cookieName.AsSpan()[scopePrefix.Length..];
                     foreach (ReadOnlySpan<char> cookieNamePrefix in cookieNamePrefixes)
                     {
                         if (originalCookieName.StartsWith(cookieNamePrefix, StringComparison.Ordinal))
                         {
-                            cookNameRos = originalCookieName;
+                            cookNameRos = cookNameRos[scopePrefix.Length..];
                             break;
                         }
                     }
                 }
 
-                state.RequestTransformContext.ProxyRequest.Headers.Add("Cookie", $"{cookNameRos}={cookieValue}");
+                string cookieHeaderValue = string.Create(
+                    cookNameRos.Length + cookieValue.Length + 1,
+                    (cookNameRos, cookieValue),
+                    static (span, state) =>
+                    {
+                        state.cookNameRos.Span.CopyTo(span);
+                        span[state.cookNameRos.Length] = '=';
+                        state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
+                    });
+                state.RequestTransformContext.ProxyRequest.Headers.Add("Cookie", cookieHeaderValue);
             }
 
             return state;

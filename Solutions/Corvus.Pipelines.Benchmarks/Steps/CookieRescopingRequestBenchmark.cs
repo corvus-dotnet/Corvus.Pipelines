@@ -32,10 +32,11 @@ public class CookieRescopingRequestBenchmark
 #pragma warning restore SA1010 // Opening square brackets should be spaced correctly
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> RequestStep =
-        CookieRescoping.ForRequestSync(CookiePrefixes, "nocookiesstartlikethis");
+        CookieRescoping.ForRequestSync(CookiePrefixes, "AddedPrefix");
 
     private readonly YarpRequestPipelineState noIncomingCookiesState;
     private readonly YarpRequestPipelineState singleNonMatchingCookieState;
+    private readonly YarpRequestPipelineState singleMatchingCookieState;
 
     /// <summary>
     /// Setup.
@@ -52,7 +53,16 @@ public class CookieRescopingRequestBenchmark
         {
             HttpContext = new DefaultHttpContext
             {
-                Request = { Cookies = new CookieCollection { { "foo", "bar" } } },
+                Request = { Cookies = new CookieCollection { { "ShouldNotChange", "bar" } } },
+            },
+            ProxyRequest = new(),
+        });
+
+        this.singleMatchingCookieState = YarpRequestPipelineState.For(new RequestTransformContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                Request = { Cookies = new CookieCollection { { "AddedPrefix2345", "bar" } } },
             },
             ProxyRequest = new(),
         });
@@ -79,10 +89,20 @@ public class CookieRescopingRequestBenchmark
         return RequestStep(this.singleNonMatchingCookieState);
     }
 
+    /// <summary>
+    /// Execute the pipeline when the incoming request has a single cookie that does not
+    /// match any of the specified prefixes.
+    /// </summary>
+    /// <returns>The state, to ensure the benchmark isn't optimized into oblivion.</returns>
+    [Benchmark]
+    public YarpRequestPipelineState SingleIncomingMatchingCookie()
+    {
+        return RequestStep(this.singleMatchingCookieState);
+    }
+
     // NEXT TIME:
     // Benchmark cases where we do change something.
     // Then add response benchmarks.
-
 
     // Other dimensions:
     //  Match:
