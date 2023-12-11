@@ -301,3 +301,39 @@ SyncPipelineStep<CanFailState<int>> retryingTransientFailure =
 canFailInt = retryingTransientFailure(CanFailState.For(0));
 
 Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+
+SyncPipelineStep<CanFailState<int>> stepCanFailPermanently =
+    state =>
+        state.Value == 0 && state.ExecutionStatus == PipelineStepStatus.Success
+            ? state.PermanentFailure()
+            : CanFailState.For(state.Value + 1);
+
+
+SyncPipelineStep<CanFailState<int>> retryingPermanentFailure =
+        stepCanFailPermanently.Retry(Retry.TransientPolicy<CanFailState<int>>());
+
+canFailInt = retryingPermanentFailure(CanFailState.For(0));
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+SyncPipelineStep<CanFailState<int>> retryingAlwaysTransientFailure =
+    state => state.TransientFailure();
+
+SyncPipelineStep<CanFailState<int>> count5 =
+        retryingAlwaysTransientFailure.Retry(Retry.CountPolicy<CanFailState<int>>(5));
+
+canFailInt = count5(CanFailState.For(0));
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+SyncPipelineStep<CanFailState<int>> count5Transient =
+        retryingAlwaysTransientFailure.Retry(
+            Retry.CountPolicy<CanFailState<int>>(5)
+                .And(Retry.TransientPolicy<CanFailState<int>>()));
+
+canFailInt = count5Transient(CanFailState.For(0));
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+
+    

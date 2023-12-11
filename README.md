@@ -1472,3 +1472,73 @@ SyncPipelineStep<CanFailState<int>> retryingTransientFailure =
 
 canFailInt = retryingTransientFailure(CanFailState.For(0));
 ```
+
+It now produces the desired result directly:
+
+```
+1 : Success
+```
+
+But what if we produced a `PermanentFailure()` instead of a `TransientFailure()`?
+
+```csharp
+SyncPipelineStep<CanFailState<int>> stepCanFailPermanently =
+    state =>
+        state.Value == 0 && state.ExecutionStatus == PipelineStepStatus.Success
+            ? state.PermanentFailure()
+            : CanFailState.For(state.Value + 1);
+
+SyncPipelineStep<CanFailState<int>> retryingPermanentFailure =
+        stepCanFailPermanently.Retry(Retry.TransientPolicy<CanFailState<int>>());
+```
+
+If we run this the output is:
+
+```
+0 : PermanentFailure
+```
+
+So, our retry operation did not retry - and that is down to the _policy_ that we applied.
+
+### Retry Policy
+
+The `Retry()` method takes a `Predicate<RetryContext<TState>>` called `shouldRetry`.
+
+When a retry operation occurs, this predicate is passed an instance of the `RetryContext<TState>`. If it returns `true`, then the operation will be retried; if it returns `false` then it will not be retried.
+
+The retry context is a readonly struct that provides some useful information about the retry operation - the current `State`, the total elapsed time spent trying to execute the operation (`RetryDuration`), the total number of times the operation has failed (`FailureCount`) and a value called `CorrelationBase` which is typically used to pass information to help decorellate things like delays between runs in retry operations (We'll see how this is used in a moment.)
+
+```csharp
+public readonly record struct RetryContext<TState>(TState State, TimeSpan RetryDuration, int FailureCount, double CorrelationBase)```
+
+There are standard policies available on the `Retry` type.
+
+Here we are using the `Retry.TransientPolicy<TState>()` which only retries on transient failures.
+
+Another common policy is the `Retry.CountPolicy` which will only retry a fixed number of times.
+
+```
+SyncPipelineStep<CanFailState<int>> retryingAlwaysTransientFailure =
+    state => state.TransientFailure();
+
+SyncPipelineStep<CanFailState<int>> count5 =
+        retryingAlwaysTransientFailure.Retry(Retry.CountPolicy<CanFailState<int>>(5));
+
+canFailInt = count5(CanFailState.For(0));
+```
+
+If you *didn't* add the count, then this would retry forever (and you'd have to kill the program.)
+
+You can also combine these predicates. There are `Retry.And()`, `Retry.Or()` and `Retry.Not()` operators.
+
+```csharp
+SyncPipelineStep<CanFailState<int>> count5Transient =
+        retryingAlwaysTransientFailure.Retry(
+            Retry.CountPolicy<CanFailState<int>>(5)
+                .And(Retry.TransientPolicy<CanFailState<int>>()));
+
+canFailInt = count5Transient(CanFailState.For(0));
+```
+
+### Before-retry strategies
+
