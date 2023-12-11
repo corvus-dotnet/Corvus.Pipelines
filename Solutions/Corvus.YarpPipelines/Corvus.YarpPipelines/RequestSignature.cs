@@ -77,6 +77,15 @@ public readonly struct RequestSignature
 
     /// <summary>
     /// Returns a new <see cref="RequestSignature"/> which copies all but the
+    /// <see cref="Path"/> property, replacing that with the specified value.
+    /// </summary>
+    /// <param name="path">The value for <see cref="Path"/>.</param>
+    /// <returns>A <see cref="RequestSignature"/>.</returns>
+    public RequestSignature WithPath(string path)
+        => new(this.Host, path, this.QueryString, this.Method);
+
+    /// <summary>
+    /// Returns a new <see cref="RequestSignature"/> which copies all but the
     /// <see cref="QueryString"/> property, replacing that with the specified value.
     /// </summary>
     /// <param name="queryString">The value for <see cref="QueryString"/>.</param>

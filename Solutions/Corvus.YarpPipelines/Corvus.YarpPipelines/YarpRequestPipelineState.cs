@@ -1,4 +1,4 @@
-﻿// <copyright file="YarpPipelineState.cs" company="Endjin Limited">
+﻿// <copyright file="YarpRequestPipelineState.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
@@ -16,7 +16,7 @@ using Yarp.ReverseProxy.Transforms;
 namespace Corvus.YarpPipelines;
 
 /// <summary>
-/// The state for processing a YARP transform.
+/// The state for processing a YARP request transform.
 /// </summary>
 /// <remarks>
 /// The steps in the pipe can inspect and modify the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>,
@@ -24,10 +24,10 @@ namespace Corvus.YarpPipelines;
 /// the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/> on to YARP for forwarding to the appropriate endpoint, or
 /// <see cref="TerminateWith(NonForwardedResponseDetails)"/> a specific response code, headers and/or body.
 /// </remarks>
-public readonly struct YarpPipelineState :
-    ICancellable<YarpPipelineState>,
-    ILoggable<YarpPipelineState>,
-    IErrorProvider<YarpPipelineState, YarpPipelineError>
+public readonly struct YarpRequestPipelineState :
+    ICancellable<YarpRequestPipelineState>,
+    ILoggable<YarpRequestPipelineState>,
+    IErrorProvider<YarpRequestPipelineState, YarpPipelineError>
 {
     private enum TransformState
     {
@@ -75,17 +75,17 @@ public readonly struct YarpPipelineState :
 
     /// <summary>
     /// Gets a value indicating whether the pipeline should be terminated. This is used by the
-    /// terminate predicate for the <see cref="YarpPipeline"/>.
+    /// terminate predicate for the <see cref="YarpRequestPipeline"/>.
     /// </summary>
     internal bool ShouldTerminatePipeline => this.PipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
 
-    // TODO: an experiment. We are wondering whether changing YarpPipelineState
+    // TODO: an experiment. We are wondering whether changing YarpRequestPipelineState
     // to contain a small number of reference type fields, and pooling the memory
     // that those fields point to. If we partition the information carefully,
     // this might minimize the number of times we need to copy data to enable
     // modification while retaining immutability. For example, there are values
     // passed in at startup that are immutable, so if those moved into a separate
-    // object, that might reduce the amount of work expended copying the YarpPipelineState
+    // object, that might reduce the amount of work expended copying the YarpRequestPipelineState
     // every time we want to create a modified version.
     // However, we're not doing that for now...
     // It is an open question as to whether this would make any kind of measurable
@@ -103,11 +103,11 @@ public readonly struct YarpPipelineState :
     private NonForwardedResponseDetails NonForwardedResponseDetails { get; init; }
 
     /// <summary>
-    /// Gets an instance of the <see cref="YarpPipelineState"/> for a particular
+    /// Gets an instance of the <see cref="YarpRequestPipelineState"/> for a particular
     /// <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>.
     /// </summary>
     /// <param name="requestTransformContext">The <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/> with which to
-    /// initialize the <see cref="YarpPipelineState"/>.</param>
+    /// initialize the <see cref="YarpRequestPipelineState"/>.</param>
     /// <param name="logger">The logger to use for the context.</param>
     /// <param name="cancellationToken">The cancellation token to use for the context.</param>
     /// <returns>The initialized instance.</returns>
@@ -115,7 +115,7 @@ public readonly struct YarpPipelineState :
     /// You can explicitly provide a logger; if you don't it will be resolved from the service provider. If
     /// no logger is available in the service provider, it will fall back to the <see cref="NullLogger"/>.
     /// </remarks>
-    public static YarpPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
+    public static YarpRequestPipelineState For(RequestTransformContext requestTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
         return new()
         {
@@ -127,40 +127,40 @@ public readonly struct YarpPipelineState :
     }
 
     /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance which will terminate the pipeline
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
     /// with the given request forwarding details. The request will be forwarded to the endpoint.
     /// </summary>
     /// <param name="forwardedRequestDetails">The details of the response to return.</param>
-    /// <returns>The terminating <see cref="YarpPipelineState"/>.</returns>
-    public YarpPipelineState TerminateWith(ForwardedRequestDetails forwardedRequestDetails)
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState TerminateWith(ForwardedRequestDetails forwardedRequestDetails)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-forward");
         return this with { PipelineState = TransformState.TerminateAndForward, ForwardedRequestDetails = forwardedRequestDetails };
     }
 
     /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance which will terminate the pipeline
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
     /// with the given response details. The request will not be forwarded to the endpoint.
     /// </summary>
     /// <param name="responseDetails">The details of the response to return.</param>
-    /// <returns>The terminating <see cref="YarpPipelineState"/>.</returns>
-    public YarpPipelineState TerminateWith(NonForwardedResponseDetails responseDetails)
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState TerminateWith(NonForwardedResponseDetails responseDetails)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-nonforward");
         return this with { PipelineState = TransformState.Terminate, NonForwardedResponseDetails = responseDetails };
     }
 
     /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline.
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance that will continue processing the pipeline.
     /// </summary>
-    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
+    /// <returns>The non-terminating <see cref="YarpRequestPipelineState"/>.</returns>
     /// <remarks>
     /// <para>
     /// Note that if this is the last step in the pipeline, it will allow the request to be forwarded to
     /// the appropriate endpoint.
     /// </para>
     /// </remarks>
-    public YarpPipelineState Continue()
+    public YarpRequestPipelineState Continue()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "continue");
         return this with { PipelineState = TransformState.Continue };
@@ -206,7 +206,7 @@ public readonly struct YarpPipelineState :
     /// to select endpoint configuration based on the page the user was originally
     /// attempting to access.
     /// </remarks>
-    public YarpPipelineState OverrideNominalRequestSignature(RequestSignature requestSignature)
+    public YarpRequestPipelineState OverrideNominalRequestSignature(RequestSignature requestSignature)
     {
         return this with { NominalRequestSignature = requestSignature };
     }

@@ -15,18 +15,18 @@ namespace PipelineExamples;
 /// </summary>
 public static class ExampleYarpPipelineWithLogging
 {
-    private static readonly SyncPipelineStep<YarpPipelineState> HandleFizz =
+    private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleFizz =
         static state => state.GetNominalRequestSignature().Path == "/fizz"
                     ? state.TerminateWith(new ForwardedRequestDetails() { ClusterId = "Nonsense" })
                     : state.Continue();
 
-    private static readonly SyncPipelineStep<YarpPipelineState> HandleBuzz =
+    private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleBuzz =
         static state => state.GetNominalRequestSignature().Path == "/buzz"
                     ? throw new InvalidOperationException("Something's gone wrong!")
                     : state.Continue();
 
-    private static readonly SyncPipelineStep<YarpPipelineState> InnerPipelineInstance =
-        YarpPipeline.Build(
+    private static readonly SyncPipelineStep<YarpRequestPipelineState> InnerPipelineInstance =
+        YarpRequestPipeline.Build(
             HandleFizz.Log(),
             HandleBuzz.Log()).Log(name: "InnerPipeline");
 
@@ -45,10 +45,10 @@ public static class ExampleYarpPipelineWithLogging
             HandleFoo.Log(),
             HandleBar.Log()).Log(name: "MessageHandlerPipeline");
 
-    private static readonly SyncPipelineStep<YarpPipelineState> AddMessageToHttpContext =
+    private static readonly SyncPipelineStep<YarpRequestPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
             .Bind(
-                wrap: static (YarpPipelineState state) => HandlerState<PathString, string?>.For(state.GetNominalRequestSignature().Path, state.Logger),
+                wrap: static (YarpRequestPipelineState state) => HandlerState<PathString, string?>.For(state.GetNominalRequestSignature().Path, state.Logger),
                 unwrap: static (state, innerState) =>
                 {
                     if (innerState.WasHandled(out string? message))
@@ -66,12 +66,12 @@ public static class ExampleYarpPipelineWithLogging
                     return state.Continue();
                 });
 
-    private static readonly Func<YarpPipelineState, SyncPipelineStep<YarpPipelineState>> ChooseMessageContextHandler =
+    private static readonly Func<YarpRequestPipelineState, SyncPipelineStep<YarpRequestPipelineState>> ChooseMessageContextHandler =
             static state => state.GetNominalRequestSignature().QueryString.HasValue
                                 ? state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400))
                                 : AddMessageToHttpContext;
 
-    private static readonly Func<YarpPipelineState, Exception, YarpPipelineState> CatchPipelineException =
+    private static readonly Func<YarpRequestPipelineState, Exception, YarpRequestPipelineState> CatchPipelineException =
         static (state, exception) =>
         {
             if (state.Logger.IsEnabled(LogLevel.Warning))
@@ -92,12 +92,12 @@ public static class ExampleYarpPipelineWithLogging
             return state.TransientFailure(new YarpPipelineError("Unable to execute the pipeline.", exception));
         };
 
-    private static readonly SyncPipelineStep<YarpPipelineState> HandleRoot =
+    private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleRoot =
         static state => state.GetNominalRequestSignature().Path == "/" // You can write in this style where we execute steps directly
                 ? state.TerminateWith(new ForwardedRequestDetails() { ClusterId = "Nonsense" })
                 : InnerPipelineInstance(state);
 
-    private static readonly PipelineStep<YarpPipelineState> AsyncDelay =
+    private static readonly PipelineStep<YarpRequestPipelineState> AsyncDelay =
         static async state =>
         {
             await Task.Delay(0).ConfigureAwait(false);
@@ -107,10 +107,10 @@ public static class ExampleYarpPipelineWithLogging
     /// <summary>
     /// Gets an instance of an example yarp pipeline handler.
     /// </summary>
-    public static SyncPipelineStep<YarpPipelineState> Instance { get; } =
-        YarpPipeline.Build(
+    public static SyncPipelineStep<YarpRequestPipelineState> Instance { get; } =
+        YarpRequestPipeline.Build(
             HandleRoot,
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).Log()).Log(name: "MainPipeline")
+            YarpRequestPipeline.CurrentSync.Choose(ChooseMessageContextHandler).Log()).Log(name: "MainPipeline")
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5)) // YarpRetry automatically logs
@@ -119,11 +119,11 @@ public static class ExampleYarpPipelineWithLogging
     /// <summary>
     /// Gets an instance of an example yarp pipeline handler.
     /// </summary>
-    public static PipelineStep<YarpPipelineState> ForceAsyncInstance { get; } =
-        YarpPipeline.Build(
+    public static PipelineStep<YarpRequestPipelineState> ForceAsyncInstance { get; } =
+        YarpRequestPipeline.Build(
             HandleRoot.Log().ToAsync(), // You can make the named item async
             AsyncDelay,
-            YarpPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync().Log()).Log(name: "MainAsyncPipeline")
+            YarpRequestPipeline.CurrentSync.Choose(ChooseMessageContextHandler).ToAsync().Log()).Log(name: "MainAsyncPipeline")
         .Catch(CatchPipelineException)
         .Retry(
             YarpRetry.TransientWithCountPolicy(5),

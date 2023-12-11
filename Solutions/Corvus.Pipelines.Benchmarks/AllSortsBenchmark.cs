@@ -39,7 +39,7 @@ public class AllSortsBenchmark
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = ExampleYarpPipeline.Instance(YarpPipelineState.For(context));
+            YarpRequestPipelineState result = ExampleYarpPipeline.Instance(YarpRequestPipelineState.For(context));
             shouldForward &= result.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out NonForwardedResponseDetails? responseDetails);
         }
 
@@ -58,7 +58,7 @@ public class AllSortsBenchmark
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(context));
+            YarpRequestPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpRequestPipelineState.For(context));
             shouldForward &= result.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out NonForwardedResponseDetails? responseDetails);
         }
 
@@ -77,7 +77,7 @@ public class AllSortsBenchmark
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpPipelineState.For(context, NopLogger.Instance));
+            YarpRequestPipelineState result = ExampleYarpPipelineWithLogging.Instance(YarpRequestPipelineState.For(context, NopLogger.Instance));
             shouldForward &= result.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out NonForwardedResponseDetails? responseDetails);
         }
 
@@ -96,7 +96,7 @@ public class AllSortsBenchmark
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = await ExampleYarpPipeline.ForceAsyncInstance(YarpPipelineState.For(context)).ConfigureAwait(false);
+            YarpRequestPipelineState result = await ExampleYarpPipeline.ForceAsyncInstance(YarpRequestPipelineState.For(context)).ConfigureAwait(false);
             shouldForward &= result.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out NonForwardedResponseDetails? responseDetails);
         }
 
@@ -115,7 +115,7 @@ public class AllSortsBenchmark
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpPipelineState.For(context)).ConfigureAwait(false);
+            YarpRequestPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpRequestPipelineState.For(context)).ConfigureAwait(false);
             shouldForward &= result.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out NonForwardedResponseDetails? responseDetails);
         }
 
@@ -134,7 +134,7 @@ public class AllSortsBenchmark
         bool shouldForward = true;
         foreach (RequestTransformContext context in Contexts)
         {
-            YarpPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpPipelineState.For(context, NopLogger.Instance)).ConfigureAwait(false);
+            YarpRequestPipelineState result = await ExampleYarpPipelineWithLogging.ForceAsyncInstance(YarpRequestPipelineState.For(context, NopLogger.Instance)).ConfigureAwait(false);
             shouldForward &= result.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out NonForwardedResponseDetails? responseDetails);
         }
 

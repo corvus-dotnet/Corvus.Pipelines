@@ -38,7 +38,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{74B8BE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Corvus.Pipelines.AspNetCore", "Corvus.Pipelines.AspNetCore\Corvus.Pipelines.AspNetCore.csproj", "{68E354B5-8586-486E-8045-BEC80091FDA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadMe", "ReadMe\ReadMe.csproj", "{EFDC9776-4610-45DA-9496-3783E9D3FF95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReadMe", "ReadMe\ReadMe.csproj", "{EFDC9776-4610-45DA-9496-3783E9D3FF95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

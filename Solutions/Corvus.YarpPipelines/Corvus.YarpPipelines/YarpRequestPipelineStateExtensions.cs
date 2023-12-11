@@ -1,4 +1,4 @@
-﻿// <copyright file="YarpPipelineStateExtensions.cs" company="Endjin Limited">
+﻿// <copyright file="YarpRequestPipelineStateExtensions.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
@@ -15,20 +15,20 @@ using Microsoft.Extensions.Primitives;
 namespace Corvus.YarpPipelines;
 
 /// <summary>
-/// Extension methods for <see cref="YarpPipelineState"/>.
+/// Extension methods for <see cref="YarpRequestPipelineState"/>.
 /// </summary>
-public static class YarpPipelineStateExtensions
+public static class YarpRequestPipelineStateExtensions
 {
     /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance that will continue processing the pipeline,
     /// ensuring that the proxied request will not include the specified header unless a downstream
     /// step adds it back in.
     /// </summary>
     /// <param name="state">The YARP pipeline state.</param>
     /// <param name="headerName">The header to remove if present.</param>
-    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
-    public static YarpPipelineState EnsureHeaderNotPresentAndContinue(
-        this YarpPipelineState state,
+    /// <returns>The non-terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public static YarpRequestPipelineState EnsureHeaderNotPresentAndContinue(
+        this YarpRequestPipelineState state,
         string headerName)
     {
         state.RequestTransformContext.ProxyRequest.Headers.Remove(headerName);
@@ -36,17 +36,17 @@ public static class YarpPipelineStateExtensions
     }
 
     /// <summary>
-    /// Returns a <see cref="YarpPipelineState"/> instance that will continue processing the pipeline,
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance that will continue processing the pipeline,
     /// ensuring that the proxied request includes the specified header. The header must not already
     /// be present.
     /// </summary>
     /// <param name="state">The YARP pipeline state.</param>
     /// <param name="headerName">The header to add.</param>
     /// <param name="value">The value for the header.</param>
-    /// <returns>The non-terminating <see cref="YarpPipelineState"/>.</returns>
+    /// <returns>The non-terminating <see cref="YarpRequestPipelineState"/>.</returns>
     /// <exception cref="ArgumentException">Thrown if the header is already present.</exception>
-    public static YarpPipelineState AddHeaderAndContinue(
-        this YarpPipelineState state,
+    public static YarpRequestPipelineState AddHeaderAndContinue(
+        this YarpRequestPipelineState state,
         string headerName,
         string value)
     {
@@ -80,8 +80,8 @@ public static class YarpPipelineStateExtensions
     /// <returns>
     /// A task producing the pipeline state to terminate the pipeline with.
     /// </returns>
-    public static async ValueTask<YarpPipelineState> CompleteInteractiveSignInAndTerminateAsync(
-        this YarpPipelineState state,
+    public static async ValueTask<YarpRequestPipelineState> CompleteInteractiveSignInAndTerminateAsync(
+        this YarpRequestPipelineState state,
         ClaimsIdentity identity,
         AuthenticationProperties authenticationProperties,
         string returnUrl,
@@ -104,7 +104,7 @@ public static class YarpPipelineStateExtensions
     /// </summary>
     /// <param name="state">The pipeline state.</param>
     /// <param name="user">The <see cref="ClaimsPrincipal"/> to set as the request's user.</param>
-    public static void SetUser(this YarpPipelineState state, ClaimsPrincipal user)
+    public static void SetUser(this YarpRequestPipelineState state, ClaimsPrincipal user)
     {
         state.RequestTransformContext.HttpContext.User = user;
     }
@@ -115,7 +115,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="state">The pipeline state.</param>
     /// <param name="user">Receives the user.</param>
     /// <returns><see langword="true"/> if a user was available.</returns>
-    public static bool TryGetAuthenticatedUser(this YarpPipelineState state, [NotNullWhen(true)] out ClaimsPrincipal? user)
+    public static bool TryGetAuthenticatedUser(this YarpRequestPipelineState state, [NotNullWhen(true)] out ClaimsPrincipal? user)
     {
         user = state.RequestTransformContext.HttpContext.User;
         return user is not null && user.Identity?.IsAuthenticated == true;
@@ -129,7 +129,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="cookie">The matching cookie, if found.</param>
     /// <returns><see langword="true"/> if a match was found.</returns>
     public static bool TryFindCookie(
-        this YarpPipelineState state,
+        this YarpRequestPipelineState state,
         Func<KeyValuePair<string, string>, bool> predicate,
         out KeyValuePair<string, string> cookie)
     {
@@ -142,12 +142,12 @@ public static class YarpPipelineStateExtensions
     /// </summary>
     /// <param name="state">The YARP pipeline state.</param>
     /// <returns>A task producing an <see cref="IFormCollection"/>.</returns>
-    public static Task<IFormCollection> ReadFormAsync(this YarpPipelineState state)
+    public static Task<IFormCollection> ReadFormAsync(this YarpRequestPipelineState state)
         => state.RequestTransformContext.HttpContext.Request.ReadFormAsync();
 
     /// <summary>
     /// Gets the raw text value of a bearer token in the Authorization header of the request
-    /// associated with a <see cref="YarpPipelineState"/>, if such a header is present.
+    /// associated with a <see cref="YarpRequestPipelineState"/>, if such a header is present.
     /// </summary>
     /// <typeparam name="TTokenReceiverState">
     /// The type of value to be passed through to <paramref name="rawTokenReceiver"/>.
@@ -157,7 +157,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="rawTokenReceiver">Call-back that will be invoked with the raw token, if present.</param>
     /// <returns><see langword="true"/> if a bearer token was present.</returns>
     public static bool TryGetRawBearerToken<TTokenReceiverState>(
-        this YarpPipelineState state,
+        this YarpRequestPipelineState state,
         in TTokenReceiverState tokenReceiverState,
         ReadOnlySpanAction<char, TTokenReceiverState> rawTokenReceiver)
     {
@@ -172,13 +172,13 @@ public static class YarpPipelineStateExtensions
 
     /// <summary>
     /// Gets the raw text value of a bearer token in the Authorization header of the request
-    /// associated with a <see cref="YarpPipelineState"/>, if such a header is present.
+    /// associated with a <see cref="YarpRequestPipelineState"/>, if such a header is present.
     /// </summary>
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <param name="rawToken">The raw token, if present.</param>
     /// <returns><see langword="true"/> if a bearer token was present.</returns>
     public static bool TryGetRawBearerToken(
-        this YarpPipelineState state,
+        this YarpRequestPipelineState state,
         out ReadOnlyMemory<char> rawToken)
     {
         if (state.Headers.Authorization is StringValues authHeader
@@ -206,7 +206,7 @@ public static class YarpPipelineStateExtensions
     /// </summary>
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <returns>The URL.</returns>
-    public static string GetEncodedUrl(this YarpPipelineState state) => state.RequestTransformContext.HttpContext.Request.GetEncodedUrl();
+    public static string GetEncodedUrl(this YarpRequestPipelineState state) => state.RequestTransformContext.HttpContext.Request.GetEncodedUrl();
 
     /// <summary>
     /// Builds an absolute URL by combining the base URL of the incoming request with a relative path.
@@ -214,7 +214,7 @@ public static class YarpPipelineStateExtensions
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <param name="relativePath">The relative path.</param>
     /// <returns>The absolute URL.</returns>
-    public static string BuildAbsoluteUrlFromRequestRelativePath(this YarpPipelineState state, string relativePath) => UriHelper.BuildAbsolute(
+    public static string BuildAbsoluteUrlFromRequestRelativePath(this YarpRequestPipelineState state, string relativePath) => UriHelper.BuildAbsolute(
         state.RequestTransformContext.HttpContext.Request.Scheme,
         state.RequestTransformContext.HttpContext.Request.Host,
         relativePath);
