@@ -22,7 +22,7 @@ using Yarp.ReverseProxy.Transforms;
 namespace Steps;
 
 /// <summary>
-/// Analyzes performance of <see cref="CookieRescoping.ForRequestSync(IReadOnlyList{string}, string)"/>.
+/// Analyzes performance of <see cref="CookieRescoping.ForRequestSync(string[], string)"/>.
 /// </summary>
 [MemoryDiagnoser]
 public class CookieRescopingRequestBenchmark

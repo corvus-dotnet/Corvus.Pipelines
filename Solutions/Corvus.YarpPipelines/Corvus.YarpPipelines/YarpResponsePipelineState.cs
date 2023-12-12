@@ -38,6 +38,12 @@ public readonly struct YarpResponsePipelineState :
     public IFeatureCollection Features => this.ResponseTransformContext.HttpContext.Features;
 
     /// <summary>
+    /// Gets the <see cref="HttpResponseMessage"/> representing the response from the back end.
+    /// </summary>
+    public HttpResponseMessage ProxyResponse
+        => this.ResponseTransformContext.ProxyResponse!; // We already checked that this is not null in the factory method.
+
+    /// <summary>
     /// Gets the YARP <see cref="ResponseTransformContext"/>.
     /// </summary>
     internal ResponseTransformContext ResponseTransformContext { get; init; }
@@ -57,6 +63,11 @@ public readonly struct YarpResponsePipelineState :
     /// </remarks>
     public static YarpResponsePipelineState For(ResponseTransformContext responseTransformContext, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
+        if (responseTransformContext.ProxyResponse == null)
+        {
+            throw new InvalidOperationException("A YarpResponsePipelineState should be created only when the back end responded");
+        }
+
         return new()
         {
             ResponseTransformContext = responseTransformContext,

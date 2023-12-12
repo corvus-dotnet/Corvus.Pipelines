@@ -29,7 +29,7 @@ public static class CookieRescoping
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The pipeline.</returns>
     public static PipelineStep<YarpRequestPipelineState> ForRequest(
-        IReadOnlyList<string> cookieNamePrefixes,
+        string[] cookieNamePrefixes,
         string scopePrefix)
         => ForRequestSync(cookieNamePrefixes, scopePrefix).ToAsync();
 
@@ -43,7 +43,7 @@ public static class CookieRescoping
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The pipeline.</returns>
     public static SyncPipelineStep<YarpRequestPipelineState> ForRequestSync(
-        IReadOnlyList<string> cookieNamePrefixes,
+        string[] cookieNamePrefixes,
         string scopePrefix)
         => (YarpRequestPipelineState state) =>
         {
@@ -97,7 +97,7 @@ public static class CookieRescoping
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The non-terminating <see cref="YarpResponsePipelineState"/>.</returns>
     public static PipelineStep<YarpResponsePipelineState> ForResponse(
-        IReadOnlyList<string> cookieNamePrefixes,
+        string[] cookieNamePrefixes,
         string scopePrefix)
         => ForResponseSync(cookieNamePrefixes, scopePrefix).ToAsync();
 
@@ -111,75 +111,56 @@ public static class CookieRescoping
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The non-terminating <see cref="YarpResponsePipelineState"/>.</returns>
     public static SyncPipelineStep<YarpResponsePipelineState> ForResponseSync(
-        IReadOnlyList<string> cookieNamePrefixes,
+        string[] cookieNamePrefixes,
         string scopePrefix)
         => (YarpResponsePipelineState state) =>
         {
-            if (state.ResponseTransformContext.ProxyResponse?.Headers is HttpResponseHeaders headers)
+            // On entry to this method, the ProxyResponse has any Set-Cookie headers
+            // from the back end (because it just represents the back end's response
+            // directly).
+            // YARP has already populated the HttpContext.Response, so its Headers
+            // property also includes all the Set-Cookies from the back end.
+            // So we're free to use either property to determine which cookies have
+            // been set. As it happens, the HttpContext.Response (representing the
+            // response we're going to send back to the external client) offers the
+            // higher-performance way because:
+            //  1) we can discover what Set-Cookie headers were present and remove
+            //      them with a single call
+            //  2) it provides us with the headers as a StringValues, which can
+            //      be enumerated more efficiently than the IEnumerable<string>
+            //      we get from ProxyResponse.Headers
+            //  3) if we Remove the Set-Cookie headers and subsequently re-add
+            //      them without modification, this appears not to cause any
+            //      additional allocations.
+            if (state.ResponseTransformContext.HttpContext.Response.Headers.Remove("Set-Cookie", out StringValues headerValues))
             {
-                IEnumerable<SetCookieHeaderValue> allTheSetCookieHeaders = headers
-                    .Where(kv => kv.Key == "Set-Cookie")
-                    .SelectMany(kv => kv.Value)
-                    .Select(headerValue => SetCookieHeaderValue.Parse(headerValue))
-                    .ToList();
-
-                // TODO: does this remove all of them if there are several?
-                state.ResponseTransformContext.HttpContext.Response.Headers.Remove("Set-Cookie");
-
-                // TODO: perf
-                foreach (SetCookieHeaderValue setCookieHeader in allTheSetCookieHeaders)
+                foreach (string? headerValue in headerValues)
                 {
-                    StringSegment cookieName = setCookieHeader.Name;
+                    ReadOnlySpan<char> headerValueRos = headerValue.AsSpan();
+                    SetCookieHeaderValue? setCookieHeaderValue = null;
+
                     foreach (ReadOnlySpan<char> cookieNamePrefix in cookieNamePrefixes)
                     {
-                        if (cookieName.AsSpan().StartsWith(cookieNamePrefix))
+                        // RFC 6265 says that the Set-Cookie header value always starts with
+                        //      cookie-name "=" cookie-value
+                        // so we don't need to fully parse the thing just to work out
+                        // whether it's one we want to change. (There's a cost to using
+                        // SetCookieHeaderValue.Parse, so we don't want to pay that unless
+                        // we're absolutely certain that we have to.)
+                        if (headerValueRos.StartsWith(cookieNamePrefix))
                         {
-                            setCookieHeader.Name = scopePrefix + cookieName;
+                            setCookieHeaderValue = SetCookieHeaderValue.Parse(headerValue);
+                            setCookieHeaderValue.Name = scopePrefix + setCookieHeaderValue.Name;
                             break;
                         }
                     }
 
-                    ////headers.Add("Set-Cookie", setCookieHeader.ToString());
                     state.ResponseTransformContext.HttpContext.Response.Headers.Append(
-                        "Set-Cookie", setCookieHeader.ToString());
+                        "Set-Cookie",
+                        setCookieHeaderValue?.ToString() ?? headerValue);
                 }
             }
 
-            // On entry to this method, the ProxyResponse has any Set-Cookie headers
-            // from the back end (because it just represents the back end's response
-            // directly).
-            // The HttpContext.Response has already been populated - its Cookies
-            // property does already include all the cookies from the back end.
-            // There apparently isn't any way for us to get either YARP or ASP.NET Core
-            // to enumerate the Set-Cookies.
-
-            // There might be multiple cookie headers, and each of those might contain
-            // multiple entries. So a single request might have the following:
-            //      Set-Cookie: foo=bar; path=/
-            //      Set-Cookie: baz=quux; path=/; secure; httponly
-            //      Set-Cookie: foo=bar;
-            //      Set-Cookie: quux=quuz
-            // The problem is we might want to rewrite just of them. The rewritten version
-            // might look like this:
-            //      Set-Cookie: foo=bar; PREFIXED.baz=quux; irritating=baz
-            //      Set-Cookie: quux=quuz
-            // So there are a few challenges:
-            //  1. we need to be able to discover each individual cookie name/value pair
-            //  2. we need to be able to replace specific cookie names selectively
-            //  3. we mustn't accidentally tip past the maximum header length
-            // The problem we have is that the state.RequestTransformContext.ProxyRequest
-            // doesn't present a cookie collection abstraction. It's all just headers,
-            // so you need to understand the structure of each cookie header value to
-            // find the ones you're interested in.
-            // It might be easier to blow away the cookies from the ProxyRequest completely,
-            // and rebuild them entirely from scratch.
-            // So we might want to turn off YARP's header handling completely, which we
-            // could do by setting the relevant context property in our EndjinAppModelTransformProvider's
-            // Apply method.
-            // NEXT TIME: carry on from here.
-            Debug.WriteLine(state.ResponseTransformContext.ProxyResponse?.Headers);
-            Debug.WriteLine(state.ResponseTransformContext.HttpContext.Response.Cookies);
-            Debug.WriteLine(state.ResponseTransformContext.HttpContext.Request.Cookies);
             return state;
         };
 }

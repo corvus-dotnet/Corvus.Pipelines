@@ -22,7 +22,7 @@ using Yarp.ReverseProxy.Transforms;
 namespace Steps;
 
 /// <summary>
-/// Analyzes performance of <see cref="CookieRescoping.ForResponseSync(IReadOnlyList{string}, string)"/>.
+/// Analyzes performance of <see cref="CookieRescoping.ForResponseSync(string[], string)"/>.
 /// </summary>
 [MemoryDiagnoser]
 public class CookieRescopingResponseBenchmark
@@ -42,25 +42,11 @@ public class CookieRescopingResponseBenchmark
     /// </summary>
     public CookieRescopingResponseBenchmark()
     {
-        this.noSetCookiesState = YarpResponsePipelineState.For(new ResponseTransformContext
-        {
-            HttpContext = new DefaultHttpContext(),
-            ProxyResponse = new(),
-        });
+        this.noSetCookiesState = YarpResponsePipelineState.For(CreateResponseTransformContext());
+        this.singleNonMatchingSetCookieState = YarpResponsePipelineState.For(
+            CreateResponseTransformContext(new KeyValuePair<string, string>("ShouldNotChange", "bar")));
 
-        DefaultHttpContext singleNonMatchingSetCookieStateContext = new();
-
-        // TODO: more comple forms of Set-Cookie header (e.g., path)
-        singleNonMatchingSetCookieStateContext.Response.Headers.Append(
-            HeaderNames.SetCookie, new SetCookieHeaderValue("ShouldNotChange", "bar").ToString());
-
-        // NEXT TIME: we might need to populate ProxyResponse.Headers as well as the HttpContext.Response.Headers
-        // because ForResponseSync presumes both are populated.
-        this.singleNonMatchingSetCookieState = YarpResponsePipelineState.For(new ResponseTransformContext
-        {
-            HttpContext = singleNonMatchingSetCookieStateContext,
-            ProxyResponse = new(),
-        });
+        // NEXT TIME: add a do-something benchmark
     }
 
     /// <summary>
@@ -82,5 +68,28 @@ public class CookieRescopingResponseBenchmark
     public YarpResponsePipelineState SingleNonMatchingSetCookie()
     {
         return ResponseStep(this.singleNonMatchingSetCookieState);
+    }
+
+    private static ResponseTransformContext CreateResponseTransformContext(
+        params KeyValuePair<string, string>[] cookies)
+    {
+        DefaultHttpContext backEndHttpContext = new();
+        HttpResponseMessage outputResponse = new();
+
+        foreach ((string cookieName, string cookieValue) in cookies)
+        {
+            string setCookieHeaderValue = new SetCookieHeaderValue(cookieName, cookieValue).ToString();
+            backEndHttpContext.Response.Headers.Append(
+                HeaderNames.SetCookie,
+                setCookieHeaderValue);
+            outputResponse.Headers.Add(
+                HeaderNames.SetCookie, setCookieHeaderValue);
+        }
+
+        return new()
+        {
+            HttpContext = backEndHttpContext,
+            ProxyResponse = outputResponse,
+        };
     }
 }
