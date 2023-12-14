@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 using Corvus.Pipelines;
@@ -20,7 +21,7 @@ namespace Corvus.YarpPipelines;
 /// </summary>
 /// <remarks>
 /// The steps in the pipe can inspect and modify the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/>,
-/// then choose to either <see cref="Continue()"/> processing, <see cref="TerminateWith(ForwardedRequestDetails)"/> - passing
+/// then choose to either <see cref="Continue()"/> processing, <see cref="TerminateWithClusterId(string)"/> - passing
 /// the <see cref="Yarp.ReverseProxy.Transforms.RequestTransformContext"/> on to YARP for forwarding to the appropriate endpoint, or
 /// <see cref="TerminateWith(NonForwardedResponseDetails)"/> a specific response code, headers and/or body.
 /// </remarks>
@@ -130,12 +131,39 @@ public readonly struct YarpRequestPipelineState :
     /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
     /// with the given request forwarding details. The request will be forwarded to the endpoint.
     /// </summary>
-    /// <param name="forwardedRequestDetails">The details of the response to return.</param>
+    /// <param name="clusterId">Identifies the cluster that should handle the request.</param>
     /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
-    public YarpRequestPipelineState TerminateWith(ForwardedRequestDetails forwardedRequestDetails)
+    public YarpRequestPipelineState TerminateWithClusterId(string clusterId)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-forward");
-        return this with { PipelineState = TransformState.TerminateAndForward, ForwardedRequestDetails = forwardedRequestDetails };
+        return this with
+        {
+            PipelineState = TransformState.TerminateAndForward,
+            ForwardedRequestDetails = this.ForwardedRequestDetails with { ClusterId = clusterId },
+        };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
+    /// with the given request forwarding details. The request will be forwarded to the endpoint.
+    /// </summary>
+    /// <param name="clusterId">Identifies the cluster that should handle the request.</param>
+    /// <param name="path">The path to put in the proxied request.</param>
+    /// <param name="queryString">The query string to put in the proxied request.</param>
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState TerminateWithClusterIdAndPath(
+        string clusterId, string path, QueryString queryString)
+    {
+        this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-forward");
+        return this with
+        {
+            PipelineState = TransformState.TerminateAndForward,
+            ForwardedRequestDetails = this.ForwardedRequestDetails with
+            {
+                ClusterId = clusterId,
+                RequestSignature = RequestSignature.ForPathAndQueryString(path, queryString),
+            },
+        };
     }
 
     /// <summary>
@@ -209,6 +237,29 @@ public readonly struct YarpRequestPipelineState :
     public YarpRequestPipelineState OverrideNominalRequestSignature(RequestSignature requestSignature)
     {
         return this with { NominalRequestSignature = requestSignature };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance with the given cookie header
+    /// value updated.
+    /// </summary>
+    /// <param name="cookieHeaderValue">The value of the cookie header to update.</param>
+    /// <param name="thisCookieWasChanged">
+    /// True if this is a cookie we changed or added, false if it's one we didn't change.
+    /// </param>
+    /// <returns>The updated state.</returns>
+    public YarpRequestPipelineState WithCookieHeader(
+        string cookieHeaderValue, bool thisCookieWasChanged)
+    {
+        ImmutableList<string> existingHeaders = this.ForwardedRequestDetails.CookieHeaderValues ?? ImmutableList<string>.Empty;
+        return this with
+        {
+            ForwardedRequestDetails = this.ForwardedRequestDetails with
+            {
+                CookieHeaderValues = existingHeaders.Add(cookieHeaderValue),
+                AtLeastOneCookieHeaderValueIsDifferent = this.ForwardedRequestDetails.AtLeastOneCookieHeaderValueIsDifferent | thisCookieWasChanged,
+            },
+        };
     }
 
     /// <summary>

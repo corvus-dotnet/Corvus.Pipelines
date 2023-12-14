@@ -28,14 +28,15 @@ namespace Steps;
 public class CookieRescopingResponseBenchmark
 {
 #pragma warning disable SA1010 // Opening square brackets should be spaced correctly. This is a bug in the analyzer.
-    private static readonly string[] CookiePrefixes = ["foo"];
+    private static readonly string[] CookiePrefixesToRescope = ["foo"];
 #pragma warning restore SA1010 // Opening square brackets should be spaced correctly
 
     private static readonly SyncPipelineStep<YarpResponsePipelineState> ResponseStep =
-        CookieRescoping.ForResponseSync(CookiePrefixes, "AddedPrefix");
+        CookieRescoping.ForResponseSync(CookiePrefixesToRescope, "AddedPrefix");
 
     private readonly YarpResponsePipelineState noSetCookiesState;
     private readonly YarpResponsePipelineState singleNonMatchingSetCookieState;
+    private readonly YarpResponsePipelineState singleMatchingSetCookieState;
 
     /// <summary>
     /// Setup.
@@ -45,8 +46,8 @@ public class CookieRescopingResponseBenchmark
         this.noSetCookiesState = YarpResponsePipelineState.For(CreateResponseTransformContext());
         this.singleNonMatchingSetCookieState = YarpResponsePipelineState.For(
             CreateResponseTransformContext(new KeyValuePair<string, string>("ShouldNotChange", "bar")));
-
-        // NEXT TIME: add a do-something benchmark
+        this.singleMatchingSetCookieState = YarpResponsePipelineState.For(
+            CreateResponseTransformContext(new KeyValuePair<string, string>("fooShouldChange", "bar")));
     }
 
     /// <summary>
@@ -70,6 +71,18 @@ public class CookieRescopingResponseBenchmark
         return ResponseStep(this.singleNonMatchingSetCookieState);
     }
 
+    /// <summary>
+    /// Execute the pipeline when the back end response sets a single cookie that
+    /// matches one of the cookie prefixes, causing the pipeline to prepend the
+    /// scope prefix.
+    /// </summary>
+    /// <returns>The state, to ensure the benchmark isn't optimized into oblivion.</returns>
+    [Benchmark]
+    public YarpResponsePipelineState SingleMatchingSetCookie()
+    {
+        return ResponseStep(this.singleMatchingSetCookieState);
+    }
+
     private static ResponseTransformContext CreateResponseTransformContext(
         params KeyValuePair<string, string>[] cookies)
     {
@@ -79,6 +92,19 @@ public class CookieRescopingResponseBenchmark
         foreach ((string cookieName, string cookieValue) in cookies)
         {
             string setCookieHeaderValue = new SetCookieHeaderValue(cookieName, cookieValue).ToString();
+
+            // NEXT TIME:
+            // Because CookieRescoping currently works by modifying the
+            // backEndHttpContext.Response.Headers, these benchmarks don't measure
+            // what we meant them to - the first iteration changes this collection
+            // and then all subsequent iterations think they have no work to do.
+            // We suspect this is typical of the kinds of problems we will have if
+            // we continue to rely on mutation in the pipeline steps. So we suspect
+            // that we want to move over to the approach used for status codes, in
+            // which the pipeline essentially produces a description of the side
+            // effects required, and then the Yarp Request/Response transforms can
+            // effect those changes.
+            // But we want to sleep on it because this is a non-trivial change.
             backEndHttpContext.Response.Headers.Append(
                 HeaderNames.SetCookie,
                 setCookieHeaderValue);

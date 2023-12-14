@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 
@@ -53,11 +54,10 @@ public static class CookieRescoping
             // (Probably. We will end up scanning some of the cookies twice.)
             // The expected normal use case is that you'll always need this if you ask for it, so maybe it's
             // fine as it is.
-            state.RequestTransformContext.ProxyRequest.Headers.Remove("Cookie");
-
             foreach ((string cookieName, string cookieValue) in cookies)
             {
                 ReadOnlyMemory<char> cookNameRos = cookieName.AsMemory();
+                bool thisCookieWasChanged = false;
 
                 if (cookieName.StartsWith(scopePrefix))
                 {
@@ -67,6 +67,7 @@ public static class CookieRescoping
                         if (originalCookieName.StartsWith(cookieNamePrefix, StringComparison.Ordinal))
                         {
                             cookNameRos = cookNameRos[scopePrefix.Length..];
+                            thisCookieWasChanged = true;
                             break;
                         }
                     }
@@ -81,11 +82,49 @@ public static class CookieRescoping
                         span[state.cookNameRos.Length] = '=';
                         state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
                     });
-                state.RequestTransformContext.ProxyRequest.Headers.Add("Cookie", cookieHeaderValue);
+
+                // NEXT TIME:
+                //  1) do the same thing for the response side
+                //  2) work out why cookie auth seems not to be working right now
+                state = state.WithCookieHeader(cookieHeaderValue, thisCookieWasChanged);
             }
 
             return state;
         };
+
+    /// <summary>
+    /// Applies the cookie header values from <paramref name="forwardedRequestDetails"/> to
+    /// a <see cref="HttpRequestHeaders"/> instance.
+    /// </summary>
+    /// <param name="forwardedRequestDetails">
+    /// Description of how the request should be proxied to the back end.
+    /// </param>
+    /// <param name="headers">
+    /// The outgoing request's headers.
+    /// </param>
+    public static void ApplyToRequest(
+        ForwardedRequestDetails forwardedRequestDetails,
+        HttpRequestHeaders headers)
+    {
+        if (forwardedRequestDetails.AtLeastOneCookieHeaderValueIsDifferent &&
+            forwardedRequestDetails.CookieHeaderValues is ImmutableList<string> cookieHeaderValues)
+        {
+            headers.Remove("Cookie");
+
+            // Although headers.Add offers an overload that accepts an IEnumerable<string?>
+            // we're going to enumerate the headers ourselves so that we can avoid allocating
+            // an enumerator.
+            foreach (string cookieHeaderValue in cookieHeaderValues)
+            {
+                headers.Add("Cookie", cookieHeaderValue);
+            }
+
+            // ...but it's going to look up the Cookie header info every time, so it's
+            // possible that this will in fact be faster.
+            // Only one way to find out!
+            ////headers.Add("Cookie", forwardedRequestDetails.CookieHeaderValues);
+        }
+    }
 
     /// <summary>
     /// Returns a <see cref="PipelineStep{YarpResponsePipelineState}"/> that ensures that if the
@@ -150,6 +189,8 @@ public static class CookieRescoping
                         if (headerValueRos.StartsWith(cookieNamePrefix))
                         {
                             setCookieHeaderValue = SetCookieHeaderValue.Parse(headerValue);
+
+                            // TODO: more allocatey than it looks.
                             setCookieHeaderValue.Name = scopePrefix + setCookieHeaderValue.Name;
                             break;
                         }

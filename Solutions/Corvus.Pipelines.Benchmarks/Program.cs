@@ -7,12 +7,14 @@ using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Toolchains.InProcess.Emit;
+
 using Perfolizer.Mathematics.OutlierDetection;
 
 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(
     args,
+#if DEBUG
+    new DebugInProcessConfigDry());
+#else
     ManualConfig.Create(DefaultConfig.Instance));
-        ////.AddJob(Job.Default
-        ////    .WithRuntime(CoreRuntime.Core80)
-        ////    .WithOutlierMode(OutlierMode.RemoveAll)
-        ////    .WithStrategy(RunStrategy.Throughput)));
+#endif

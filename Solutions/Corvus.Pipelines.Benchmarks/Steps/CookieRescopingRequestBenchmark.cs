@@ -28,11 +28,11 @@ namespace Steps;
 public class CookieRescopingRequestBenchmark
 {
 #pragma warning disable SA1010 // Opening square brackets should be spaced correctly. This is a bug in the analyzer.
-    private static readonly string[] CookiePrefixes = ["foo"];
+    private static readonly string[] CookiePrefixesToRescope = ["foo"];
 #pragma warning restore SA1010 // Opening square brackets should be spaced correctly
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> RequestStep =
-        CookieRescoping.ForRequestSync(CookiePrefixes, "AddedPrefix");
+        CookieRescoping.ForRequestSync(CookiePrefixesToRescope, "AddedPrefix");
 
     private readonly YarpRequestPipelineState noIncomingCookiesState;
     private readonly YarpRequestPipelineState singleNonMatchingCookieState;
@@ -62,7 +62,7 @@ public class CookieRescopingRequestBenchmark
         {
             HttpContext = new DefaultHttpContext
             {
-                Request = { Cookies = new CookieCollection { { "AddedPrefix2345", "bar" } } },
+                Request = { Cookies = new CookieCollection { { "AddedPrefixfooShouldChange", "bar" } } },
             },
             ProxyRequest = new(),
         });

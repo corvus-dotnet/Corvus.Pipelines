@@ -60,8 +60,10 @@ public readonly struct RequestSignature
     /// host or method.
     /// </summary>
     /// <param name="path">The <see cref="Path"/>.</param>
+    /// <param name="queryString">The <see cref="QueryString"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public static RequestSignature ForPath(string path) => new(string.Empty, path, QueryString.Empty, string.Empty);
+    public static RequestSignature ForPathAndQueryString(PathString path, QueryString queryString)
+        => new(string.Empty, path, queryString, string.Empty);
 
     /// <summary>
     /// Creates a <see cref="RequestSignature"/> from the elements of an <see cref="HttpRequest"/>.

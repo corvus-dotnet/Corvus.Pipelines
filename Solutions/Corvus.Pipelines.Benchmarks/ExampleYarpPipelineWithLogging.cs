@@ -17,7 +17,7 @@ public static class ExampleYarpPipelineWithLogging
 {
     private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleFizz =
         static state => state.GetNominalRequestSignature().Path == "/fizz"
-                    ? state.TerminateWith(new ForwardedRequestDetails() { ClusterId = "Nonsense" })
+                    ? state.TerminateWithClusterId("Nonsense")
                     : state.Continue();
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleBuzz =
@@ -94,7 +94,7 @@ public static class ExampleYarpPipelineWithLogging
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleRoot =
         static state => state.GetNominalRequestSignature().Path == "/" // You can write in this style where we execute steps directly
-                ? state.TerminateWith(new ForwardedRequestDetails() { ClusterId = "Nonsense" })
+                ? state.TerminateWithClusterId("Nonsense")
                 : InnerPipelineInstance(state);
 
     private static readonly PipelineStep<YarpRequestPipelineState> AsyncDelay =

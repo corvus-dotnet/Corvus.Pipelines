@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Collections.Immutable;
+
 namespace Corvus.YarpPipelines;
 
 /// <summary>
@@ -12,6 +14,14 @@ namespace Corvus.YarpPipelines;
 /// If not null, this determines the signature of the request sent to the back end.
 /// If null, the request signature will be derived from nominal request signature.
 /// </param>
+/// <param name="CookieHeaderValues">
+/// The cookie header values to send to the back end.
+/// </param>
+/// <param name="AtLeastOneCookieHeaderValueIsDifferent">
+/// True if this value is being changed, false if it is being copied over without modification.
+/// </param>
 public readonly record struct ForwardedRequestDetails(
     string ClusterId,
-    RequestSignature? RequestSignature = null);
+    RequestSignature? RequestSignature,
+    ImmutableList<string>? CookieHeaderValues,
+    bool AtLeastOneCookieHeaderValueIsDifferent);
