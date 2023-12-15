@@ -54,39 +54,44 @@ public static class CookieRescoping
             // (Probably. We will end up scanning some of the cookies twice.)
             // The expected normal use case is that you'll always need this if you ask for it, so maybe it's
             // fine as it is.
-            foreach ((string cookieName, string cookieValue) in cookies)
+            // We check whether there are cookies at all before starting to enumerate, because this
+            // is an interface-based enumeration, and it allocates 56 bytes to run the foreach even
+            // when the collection is empty.
+            if (cookies.Count > 0)
             {
-                ReadOnlyMemory<char> cookNameRos = cookieName.AsMemory();
-                bool thisCookieWasChanged = false;
-
-                if (cookieName.StartsWith(scopePrefix))
+                foreach ((string cookieName, string cookieValue) in cookies)
                 {
-                    ReadOnlySpan<char> originalCookieName = cookieName.AsSpan()[scopePrefix.Length..];
-                    foreach (ReadOnlySpan<char> cookieNamePrefix in cookieNamePrefixes)
+                    ReadOnlyMemory<char> cookNameRos = cookieName.AsMemory();
+                    bool thisCookieWasChanged = false;
+
+                    if (cookieName.StartsWith(scopePrefix))
                     {
-                        if (originalCookieName.StartsWith(cookieNamePrefix, StringComparison.Ordinal))
+                        ReadOnlySpan<char> originalCookieName = cookieName.AsSpan()[scopePrefix.Length..];
+                        foreach (ReadOnlySpan<char> cookieNamePrefix in cookieNamePrefixes)
                         {
-                            cookNameRos = cookNameRos[scopePrefix.Length..];
-                            thisCookieWasChanged = true;
-                            break;
+                            if (originalCookieName.StartsWith(cookieNamePrefix, StringComparison.Ordinal))
+                            {
+                                cookNameRos = cookNameRos[scopePrefix.Length..];
+                                thisCookieWasChanged = true;
+                                break;
+                            }
                         }
                     }
+
+                    string cookieHeaderValue = string.Create(
+                        cookNameRos.Length + cookieValue.Length + 1,
+                        (cookNameRos, cookieValue),
+                        static (span, state) =>
+                        {
+                            state.cookNameRos.Span.CopyTo(span);
+                            span[state.cookNameRos.Length] = '=';
+                            state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
+                        });
+
+                    // NEXT TIME:
+                    //  do the same thing for the response side
+                    state = state.WithCookieHeader(cookieHeaderValue, thisCookieWasChanged);
                 }
-
-                string cookieHeaderValue = string.Create(
-                    cookNameRos.Length + cookieValue.Length + 1,
-                    (cookNameRos, cookieValue),
-                    static (span, state) =>
-                    {
-                        state.cookNameRos.Span.CopyTo(span);
-                        span[state.cookNameRos.Length] = '=';
-                        state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
-                    });
-
-                // NEXT TIME:
-                //  1) do the same thing for the response side
-                //  2) work out why cookie auth seems not to be working right now
-                state = state.WithCookieHeader(cookieHeaderValue, thisCookieWasChanged);
             }
 
             return state;

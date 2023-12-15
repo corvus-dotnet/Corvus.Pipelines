@@ -9,6 +9,8 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
 
+using Corvus.Pipelines.Benchmarks;
+
 using Perfolizer.Mathematics.OutlierDetection;
 
 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(

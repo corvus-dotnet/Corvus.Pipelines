@@ -9,6 +9,10 @@ namespace Corvus.YarpPipelines;
 /// <summary>
 /// The elements of a request enabling identification for pipeline selection purposes.
 /// </summary>
+/// <remarks>
+/// TODO: is this type overloaded? This is both a request signature, but also a vector for feeding
+/// information back out of the pipeline.
+/// </remarks>
 public readonly struct RequestSignature
 {
     private readonly HttpRequest? request;
@@ -21,12 +25,14 @@ public readonly struct RequestSignature
     /// <param name="path">The URL path.</param>
     /// <param name="queryString">The query string.</param>
     /// <param name="method">The HTTP method/verb.</param>
-    public RequestSignature(string host, string path, QueryString queryString, string method)
+    public RequestSignature(string host, PathString path, QueryString queryString, string method)
     {
         this.request = default;
 
-        // As with our previous Feature-based implementation, this allocates; but it reduces the size of the state for the
-        // normal execution path of the pipeline. This is only used for e.g. OIDC redirects.
+        // TODO: As with our previous Feature-based implementation, this allocates; but it reduces the size of the state for the
+        // normal execution path of the pipeline. This was initially only used for OIDC redirects, but it now seems
+        // to be affecting cookie rescoping, so we may need to rethink. (But changing it back to a struct makes
+        // cookie rescoping handling noticeably slower.)
         this.requestSignatureOverride = new(host, path, queryString, method);
     }
 
@@ -43,7 +49,7 @@ public readonly struct RequestSignature
     /// <summary>
     /// Gets the URL path.
     /// </summary>
-    public string Path => this.request?.Path ?? this.requestSignatureOverride?.Path ?? throw new InvalidOperationException();
+    public PathString Path => this.request?.Path ?? this.requestSignatureOverride?.Path ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the query string.
@@ -83,7 +89,7 @@ public readonly struct RequestSignature
     /// </summary>
     /// <param name="path">The value for <see cref="Path"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public RequestSignature WithPath(string path)
+    public RequestSignature WithPath(PathString path)
         => new(this.Host, path, this.QueryString, this.Method);
 
     /// <summary>
@@ -95,5 +101,5 @@ public readonly struct RequestSignature
     public RequestSignature WithQueryString(QueryString queryString)
         => new(this.Host, this.Path, queryString, this.Method);
 
-    private record RequestSignatureOverride(string Host, string Path, QueryString QueryString, string Method);
+    private record RequestSignatureOverride(string Host, PathString Path, QueryString QueryString, string Method);
 }
