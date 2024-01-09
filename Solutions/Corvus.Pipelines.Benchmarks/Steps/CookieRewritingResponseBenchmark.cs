@@ -1,13 +1,6 @@
-﻿// <copyright file="CookieRescopingResponseBenchmark.cs" company="Endjin Limited">
+﻿// <copyright file="CookieRewritingResponseBenchmark.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 using BenchmarkDotNet.Attributes;
 
@@ -22,17 +15,15 @@ using Yarp.ReverseProxy.Transforms;
 namespace Steps;
 
 /// <summary>
-/// Analyzes performance of <see cref="CookieRescoping.ForResponseSync(string[], string)"/>.
+/// Analyzes performance of <see cref="CookieRewriting.RescopeForResponseSync(string[], string)"/>.
 /// </summary>
 [MemoryDiagnoser]
-public class CookieRescopingResponseBenchmark
+public class CookieRewritingResponseBenchmark
 {
-#pragma warning disable SA1010 // Opening square brackets should be spaced correctly. This is a bug in the analyzer.
     private static readonly string[] CookiePrefixesToRescope = ["foo"];
-#pragma warning restore SA1010 // Opening square brackets should be spaced correctly
 
     private static readonly SyncPipelineStep<YarpResponsePipelineState> ResponseStep =
-        CookieRescoping.ForResponseSync(CookiePrefixesToRescope, "AddedPrefix");
+        CookieRewriting.RescopeForResponseSync(CookiePrefixesToRescope, "AddedPrefix");
 
     private readonly YarpResponsePipelineState noSetCookiesState;
     private readonly YarpResponsePipelineState singleNonMatchingSetCookieState;
@@ -41,7 +32,7 @@ public class CookieRescopingResponseBenchmark
     /// <summary>
     /// Setup.
     /// </summary>
-    public CookieRescopingResponseBenchmark()
+    public CookieRewritingResponseBenchmark()
     {
         this.noSetCookiesState = YarpResponsePipelineState.For(CreateResponseTransformContext());
         this.singleNonMatchingSetCookieState = YarpResponsePipelineState.For(
@@ -94,7 +85,7 @@ public class CookieRescopingResponseBenchmark
             string setCookieHeaderValue = new SetCookieHeaderValue(cookieName, cookieValue).ToString();
 
             // NEXT TIME:
-            // Because CookieRescoping currently works by modifying the
+            // Because CookieRewriting currently works by modifying the
             // backEndHttpContext.Response.Headers, these benchmarks don't measure
             // what we meant them to - the first iteration changes this collection
             // and then all subsequent iterations think they have no work to do.

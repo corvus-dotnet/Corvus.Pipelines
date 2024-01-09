@@ -1,4 +1,4 @@
-﻿// <copyright file="CookieRescoping.cs" company="Endjin Limited">
+﻿// <copyright file="CookieRewriting.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
@@ -18,7 +18,7 @@ namespace Corvus.YarpPipelines;
 /// Cookie rescoping extension methods for <see cref="YarpRequestPipelineState"/>.
 /// and <see cref="YarpResponsePipelineState"/>.
 /// </summary>
-public static class CookieRescoping
+public static class CookieRewriting
 {
     /// <summary>
     /// Returns a <see cref="PipelineStep{YarpRequestPipelineState}"/> that ensures that if the
@@ -29,10 +29,10 @@ public static class CookieRescoping
     /// <param name="cookieNamePrefixes">The cookie names that should have the <paramref name="scopePrefix"/> prepended.</param>
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The pipeline.</returns>
-    public static PipelineStep<YarpRequestPipelineState> ForRequest(
+    public static PipelineStep<YarpRequestPipelineState> RescopeForRequest(
         string[] cookieNamePrefixes,
         string scopePrefix)
-        => ForRequestSync(cookieNamePrefixes, scopePrefix).ToAsync();
+        => RescopeForRequestSync(cookieNamePrefixes, scopePrefix).ToAsync();
 
     /// <summary>
     /// Returns a <see cref="SyncPipelineStep{YarpRequestPipelineState}"/> that ensures that if the
@@ -43,7 +43,7 @@ public static class CookieRescoping
     /// <param name="cookieNamePrefixes">The cookie names that should have the <paramref name="scopePrefix"/> prepended.</param>
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The pipeline.</returns>
-    public static SyncPipelineStep<YarpRequestPipelineState> ForRequestSync(
+    public static SyncPipelineStep<YarpRequestPipelineState> RescopeForRequestSync(
         string[] cookieNamePrefixes,
         string scopePrefix)
         => (YarpRequestPipelineState state) =>
@@ -88,8 +88,6 @@ public static class CookieRescoping
                             state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
                         });
 
-                    // NEXT TIME:
-                    //  do the same thing for the response side
                     state = state.WithCookieHeader(cookieHeaderValue, thisCookieWasChanged);
                 }
             }
@@ -140,10 +138,10 @@ public static class CookieRescoping
     /// <param name="cookieNamePrefixes">The cookie names that should have the <paramref name="scopePrefix"/> prepended.</param>
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The non-terminating <see cref="YarpResponsePipelineState"/>.</returns>
-    public static PipelineStep<YarpResponsePipelineState> ForResponse(
+    public static PipelineStep<YarpResponsePipelineState> RescopeForResponse(
         string[] cookieNamePrefixes,
         string scopePrefix)
-        => ForResponseSync(cookieNamePrefixes, scopePrefix).ToAsync();
+        => RescopeForResponseSync(cookieNamePrefixes, scopePrefix).ToAsync();
 
     /// <summary>
     /// Returns a <see cref="SyncPipelineStep{YarpResponsePipelineState}"/> that ensures that if the
@@ -154,7 +152,7 @@ public static class CookieRescoping
     /// <param name="cookieNamePrefixes">The cookie names that should have the <paramref name="scopePrefix"/> prepended.</param>
     /// <param name="scopePrefix">The prefix to add to matching cookie names.</param>
     /// <returns>The non-terminating <see cref="YarpResponsePipelineState"/>.</returns>
-    public static SyncPipelineStep<YarpResponsePipelineState> ForResponseSync(
+    public static SyncPipelineStep<YarpResponsePipelineState> RescopeForResponseSync(
         string[] cookieNamePrefixes,
         string scopePrefix)
         => (YarpResponsePipelineState state) =>
@@ -176,10 +174,25 @@ public static class CookieRescoping
             //  3) if we Remove the Set-Cookie headers and subsequently re-add
             //      them without modification, this appears not to cause any
             //      additional allocations.
-            if (state.ResponseTransformContext.HttpContext.Response.Headers.Remove("Set-Cookie", out StringValues headerValues))
+
+            // TODO: should we have a struct encapsulating the collection of replacements?
+            // That would make it easier to use pooled arrays for this.
+            (string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)[]? replacements = null;
+            int replacementCount = 0;
+            if (state.ResponseTransformContext.HttpContext.Response.Headers.TryGetValue("Set-Cookie", out StringValues headerValues))
             {
                 foreach (string? headerValue in headerValues)
                 {
+                    // Although StringValues supports nulls (in two ways: it may be null as
+                    // a whole, but it's also possible for individual elements to be null when
+                    // it's in multi-value mode), we should never see any nulls when we're
+                    // enumerating the value returned by Remove. Either that will be a singular
+                    // null or an empty list, in which case enumeration returns no values, or
+                    // it will be a list of values populated from the Set-Cookie headers in the
+                    // response, in which case each value will be a non-null string.
+                    Debug.Assert(headerValue is not null, "Enumeration from IHeaderDictionary contained null");
+
+                    // Why did we make this a ROS? It's the whole of the string.
                     ReadOnlySpan<char> headerValueRos = headerValue.AsSpan();
                     SetCookieHeaderValue? setCookieHeaderValue = null;
 
@@ -193,20 +206,70 @@ public static class CookieRescoping
                         // we're absolutely certain that we have to.)
                         if (headerValueRos.StartsWith(cookieNamePrefix))
                         {
-                            setCookieHeaderValue = SetCookieHeaderValue.Parse(headerValue);
-
                             // TODO: more allocatey than it looks.
+                            // In the SingleMatchingSetCookie benchmark, the use of SetCookieHeaderValue
+                            // to Parse and then create the modified header is surprisingly expensive.
+                            // It appears to be costing 288 bytes per request (out of a total of
+                            // 464 bytes).
+                            setCookieHeaderValue = SetCookieHeaderValue.Parse(headerValue);
                             setCookieHeaderValue.Name = scopePrefix + setCookieHeaderValue.Name;
+
+                            // We only allocate somewhere to hold the replacements once we've worked out
+                            // that we need to make at least one replacement.
+                            // Things we might improve:
+                            //  1. Use a pooled array.
+                            //  2. work out how many headers we already looked at, and allocate a smaller array
+                            replacements ??= new (string, string)[headerValues.Count];
+                            replacements[replacementCount++] = (headerValue, setCookieHeaderValue.ToString());
                             break;
                         }
                     }
-
-                    state.ResponseTransformContext.HttpContext.Response.Headers.Append(
-                        "Set-Cookie",
-                        setCookieHeaderValue?.ToString() ?? headerValue);
                 }
+            }
+
+            if (replacements is not null)
+            {
+                state = state.WithSetCookieHeadersReplaced(replacements);
             }
 
             return state;
         };
+
+    /// <summary>
+    /// Applies the Set-Cookie header changes from <paramref name="state"/> to
+    /// the state's <see cref="HttpResponse"/>.
+    /// </summary>
+    /// <param name="state">
+    /// The outcome of the response pipeline.
+    /// </param>
+    public static void ApplyToResponse(
+        YarpResponsePipelineState state)
+    {
+        // Did the pipeline ask us to do anything?
+        if (state.ShouldAddOrReplaceCookies(out YarpResponsePipelineState.CookiesToAddOrReplace cookieMap))
+        {
+            if (state.ResponseTransformContext.HttpContext.Response.Headers.Remove("Set-Cookie", out StringValues headerValues))
+            {
+                foreach (string? headerValue in headerValues)
+                {
+                    // See similar assert in RescopeForResponseSync.
+                    Debug.Assert(headerValue is not null, "Enumeration from IHeaderDictionary contained null");
+
+                    if (cookieMap.ShouldReplace(headerValue, out string? renamedValue))
+                    {
+                        state.ResponseTransformContext.HttpContext.Response.Headers.Append(
+                            "Set-Cookie",
+                            renamedValue);
+                    }
+                    else
+                    {
+                        // Put it back.
+                        state.ResponseTransformContext.HttpContext.Response.Headers.Append(
+                            "Set-Cookie",
+                            headerValue);
+                    }
+                }
+            }
+        }
+    }
 }

@@ -101,5 +101,14 @@ public readonly struct RequestSignature
     public RequestSignature WithQueryString(QueryString queryString)
         => new(this.Host, this.Path, queryString, this.Method);
 
+    /// <summary>
+    /// Holds the elements of a request signature that are not derived from
+    /// an <see cref="HttpRequest"/>.
+    /// </summary>
+    /// <remarks>
+    /// Normally we avoid heap-based data, but we discovered that adding the fields
+    /// in here to every single <see cref="RequestSignature"/> had a significant
+    /// impact on performance, because these things are copied all over the place.
+    /// </remarks>
     private record RequestSignatureOverride(string Host, PathString Path, QueryString QueryString, string Method);
 }

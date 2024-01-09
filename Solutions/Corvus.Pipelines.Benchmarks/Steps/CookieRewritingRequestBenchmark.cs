@@ -1,4 +1,4 @@
-﻿// <copyright file="CookieRescopingRequestBenchmark.cs" company="Endjin Limited">
+﻿// <copyright file="CookieRewritingRequestBenchmark.cs" company="Endjin Limited">
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
@@ -18,17 +18,15 @@ using Yarp.ReverseProxy.Transforms;
 namespace Steps;
 
 /// <summary>
-/// Analyzes performance of <see cref="CookieRescoping.ForRequestSync(string[], string)"/>.
+/// Analyzes performance of <see cref="CookieRewriting.RescopeForRequestSync(string[], string)"/>.
 /// </summary>
 [MemoryDiagnoser]
-public class CookieRescopingRequestBenchmark
+public class CookieRewritingRequestBenchmark
 {
-#pragma warning disable SA1010 // Opening square brackets should be spaced correctly. This is a bug in the analyzer.
     private static readonly string[] CookiePrefixesToRescope = ["foo"];
-#pragma warning restore SA1010 // Opening square brackets should be spaced correctly
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> RequestStep =
-        CookieRescoping.ForRequestSync(CookiePrefixesToRescope, "AddedPrefix");
+        CookieRewriting.RescopeForRequestSync(CookiePrefixesToRescope, "AddedPrefix");
 
     private readonly PipelineAndCookies noIncomingCookiesState;
     private readonly PipelineAndCookies singleNonMatchingCookieState;
@@ -43,7 +41,7 @@ public class CookieRescopingRequestBenchmark
     /// <summary>
     /// Setup.
     /// </summary>
-    public CookieRescopingRequestBenchmark()
+    public CookieRewritingRequestBenchmark()
     {
         this.noIncomingCookiesState = new PipelineAndCookies(
             new CookieCollection());
@@ -132,13 +130,13 @@ public class CookieRescopingRequestBenchmark
             throw new InvalidOperationException("Should have forwarded.");
         }
 
-        CookieRescoping.ApplyToRequest(forwardedRequestDetails.Value, pipelineAndCookies.GetHeaders());
+        CookieRewriting.ApplyToRequest(forwardedRequestDetails.Value, pipelineAndCookies.GetHeaders());
 
         return state;
     }
 
     // TODO:
-    // In CookieRescoping.ApplyToRequest, it is unclear which of the two mechanisms for
+    // In CookieRewriting.ApplyToRequest, it is unclear which of the two mechanisms for
     // populating the Cookie headers is more efficient. To benchmark both meaningfully,
     // we need benchmarks with variable numbers of cookies in total, and variable numbers
     // of cookies that match.

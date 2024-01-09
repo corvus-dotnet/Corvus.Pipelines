@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Collections.Immutable;
+
 using Corvus.Pipelines;
 
 using Microsoft.AspNetCore.Http.Features;
@@ -48,6 +50,8 @@ public readonly struct YarpResponsePipelineState :
     /// </summary>
     internal ResponseTransformContext ResponseTransformContext { get; init; }
 
+    private ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> SetCookieHeaderReplacements { get; init; }
+
     /// <summary>
     /// Gets an instance of the <see cref="YarpResponsePipelineState"/> for a particular
     /// <see cref="Yarp.ReverseProxy.Transforms.ResponseTransformContext"/>.
@@ -74,5 +78,85 @@ public readonly struct YarpResponsePipelineState :
             Logger = logger ?? responseTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance,
             CancellationToken = cancellationToken,
         };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpResponsePipelineState"/> instance with the given cookie header
+    /// value updated.
+    /// </summary>
+    /// <param name="replacements">
+    /// The Set-Cookie header values that should be replaced.
+    /// </param>
+    /// <returns>The updated state.</returns>
+    public YarpResponsePipelineState WithSetCookieHeadersReplaced(
+        ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements)
+    {
+        return this with
+        {
+            SetCookieHeaderReplacements = replacements,
+        };
+    }
+
+    /// <summary>
+    /// Determines whether any cookies in the response should be renamed.
+    /// </summary>
+    /// <param name="cookieRenames">The renaming details.</param>
+    /// <returns>True if at least one cookie should be renamed.</returns>
+    public bool ShouldAddOrReplaceCookies(out CookiesToAddOrReplace cookieRenames)
+    {
+        if (this.SetCookieHeaderReplacements.IsEmpty)
+        {
+            cookieRenames = default;
+            return false;
+        }
+
+        cookieRenames = new CookiesToAddOrReplace(this.SetCookieHeaderReplacements);
+        return true;
+    }
+
+    /// <summary>
+    /// Describes the <c>Set-Cookie</c> headers to be rewritten or added.
+    /// </summary>
+    /// <remarks>
+    /// Currently, we don't support adding, because we have no scenarios that need it.
+    /// </remarks>
+    public readonly struct CookiesToAddOrReplace
+    {
+        private readonly ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> setCookieHeaderReplacements;
+
+        /// <summary>
+        /// Initializes a <see cref="CookiesToAddOrReplace"/>.
+        /// </summary>
+        /// <param name="setCookieHeaderReplacements">
+        /// The Set-Cookie header values that should be replaced.
+        /// </param>
+        public CookiesToAddOrReplace(ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> setCookieHeaderReplacements)
+        {
+            this.setCookieHeaderReplacements = setCookieHeaderReplacements;
+        }
+
+        /// <summary>
+        /// Determines whether a particular Set-Cookie header should be replaced.
+        /// </summary>
+        /// <param name="headerValue">The header's current value.</param>
+        /// <param name="newHeaderValue">The replacement header value.</param>
+        /// <returns>
+        /// True if the header should be replaced, false if it should be left as-is.
+        /// </returns>
+        public bool ShouldReplace(string headerValue, out string? newHeaderValue)
+        {
+            ReadOnlySpan<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements = this.setCookieHeaderReplacements.Span;
+            for (int i = 0; i < replacements.Length; ++i)
+            {
+                if (replacements[i].SetCookieHeaderValueToReplace == headerValue)
+                {
+                    newHeaderValue = replacements[i].ReplacementHeaderValue;
+                    return true;
+                }
+            }
+
+            newHeaderValue = default;
+            return false;
+        }
     }
 }
