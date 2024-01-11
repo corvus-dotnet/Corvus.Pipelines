@@ -174,13 +174,11 @@ public static class CookieRewriting
             //  3) if we Remove the Set-Cookie headers and subsequently re-add
             //      them without modification, this appears not to cause any
             //      additional allocations.
-
-            // TODO: should we have a struct encapsulating the collection of replacements?
-            // That would make it easier to use pooled arrays for this.
-            (string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)[]? replacements = null;
-            int replacementCount = 0;
             if (state.ResponseTransformContext.HttpContext.Response.Headers.TryGetValue("Set-Cookie", out StringValues headerValues))
             {
+                YarpResponsePipelineState.CookieHeaderChanges cookieHeaderChanges = default;
+                int headersRemaining = 0;
+
                 foreach (string? headerValue in headerValues)
                 {
                     // Although StringValues supports nulls (in two ways: it may be null as
@@ -211,25 +209,35 @@ public static class CookieRewriting
                             // to Parse and then create the modified header is surprisingly expensive.
                             // It appears to be costing 288 bytes per request (out of a total of
                             // 464 bytes).
+                            // It turns out that the reason for this is that in addition to the three
+                            // fields to hold the name, value, and (nullable) reference to a list of
+                            // extensions, there also a load of other auto-properties that are a mixture
+                            // of StringSegment and TimeSpan and such like. These combine to make
+                            // SetCookieHeaderValue 136 bytes in size. We're not quite sure where the
+                            // rest goes but some of it will be in the string creation.
+                            // So we could reduce memory consumption significantly because all we
+                            // really care about is the name and everything else.
+                            // Let's do that NEXT TIME.
                             setCookieHeaderValue = SetCookieHeaderValue.Parse(headerValue);
                             setCookieHeaderValue.Name = scopePrefix + setCookieHeaderValue.Name;
 
-                            // We only allocate somewhere to hold the replacements once we've worked out
-                            // that we need to make at least one replacement.
-                            // Things we might improve:
-                            //  1. Use a pooled array.
-                            //  2. work out how many headers we already looked at, and allocate a smaller array
-                            replacements ??= new (string, string)[headerValues.Count];
-                            replacements[replacementCount++] = (headerValue, setCookieHeaderValue.ToString());
+                            if (headersRemaining <= 0)
+                            {
+                                headersRemaining += headerValues.Count;
+                            }
+
+                            cookieHeaderChanges.AddReplacement(headerValue, setCookieHeaderValue.ToString(), headersRemaining);
                             break;
                         }
                     }
-                }
-            }
 
-            if (replacements is not null)
-            {
-                state = state.WithSetCookieHeadersReplaced(replacements);
+                    headersRemaining -= 1;
+                }
+
+                if (!cookieHeaderChanges.IsEmpty)
+                {
+                    state = state.WithSetCookieHeadersReplaced(ref cookieHeaderChanges);
+                }
             }
 
             return state;

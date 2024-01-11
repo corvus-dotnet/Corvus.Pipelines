@@ -3,6 +3,8 @@
 // </copyright>
 
 using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 using Corvus.Pipelines;
 
@@ -84,13 +86,17 @@ public readonly struct YarpResponsePipelineState :
     /// Returns a <see cref="YarpResponsePipelineState"/> instance with the given cookie header
     /// value updated.
     /// </summary>
-    /// <param name="replacements">
-    /// The Set-Cookie header values that should be replaced.
+    /// <param name="cookieHeaderChanges">
+    /// A <see cref="CookieHeaderChanges"/> tracking whether any Set-Cookie header values should be replaced,
+    /// and if so with what.
     /// </param>
     /// <returns>The updated state.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public YarpResponsePipelineState WithSetCookieHeadersReplaced(
-        ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements)
+        ref readonly CookieHeaderChanges cookieHeaderChanges)
     {
+        ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements = cookieHeaderChanges.Replacements;
+
         return this with
         {
             SetCookieHeaderReplacements = replacements,
@@ -157,6 +163,58 @@ public readonly struct YarpResponsePipelineState :
 
             newHeaderValue = default;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Accumulates the changes to the Set-Cookie headers.
+    /// </summary>
+    public struct CookieHeaderChanges
+    {
+        private Memory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements;
+        private int replacementsCount;
+
+        /// <summary>
+        /// Gets the Set-Cookie header replacements. Might be empty.
+        /// </summary>
+        public readonly ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> Replacements
+            => this.replacements[..this.replacementsCount];
+
+        /// <summary>
+        /// Gets a value indicating whether there are any replacements.
+        /// </summary>
+        public readonly bool IsEmpty => this.replacementsCount == 0;
+
+        /// <summary>
+        /// Adds a replacement.
+        /// </summary>
+        /// <param name="setCookieHeaderValueToReplace">
+        /// The Set-Cookie header value that should be replaced.
+        /// </param>
+        /// <param name="replacementHeaderValue">
+        /// The value with which the Set-Cookie header should be replaced.
+        /// </param>
+        /// <param name="maxHeaders">
+        /// The number of as yet unprocessed Set-Cookie headers. (This is used to size the array on the
+        /// first call.)
+        /// </param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AddReplacement(
+            string setCookieHeaderValueToReplace,
+            string replacementHeaderValue,
+            int maxHeaders)
+        {
+            if (this.replacements.IsEmpty)
+            {
+                // TODO: could use pooled arrays. (Would need to ensure we always release it.)
+                this.replacements = new (string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)[maxHeaders];
+            }
+            else
+            {
+                Debug.Assert(this.replacements.Length >= maxHeaders, "maxHeaders is larger than on an earlier call");
+            }
+
+            this.replacements.Span[this.replacementsCount++] = (setCookieHeaderValueToReplace, replacementHeaderValue);
         }
     }
 }
