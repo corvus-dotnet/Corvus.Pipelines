@@ -192,7 +192,7 @@ public static class CookieRewriting
 
                     // Why did we make this a ROS? It's the whole of the string.
                     ReadOnlySpan<char> headerValueRos = headerValue.AsSpan();
-                    SetCookieHeaderValue? setCookieHeaderValue = null;
+                    string? rescopedSetCookieHeaderValue = null;
 
                     foreach (ReadOnlySpan<char> cookieNamePrefix in cookieNamePrefixes)
                     {
@@ -204,29 +204,25 @@ public static class CookieRewriting
                         // we're absolutely certain that we have to.)
                         if (headerValueRos.StartsWith(cookieNamePrefix))
                         {
-                            // TODO: more allocatey than it looks.
-                            // In the SingleMatchingSetCookie benchmark, the use of SetCookieHeaderValue
-                            // to Parse and then create the modified header is surprisingly expensive.
-                            // It appears to be costing 288 bytes per request (out of a total of
-                            // 464 bytes).
-                            // It turns out that the reason for this is that in addition to the three
-                            // fields to hold the name, value, and (nullable) reference to a list of
-                            // extensions, there also a load of other auto-properties that are a mixture
-                            // of StringSegment and TimeSpan and such like. These combine to make
-                            // SetCookieHeaderValue 136 bytes in size. We're not quite sure where the
-                            // rest goes but some of it will be in the string creation.
-                            // So we could reduce memory consumption significantly because all we
-                            // really care about is the name and everything else.
-                            // Let's do that NEXT TIME.
-                            setCookieHeaderValue = SetCookieHeaderValue.Parse(headerValue);
-                            setCookieHeaderValue.Name = scopePrefix + setCookieHeaderValue.Name;
+                            // Although SetCookieHeaderValue would make it more obvious that we're
+                            // just changing the name here, that type turns out to be very allocatey.
+                            // This was a few hundred bytes cheaper, and over twice as fast.
+                            int requiredHeaderValueLength = headerValueRos.Length + scopePrefix.Length;
+                            rescopedSetCookieHeaderValue = string.Create(
+                                requiredHeaderValueLength,
+                                (scopePrefix, headerValue),
+                                (span, state) =>
+                                {
+                                    state.scopePrefix.CopyTo(span);
+                                    state.headerValue.CopyTo(span[state.scopePrefix.Length..]);
+                                });
 
                             if (headersRemaining <= 0)
                             {
                                 headersRemaining += headerValues.Count;
                             }
 
-                            cookieHeaderChanges.AddReplacement(headerValue, setCookieHeaderValue.ToString(), headersRemaining);
+                            cookieHeaderChanges.AddReplacement(headerValue, rescopedSetCookieHeaderValue, headersRemaining);
                             break;
                         }
                     }
