@@ -49,14 +49,6 @@ public static class CookieRewriting
         => (YarpRequestPipelineState state) =>
         {
             IRequestCookieCollection cookies = state.RequestTransformContext.HttpContext.Request.Cookies;
-
-            // TODO: detect whether we need to change anything - no sense rebuilding all the cookies if we didn't.
-            // (Probably. We will end up scanning some of the cookies twice.)
-            // The expected normal use case is that you'll always need this if you ask for it, so maybe it's
-            // fine as it is.
-            // We check whether there are cookies at all before starting to enumerate, because this
-            // is an interface-based enumeration, and it allocates 56 bytes to run the foreach even
-            // when the collection is empty.
             if (cookies.Count > 0)
             {
                 foreach ((string cookieName, string cookieValue) in cookies)

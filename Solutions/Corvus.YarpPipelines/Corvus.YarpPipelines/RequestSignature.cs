@@ -15,6 +15,7 @@ namespace Corvus.YarpPipelines;
 /// </remarks>
 public readonly struct RequestSignature
 {
+    // TODO: we could collapse this into a single object? field, halving the size of this struct.
     private readonly HttpRequest? request;
     private readonly RequestSignatureOverride? requestSignatureOverride;
 
@@ -78,8 +79,6 @@ public readonly struct RequestSignature
     /// <returns>A signature.</returns>
     public static RequestSignature From(HttpRequest request)
     {
-        // TODO: are we going to cause potentially unnecessary parsing of the query string by
-        // retrieving the Query property, or does it not do anything until we ask it questions?
         return new RequestSignature(request);
     }
 
