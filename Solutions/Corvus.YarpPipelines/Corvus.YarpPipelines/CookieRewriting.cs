@@ -211,7 +211,7 @@ public static class CookieRewriting
                             rescopedSetCookieHeaderValue = string.Create(
                                 requiredHeaderValueLength,
                                 (scopePrefix, headerValue),
-                                (span, state) =>
+                                static (span, state) =>
                                 {
                                     state.scopePrefix.CopyTo(span);
                                     state.headerValue.CopyTo(span[state.scopePrefix.Length..]);
@@ -250,7 +250,7 @@ public static class CookieRewriting
         YarpResponsePipelineState state)
     {
         // Did the pipeline ask us to do anything?
-        if (state.ShouldAddOrReplaceCookies(out YarpResponsePipelineState.CookiesToAddOrReplace cookieMap))
+        if (state.ShouldAddOrReplaceCookies(out YarpResponsePipelineState.CookieHeaderChanges cookieMap))
         {
             if (state.ResponseTransformContext.HttpContext.Response.Headers.Remove("Set-Cookie", out StringValues headerValues))
             {

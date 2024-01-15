@@ -2,7 +2,6 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -52,7 +51,7 @@ public readonly struct YarpResponsePipelineState :
     /// </summary>
     internal ResponseTransformContext ResponseTransformContext { get; init; }
 
-    private ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> SetCookieHeaderReplacements { get; init; }
+    private CookieHeaderChanges SetCookieHeaderReplacements { get; init; }
 
     /// <summary>
     /// Gets an instance of the <see cref="YarpResponsePipelineState"/> for a particular
@@ -95,11 +94,9 @@ public readonly struct YarpResponsePipelineState :
     public YarpResponsePipelineState WithSetCookieHeadersReplaced(
         ref readonly CookieHeaderChanges cookieHeaderChanges)
     {
-        ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements = cookieHeaderChanges.Replacements;
-
         return this with
         {
-            SetCookieHeaderReplacements = replacements,
+            SetCookieHeaderReplacements = cookieHeaderChanges,
         };
     }
 
@@ -108,62 +105,10 @@ public readonly struct YarpResponsePipelineState :
     /// </summary>
     /// <param name="cookieRenames">The renaming details.</param>
     /// <returns>True if at least one cookie should be renamed.</returns>
-    public bool ShouldAddOrReplaceCookies(out CookiesToAddOrReplace cookieRenames)
+    public bool ShouldAddOrReplaceCookies(out CookieHeaderChanges cookieRenames)
     {
-        if (this.SetCookieHeaderReplacements.IsEmpty)
-        {
-            cookieRenames = default;
-            return false;
-        }
-
-        cookieRenames = new CookiesToAddOrReplace(this.SetCookieHeaderReplacements);
-        return true;
-    }
-
-    /// <summary>
-    /// Describes the <c>Set-Cookie</c> headers to be rewritten or added.
-    /// </summary>
-    /// <remarks>
-    /// Currently, we don't support adding, because we have no scenarios that need it.
-    /// </remarks>
-    public readonly struct CookiesToAddOrReplace
-    {
-        private readonly ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> setCookieHeaderReplacements;
-
-        /// <summary>
-        /// Initializes a <see cref="CookiesToAddOrReplace"/>.
-        /// </summary>
-        /// <param name="setCookieHeaderReplacements">
-        /// The Set-Cookie header values that should be replaced.
-        /// </param>
-        public CookiesToAddOrReplace(ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> setCookieHeaderReplacements)
-        {
-            this.setCookieHeaderReplacements = setCookieHeaderReplacements;
-        }
-
-        /// <summary>
-        /// Determines whether a particular Set-Cookie header should be replaced.
-        /// </summary>
-        /// <param name="headerValue">The header's current value.</param>
-        /// <param name="newHeaderValue">The replacement header value.</param>
-        /// <returns>
-        /// True if the header should be replaced, false if it should be left as-is.
-        /// </returns>
-        public bool ShouldReplace(string headerValue, out string? newHeaderValue)
-        {
-            ReadOnlySpan<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements = this.setCookieHeaderReplacements.Span;
-            for (int i = 0; i < replacements.Length; ++i)
-            {
-                if (replacements[i].SetCookieHeaderValueToReplace == headerValue)
-                {
-                    newHeaderValue = replacements[i].ReplacementHeaderValue;
-                    return true;
-                }
-            }
-
-            newHeaderValue = default;
-            return false;
-        }
+        cookieRenames = this.SetCookieHeaderReplacements;
+        return !this.SetCookieHeaderReplacements.IsEmpty;
     }
 
     /// <summary>
@@ -171,14 +116,8 @@ public readonly struct YarpResponsePipelineState :
     /// </summary>
     public struct CookieHeaderChanges
     {
-        private Memory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements;
+        private (string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)[]? replacements;
         private int replacementsCount;
-
-        /// <summary>
-        /// Gets the Set-Cookie header replacements. Might be empty.
-        /// </summary>
-        public readonly ReadOnlyMemory<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> Replacements
-            => this.replacements[..this.replacementsCount];
 
         /// <summary>
         /// Gets a value indicating whether there are any replacements.
@@ -204,9 +143,17 @@ public readonly struct YarpResponsePipelineState :
             string replacementHeaderValue,
             int maxHeaders)
         {
-            if (this.replacements.IsEmpty)
+            if (this.replacements is null)
             {
-                // TODO: could use pooled arrays. (Would need to ensure we always release it.)
+                // We tried using ArrayPool here to amortize the allocations. Although this did reduce
+                // the per-request allocations, it's not possible to get those to zero in the code paths
+                // that end up allocating this array, because we have to allocate a string with the
+                // modified Set-Cookie header. That string is usually going to be much larger than this
+                // array, so this offers at best a marginal reduction in allocation. And it comes at a
+                // significant cost: the CPU usage was about 47% higher when using ArrayPool. Since
+                // it's impossible to hit zero allocation for this code path, the extra CPU usage
+                // seems more important. Moreover, the extra checks required by the use of ArrayPool
+                // slow down the cases where we don't need to allocate.
                 this.replacements = new (string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)[maxHeaders];
             }
             else
@@ -214,7 +161,31 @@ public readonly struct YarpResponsePipelineState :
                 Debug.Assert(this.replacements.Length >= maxHeaders, "maxHeaders is larger than on an earlier call");
             }
 
-            this.replacements.Span[this.replacementsCount++] = (setCookieHeaderValueToReplace, replacementHeaderValue);
+            this.replacements[this.replacementsCount++] = (setCookieHeaderValueToReplace, replacementHeaderValue);
+        }
+
+        /// <summary>
+        /// Determines whether a particular Set-Cookie header should be replaced.
+        /// </summary>
+        /// <param name="headerValue">The header's current value.</param>
+        /// <param name="newHeaderValue">The replacement header value.</param>
+        /// <returns>
+        /// True if the header should be replaced, false if it should be left as-is.
+        /// </returns>
+        public readonly bool ShouldReplace(string headerValue, out string? newHeaderValue)
+        {
+            ReadOnlySpan<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements = this.replacements;
+            foreach ((string SetCookieHeaderValueToReplace, string ReplacementHeaderValue) replacement in replacements)
+            {
+                if (replacement.SetCookieHeaderValueToReplace == headerValue)
+                {
+                    newHeaderValue = replacement.ReplacementHeaderValue;
+                    return true;
+                }
+            }
+
+            newHeaderValue = default;
+            return false;
         }
     }
 }
