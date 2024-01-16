@@ -84,7 +84,7 @@ public static class YarpRequestPipelineStateExtensions
         this YarpRequestPipelineState state,
         ClaimsIdentity identity,
         AuthenticationProperties authenticationProperties,
-        string returnUrl,
+        ReadOnlyMemory<char> returnUrl,
         string cookiePath,
         string cookieName)
     {

@@ -152,7 +152,7 @@ public readonly struct YarpRequestPipelineState :
     /// <param name="queryString">The query string to put in the proxied request.</param>
     /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
     public YarpRequestPipelineState TerminateWithClusterIdAndPath(
-        string clusterId, PathString path, QueryString queryString)
+        string clusterId, ReadOnlyMemory<char> path, QueryString queryString)
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-forward");
         return this with

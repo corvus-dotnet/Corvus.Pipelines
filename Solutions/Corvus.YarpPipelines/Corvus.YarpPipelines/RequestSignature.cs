@@ -3,6 +3,7 @@
 // </copyright>
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 
 namespace Corvus.YarpPipelines;
 
@@ -10,8 +11,33 @@ namespace Corvus.YarpPipelines;
 /// The elements of a request enabling identification for pipeline selection purposes.
 /// </summary>
 /// <remarks>
-/// TODO: is this type overloaded? This is both a request signature, but also a vector for feeding
-/// information back out of the pipeline.
+/// <para>
+/// This is used in the following ways:
+/// </para>
+/// <list type="bullet">
+/// <item>
+/// <para>
+/// Rewriting paths, e.g., the public-facing endpoint might be /weather/op?x=y but we might
+/// rewrite that to just /op?x=y for the back end. In this case, there will be no <see cref="Host"/>.
+/// </para>
+/// </item>
+/// <item>
+/// <para>
+/// NEXT TIME: look at this.
+/// Modifying the query string, e.g. removing parts that are only of interest to the proxy and
+/// which the back end will not understand. (TODO: we don't yet have an example of this.)
+/// </para>
+/// </item>
+/// <item>
+/// <para>
+/// Enables authentication callback handlers to set the nominal request signature to reflect the request
+/// that was in progress when we redirected the caller to the authentication provider.
+/// </para>
+/// <para>
+/// Delegates to the <see cref="HttpRequest"/> when handling the request in a straightforward way.
+/// </para>
+/// </item>
+/// </list>
 /// </remarks>
 public readonly struct RequestSignature
 {
@@ -22,11 +48,11 @@ public readonly struct RequestSignature
     /// <summary>
     /// Create an instance of a request signature from its components.
     /// </summary>
-    /// <param name="host">The host.</param>
+    /// <param name="host">The host and, if present, port.</param>
     /// <param name="path">The URL path.</param>
     /// <param name="queryString">The query string.</param>
     /// <param name="method">The HTTP method/verb.</param>
-    public RequestSignature(string host, PathString path, QueryString queryString, string method)
+    private RequestSignature(HostString host, ReadOnlyMemory<char> path, QueryString queryString, string method)
     {
         this.request = default;
 
@@ -45,12 +71,12 @@ public readonly struct RequestSignature
     /// <summary>
     /// Gets the host.
     /// </summary>
-    public string Host => this.request?.Host.Host ?? this.requestSignatureOverride?.Host ?? throw new InvalidOperationException();
+    public HostString Host => this.request?.Host ?? this.requestSignatureOverride?.Host ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the URL path.
     /// </summary>
-    public PathString Path => this.request?.Path ?? this.requestSignatureOverride?.Path ?? throw new InvalidOperationException();
+    public ReadOnlyMemory<char> Path => this.request?.Path.Value?.AsMemory() ?? this.requestSignatureOverride?.Path ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the query string.
@@ -69,8 +95,26 @@ public readonly struct RequestSignature
     /// <param name="path">The <see cref="Path"/>.</param>
     /// <param name="queryString">The <see cref="QueryString"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public static RequestSignature ForPathAndQueryString(PathString path, QueryString queryString)
-        => new(string.Empty, path, queryString, string.Empty);
+    public static RequestSignature ForPathAndQueryString(ReadOnlyMemory<char> path, QueryString queryString)
+        => new(default, path, queryString, string.Empty);
+
+    /// <summary>
+    /// Creates a <see cref="RequestSignature"/> representing a particular URL and method.
+    /// </summary>
+    /// <param name="url">The URL.</param>
+    /// <param name="method">The <see cref="Method"/>.</param>
+    /// <returns>A <see cref="RequestSignature"/>.</returns>
+    public static RequestSignature ForUrlAndMethod(string url, string method)
+    {
+        UriHelper.FromAbsolute(
+            url,
+            out _,
+            out HostString host,
+            out PathString path,
+            out QueryString queryString,
+            out _);
+        return new(host, path.Value.AsMemory(), queryString, method);
+    }
 
     /// <summary>
     /// Creates a <see cref="RequestSignature"/> from the elements of an <see cref="HttpRequest"/>.
@@ -83,24 +127,6 @@ public readonly struct RequestSignature
     }
 
     /// <summary>
-    /// Returns a new <see cref="RequestSignature"/> which copies all but the
-    /// <see cref="Path"/> property, replacing that with the specified value.
-    /// </summary>
-    /// <param name="path">The value for <see cref="Path"/>.</param>
-    /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public RequestSignature WithPath(PathString path)
-        => new(this.Host, path, this.QueryString, this.Method);
-
-    /// <summary>
-    /// Returns a new <see cref="RequestSignature"/> which copies all but the
-    /// <see cref="QueryString"/> property, replacing that with the specified value.
-    /// </summary>
-    /// <param name="queryString">The value for <see cref="QueryString"/>.</param>
-    /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public RequestSignature WithQueryString(QueryString queryString)
-        => new(this.Host, this.Path, queryString, this.Method);
-
-    /// <summary>
     /// Holds the elements of a request signature that are not derived from
     /// an <see cref="HttpRequest"/>.
     /// </summary>
@@ -109,5 +135,5 @@ public readonly struct RequestSignature
     /// in here to every single <see cref="RequestSignature"/> had a significant
     /// impact on performance, because these things are copied all over the place.
     /// </remarks>
-    private record RequestSignatureOverride(string Host, PathString Path, QueryString QueryString, string Method);
+    private record RequestSignatureOverride(HostString Host, ReadOnlyMemory<char> Path, QueryString QueryString, string Method);
 }

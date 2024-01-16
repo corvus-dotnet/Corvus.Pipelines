@@ -12,7 +12,7 @@ namespace Corvus.YarpPipelines;
 /// <remarks><see cref="YarpRequestPipelineState.TerminateWith(NonForwardedResponseDetails)"/> for more details.</remarks>
 public readonly struct NonForwardedResponseDetails
 {
-    private readonly string? redirectLocation;
+    private readonly ReadOnlyMemory<char> redirectLocation;
     private readonly ImmutableArray<CookieDetails>? cookieDetails;
     private readonly bool redirectShouldPreserveMethod;
 
@@ -22,16 +22,16 @@ public readonly struct NonForwardedResponseDetails
     }
 
     private NonForwardedResponseDetails(
-        string redirectLocation, bool preserveMethod)
+        ReadOnlyMemory<char> redirectLocation, bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
         this.redirectShouldPreserveMethod = preserveMethod;
     }
 
     private NonForwardedResponseDetails(
-    string redirectLocation,
-    CookieDetails cookieDetails,
-    bool preserveMethod)
+        ReadOnlyMemory<char> redirectLocation,
+        CookieDetails cookieDetails,
+        bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
         this.cookieDetails =
@@ -61,7 +61,7 @@ public readonly struct NonForwardedResponseDetails
     /// </summary>
     /// <param name="location">The redirection location.</param>
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
-    public static NonForwardedResponseDetails ForAuthenticationRedirect(string location)
+    public static NonForwardedResponseDetails ForAuthenticationRedirect(ReadOnlyMemory<char> location)
     {
         return new(location, preserveMethod: false);
     }
@@ -78,7 +78,7 @@ public readonly struct NonForwardedResponseDetails
     /// <param name="cookieExpiresFrom">The time after which the cookie expires.</param>
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
     public static NonForwardedResponseDetails ForAuthenticationRedirectSettingCookie(
-        string location,
+        ReadOnlyMemory<char> location,
         string cookiePath,
         string cookieName,
         string cookieValue,
@@ -97,7 +97,7 @@ public readonly struct NonForwardedResponseDetails
     /// <param name="cookieName">The cookie name.</param>
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
     public static NonForwardedResponseDetails ForAuthenticationRedirectRemovingCookie(
-        string location,
+        ReadOnlyMemory<char> location,
         string cookiePath,
         string cookieName)
     {
@@ -111,11 +111,11 @@ public readonly struct NonForwardedResponseDetails
     /// Set to the redirect details if this value represents a redirect.
     /// </param>
     /// <returns><see langword="true"/> if this was a redirect.</returns>
-    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod, ImmutableArray<CookieDetails>? CookieDetails) result)
+    public bool TryGetRedirect(out (ReadOnlyMemory<char> Location, bool Permanent, bool PreserveMethod, ImmutableArray<CookieDetails>? CookieDetails) result)
     {
-        if (this.redirectLocation is string location)
+        if (!this.redirectLocation.IsEmpty)
         {
-            result = (location, false, this.redirectShouldPreserveMethod, this.cookieDetails);
+            result = (this.redirectLocation, false, this.redirectShouldPreserveMethod, this.cookieDetails);
             return true;
         }
 
