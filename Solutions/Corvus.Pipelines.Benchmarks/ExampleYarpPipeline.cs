@@ -15,12 +15,12 @@ namespace PipelineExamples;
 public static class ExampleYarpPipeline
 {
     private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleFizz =
-        static state => state.GetNominalRequestSignature().Path == "/fizz"
+        static state => state.GetNominalRequestSignature().Path.Span.SequenceEqual("/fizz")
                     ? state.TerminateWithClusterId("Nonsense")
                     : state.Continue();
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleBuzz =
-        static state => state.GetNominalRequestSignature().Path == "/buzz"
+        static state => state.GetNominalRequestSignature().Path.Span.SequenceEqual("/buzz")
                     ? throw new InvalidOperationException("Something's gone wrong!")
                     : state.Continue();
 
@@ -29,17 +29,17 @@ public static class ExampleYarpPipeline
             HandleFizz,
             HandleBuzz);
 
-    private static readonly SyncPipelineStep<HandlerState<PathString, string?>> HandleFoo =
-        static state => state.Input == "/foo"
+    private static readonly SyncPipelineStep<HandlerState<ReadOnlyMemory<char>, string?>> HandleFoo =
+        static state => state.Input.Span.SequenceEqual("/foo")
                             ? state.Handled("We're looking at a foo")
                             : state.NotHandled();
 
-    private static readonly SyncPipelineStep<HandlerState<PathString, string?>> HandleBar =
-        static state => state.Input == "/bar"
+    private static readonly SyncPipelineStep<HandlerState<ReadOnlyMemory<char>, string?>> HandleBar =
+        static state => state.Input.Span.SequenceEqual("/bar")
                     ? state.Handled(null)
                     : state.NotHandled();
 
-    private static readonly SyncPipelineStep<HandlerState<PathString, string?>> MessageHandlerPipelineInstance =
+    private static readonly SyncPipelineStep<HandlerState<ReadOnlyMemory<char>, string?>> MessageHandlerPipelineInstance =
         HandlerPipeline.Build(
             HandleFoo,
             HandleBar);
@@ -47,7 +47,7 @@ public static class ExampleYarpPipeline
     private static readonly SyncPipelineStep<YarpRequestPipelineState> AddMessageToHttpContext =
         MessageHandlerPipelineInstance
             .Bind(
-                wrap: static (YarpRequestPipelineState state) => HandlerState<PathString, string?>.For(state.GetNominalRequestSignature().Path, state.Logger),
+                wrap: static (YarpRequestPipelineState state) => HandlerState<ReadOnlyMemory<char>, string?>.For(state.GetNominalRequestSignature().Path, state.Logger),
                 unwrap: static (state, innerState) =>
                 {
                     if (innerState.WasHandled(out string? message))
@@ -66,15 +66,15 @@ public static class ExampleYarpPipeline
                 });
 
     private static readonly Func<YarpRequestPipelineState, SyncPipelineStep<YarpRequestPipelineState>> ChooseMessageContextHandler =
-            static state => state.GetNominalRequestSignature().QueryString.HasValue
-                                ? state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400))
-                                : AddMessageToHttpContext;
+            static state => state.GetNominalRequestSignature().QueryString.IsEmpty
+                                ? AddMessageToHttpContext
+                                : state => state.TerminateWith(NonForwardedResponseDetails.ForStatusCode(400));
 
     private static readonly Func<YarpRequestPipelineState, Exception, YarpRequestPipelineState> CatchPipelineException =
         static (state, exception) => state.TransientFailure(new YarpPipelineError("Unable to execute the pipeline.", exception));
 
     private static readonly SyncPipelineStep<YarpRequestPipelineState> HandleRoot =
-        static state => state.GetNominalRequestSignature().Path == "/" // You can write in this style where we execute steps directly
+        static state => state.GetNominalRequestSignature().Path.Span.SequenceEqual("/") // You can write in this style where we execute steps directly
                 ? state.TerminateWithClusterId("Nonsense")
                 : InnerPipelineInstance(state);
 

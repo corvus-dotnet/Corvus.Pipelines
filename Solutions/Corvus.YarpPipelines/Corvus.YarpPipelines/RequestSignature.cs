@@ -52,7 +52,7 @@ public readonly struct RequestSignature
     /// <param name="path">The URL path.</param>
     /// <param name="queryString">The query string.</param>
     /// <param name="method">The HTTP method/verb.</param>
-    private RequestSignature(HostString host, ReadOnlyMemory<char> path, QueryString queryString, string method)
+    private RequestSignature(HostString host, ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString, string method)
     {
         this.request = default;
 
@@ -81,7 +81,7 @@ public readonly struct RequestSignature
     /// <summary>
     /// Gets the query string.
     /// </summary>
-    public QueryString QueryString => this.request?.QueryString ?? this.requestSignatureOverride?.QueryString ?? throw new InvalidOperationException();
+    public ReadOnlyMemory<char> QueryString => this.request?.QueryString.Value?.AsMemory() ?? this.requestSignatureOverride?.QueryString ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the HTTP method/verb.
@@ -95,7 +95,7 @@ public readonly struct RequestSignature
     /// <param name="path">The <see cref="Path"/>.</param>
     /// <param name="queryString">The <see cref="QueryString"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public static RequestSignature ForPathAndQueryString(ReadOnlyMemory<char> path, QueryString queryString)
+    public static RequestSignature ForPathAndQueryString(ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString)
         => new(default, path, queryString, string.Empty);
 
     /// <summary>
@@ -106,6 +106,10 @@ public readonly struct RequestSignature
     /// <returns>A <see cref="RequestSignature"/>.</returns>
     public static RequestSignature ForUrlAndMethod(string url, string method)
     {
+        // TODO: This could be done more efficient, because we could obtain ReadOnlyMemory<char>s for
+        // the various parts, avoiding the need to allocate new strings. Currently this code path
+        // is used only in a relatively unusual case (OIDC redirects), so it won't have a huge
+        // impact, but we should do it at some point.
         UriHelper.FromAbsolute(
             url,
             out _,
@@ -113,7 +117,7 @@ public readonly struct RequestSignature
             out PathString path,
             out QueryString queryString,
             out _);
-        return new(host, path.Value.AsMemory(), queryString, method);
+        return new(host, path.Value.AsMemory(), queryString.Value.AsMemory(), method);
     }
 
     /// <summary>
@@ -135,5 +139,5 @@ public readonly struct RequestSignature
     /// in here to every single <see cref="RequestSignature"/> had a significant
     /// impact on performance, because these things are copied all over the place.
     /// </remarks>
-    private record RequestSignatureOverride(HostString Host, ReadOnlyMemory<char> Path, QueryString QueryString, string Method);
+    private record RequestSignatureOverride(HostString Host, ReadOnlyMemory<char> Path, ReadOnlyMemory<char> QueryString, string Method);
 }

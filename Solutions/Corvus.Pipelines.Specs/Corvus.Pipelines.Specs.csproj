@@ -34,6 +34,7 @@
 
 	<ItemGroup>
     <ProjectReference Include="..\Corvus.Pipelines\Corvus.Pipelines.csproj" />
+    <ProjectReference Include="..\Corvus.YarpPipelines\Corvus.YarpPipelines.csproj" />
   </ItemGroup>
 
 	<PropertyGroup>
@@ -42,7 +43,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Update="Corvus.Pipelines.Specs\Features\IfOperator.feature.cs">
+	  <Compile Update="Corvus.Pipelines.Specs\Features\Operators\IfOperator.feature.cs">
 	    <DependentUpon>IfOperator.feature</DependentUpon>
 	  </Compile>
 	</ItemGroup>
@@ -52,7 +53,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <SpecFlowFeatureFiles Update="Corvus.Pipelines.Specs\Features\IfOperator.feature">
+	  <SpecFlowFeatureFiles Update="Corvus.Pipelines.Specs\Features\Operators\IfOperator.feature">
 	    <Visible>$(UsingMicrosoftNETSdk)</Visible>
 	    <CodeBehindFile>%(RelativeDir)%(Filename).feature$(DefaultLanguageSourceExtension)</CodeBehindFile>
 	  </SpecFlowFeatureFiles>
