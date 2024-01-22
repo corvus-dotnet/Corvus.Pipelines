@@ -67,8 +67,6 @@ public static class QueryStringExtensions
                 nameEnd += currentNameIndex;
             }
 
-            //// IDG question: what if there's another = before the &? It is our job to detect that?
-
             if (qss[currentNameIndex..nameEnd].Equals(parameterName, parameterNameComparison))
             {
                 // We found a match, so we need to remove this name/value pair

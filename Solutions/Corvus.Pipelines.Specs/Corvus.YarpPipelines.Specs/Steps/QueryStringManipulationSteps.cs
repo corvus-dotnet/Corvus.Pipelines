@@ -2,8 +2,6 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using Corvus.YarpPipelines;
-
 using NUnit.Framework;
 
 using TechTalk.SpecFlow;
