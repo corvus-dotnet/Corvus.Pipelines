@@ -130,6 +130,7 @@ public class CookieRewritingRequestBenchmark
             throw new InvalidOperationException("Should have forwarded.");
         }
 
+        // The first thing to call GetHeaders seems to cause a small (32 byte) allocaion.
         CookieRewriting.ApplyToRequest(forwardedRequestDetails.Value, pipelineAndCookies.GetHeaders());
 
         return state;

@@ -51,9 +51,14 @@ public static class CookieRewriting
             IRequestCookieCollection cookies = state.RequestTransformContext.HttpContext.Request.Cookies;
             if (cookies.Count > 0)
             {
+                // This allocates 24 + 8*N bytes where N is the number of cookies.
                 string[] cookieHeaderValues = new string[cookies.Count];
-                int index = 0;
+
                 bool atLeastOneCookieWasChanged = false;
+                int index = 0;
+
+                // The use of foreach here adds 56 bytes of allocation. IRequestCookieCollection does not
+                // provide any no-allocation way of enumerating the cookies.
                 foreach ((string cookieName, string cookieValue) in cookies)
                 {
                     ReadOnlyMemory<char> cookNameRos = cookieName.AsMemory();
@@ -89,7 +94,10 @@ public static class CookieRewriting
                     cookieHeaderValues[index++] = cookieHeaderValue;
                 }
 
-                state = state.WithCookieHeaders(cookieHeaderValues, atLeastOneCookieWasChanged);
+                if (atLeastOneCookieWasChanged)
+                {
+                    state = state.WithCookieHeaders(cookieHeaderValues);
+                }
             }
 
             return state;
@@ -109,8 +117,7 @@ public static class CookieRewriting
         ForwardedRequestDetails forwardedRequestDetails,
         HttpRequestHeaders headers)
     {
-        if (forwardedRequestDetails.AtLeastOneCookieHeaderValueIsDifferent &&
-            forwardedRequestDetails.CookieHeaderValues is string[] cookieHeaderValues)
+        if (forwardedRequestDetails.CookieHeaderValues is string[] cookieHeaderValues)
         {
             headers.Remove("Cookie");
 
