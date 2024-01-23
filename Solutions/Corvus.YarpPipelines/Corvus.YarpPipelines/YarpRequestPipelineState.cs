@@ -243,21 +243,20 @@ public readonly struct YarpRequestPipelineState :
     /// Returns a <see cref="YarpRequestPipelineState"/> instance with the given cookie header
     /// value updated.
     /// </summary>
-    /// <param name="cookieHeaderValue">The value of the cookie header to update.</param>
-    /// <param name="thisCookieWasChanged">
+    /// <param name="cookieHeaderValues">The value of the cookie header to update.</param>
+    /// <param name="atLeastOneCookieWasChanged">
     /// True if this is a cookie we changed or added, false if it's one we didn't change.
     /// </param>
     /// <returns>The updated state.</returns>
-    public YarpRequestPipelineState WithCookieHeader(
-        string cookieHeaderValue, bool thisCookieWasChanged)
+    public YarpRequestPipelineState WithCookieHeaders(
+        string[] cookieHeaderValues, bool atLeastOneCookieWasChanged)
     {
-        ImmutableList<string> existingHeaders = this.ForwardedRequestDetails.CookieHeaderValues ?? ImmutableList<string>.Empty;
         return this with
         {
             ForwardedRequestDetails = this.ForwardedRequestDetails with
             {
-                CookieHeaderValues = existingHeaders.Add(cookieHeaderValue),
-                AtLeastOneCookieHeaderValueIsDifferent = this.ForwardedRequestDetails.AtLeastOneCookieHeaderValueIsDifferent | thisCookieWasChanged,
+                CookieHeaderValues = cookieHeaderValues,
+                AtLeastOneCookieHeaderValueIsDifferent = this.ForwardedRequestDetails.AtLeastOneCookieHeaderValueIsDifferent | atLeastOneCookieWasChanged,
             },
         };
     }

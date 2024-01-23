@@ -23,5 +23,5 @@ namespace Corvus.YarpPipelines;
 public readonly record struct ForwardedRequestDetails(
     string ClusterId,
     (ReadOnlyMemory<char> Path, ReadOnlyMemory<char> QueryString)? PathAndQueryOverride,
-    ImmutableList<string>? CookieHeaderValues,
+    string[]? CookieHeaderValues,
     bool AtLeastOneCookieHeaderValueIsDifferent);

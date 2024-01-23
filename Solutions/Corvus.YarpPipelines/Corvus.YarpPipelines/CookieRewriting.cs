@@ -51,11 +51,14 @@ public static class CookieRewriting
             IRequestCookieCollection cookies = state.RequestTransformContext.HttpContext.Request.Cookies;
             if (cookies.Count > 0)
             {
+                string[] cookieHeaderValues = new string[cookies.Count];
+                int index = 0;
+                bool atLeastOneCookieWasChanged = false;
                 foreach ((string cookieName, string cookieValue) in cookies)
                 {
                     ReadOnlyMemory<char> cookNameRos = cookieName.AsMemory();
-                    bool thisCookieWasChanged = false;
 
+                    bool cookieShouldChange = false;
                     if (cookieName.StartsWith(scopePrefix))
                     {
                         ReadOnlySpan<char> originalCookieName = cookieName.AsSpan()[scopePrefix.Length..];
@@ -64,24 +67,29 @@ public static class CookieRewriting
                             if (originalCookieName.StartsWith(cookieNamePrefix, StringComparison.Ordinal))
                             {
                                 cookNameRos = cookNameRos[scopePrefix.Length..];
-                                thisCookieWasChanged = true;
+                                cookieShouldChange = true;
                                 break;
                             }
                         }
                     }
 
-                    string cookieHeaderValue = string.Create(
-                        cookNameRos.Length + cookieValue.Length + 1,
-                        (cookNameRos, cookieValue),
-                        static (span, state) =>
-                        {
-                            state.cookNameRos.Span.CopyTo(span);
-                            span[state.cookNameRos.Length] = '=';
-                            state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
-                        });
+                    atLeastOneCookieWasChanged |= cookieShouldChange;
+                    string cookieHeaderValue = cookieShouldChange
+                        ? string.Create(
+                            cookNameRos.Length + cookieValue.Length + 1,
+                            (cookNameRos, cookieValue),
+                            static (span, state) =>
+                            {
+                                state.cookNameRos.Span.CopyTo(span);
+                                span[state.cookNameRos.Length] = '=';
+                                state.cookieValue.CopyTo(span[(state.cookNameRos.Length + 1)..]);
+                            })
+                        : cookieValue;
 
-                    state = state.WithCookieHeader(cookieHeaderValue, thisCookieWasChanged);
+                    cookieHeaderValues[index++] = cookieHeaderValue;
                 }
+
+                state = state.WithCookieHeaders(cookieHeaderValues, atLeastOneCookieWasChanged);
             }
 
             return state;
@@ -102,7 +110,7 @@ public static class CookieRewriting
         HttpRequestHeaders headers)
     {
         if (forwardedRequestDetails.AtLeastOneCookieHeaderValueIsDifferent &&
-            forwardedRequestDetails.CookieHeaderValues is ImmutableList<string> cookieHeaderValues)
+            forwardedRequestDetails.CookieHeaderValues is string[] cookieHeaderValues)
         {
             headers.Remove("Cookie");
 

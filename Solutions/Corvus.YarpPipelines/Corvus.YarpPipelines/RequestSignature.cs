@@ -40,9 +40,7 @@ namespace Corvus.YarpPipelines;
 /// </remarks>
 public readonly struct RequestSignature
 {
-    // TODO: we could collapse this into a single object? field, halving the size of this struct.
-    private readonly HttpRequest? request;
-    private readonly RequestSignatureOverride? requestSignatureOverride;
+    private readonly object requestOrOverride;
 
     /// <summary>
     /// Create an instance of a request signature from its components.
@@ -53,40 +51,42 @@ public readonly struct RequestSignature
     /// <param name="method">The HTTP method/verb.</param>
     private RequestSignature(HostString host, ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString, string method)
     {
-        this.request = default;
-
         // NEXT TIME: investigate this "rethink".
         // TODO: As with our previous Feature-based implementation, this allocates; but it reduces the size of the state for the
         // normal execution path of the pipeline. This was initially only used for OIDC redirects, but it now seems
         // to be affecting cookie rescoping, so we may need to rethink. (But changing it back to a struct makes
         // cookie rescoping handling noticeably slower.)
-        this.requestSignatureOverride = new(host, path, queryString, method);
+        this.requestOrOverride = new RequestSignatureOverride(host, path, queryString, method);
     }
 
     private RequestSignature(HttpRequest request)
     {
-        this.request = request;
+        this.requestOrOverride = request;
     }
 
     /// <summary>
     /// Gets the host.
     /// </summary>
-    public HostString Host => this.request?.Host ?? this.requestSignatureOverride?.Host ?? throw new InvalidOperationException();
+    public HostString Host => this.Request?.Host ?? this.SignatureOverride?.Host ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the URL path.
     /// </summary>
-    public ReadOnlyMemory<char> Path => this.request?.Path.Value?.AsMemory() ?? this.requestSignatureOverride?.Path ?? throw new InvalidOperationException();
+    public ReadOnlyMemory<char> Path => this.Request?.Path.Value?.AsMemory() ?? this.SignatureOverride?.Path ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the query string.
     /// </summary>
-    public ReadOnlyMemory<char> QueryString => this.request?.QueryString.Value?.AsMemory() ?? this.requestSignatureOverride?.QueryString ?? throw new InvalidOperationException();
+    public ReadOnlyMemory<char> QueryString => this.Request?.QueryString.Value?.AsMemory() ?? this.SignatureOverride?.QueryString ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the HTTP method/verb.
     /// </summary>
-    public string Method => this.request?.Method ?? this.requestSignatureOverride?.Method ?? throw new InvalidOperationException();
+    public string Method => this.Request?.Method ?? this.SignatureOverride?.Method ?? throw new InvalidOperationException();
+
+    private readonly HttpRequest? Request => this.requestOrOverride as HttpRequest;
+
+    private readonly RequestSignatureOverride? SignatureOverride => this.requestOrOverride as RequestSignatureOverride;
 
     /// <summary>
     /// Creates a <see cref="RequestSignature"/> representing a specific path, not specifying any particular
