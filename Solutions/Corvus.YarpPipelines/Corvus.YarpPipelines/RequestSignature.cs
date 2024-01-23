@@ -23,9 +23,8 @@ namespace Corvus.YarpPipelines;
 /// </item>
 /// <item>
 /// <para>
-/// NEXT TIME: look at this.
 /// Modifying the query string, e.g. removing parts that are only of interest to the proxy and
-/// which the back end will not understand. (TODO: we don't yet have an example of this.)
+/// which the back end will not understand.
 /// </para>
 /// </item>
 /// <item>
@@ -56,6 +55,7 @@ public readonly struct RequestSignature
     {
         this.request = default;
 
+        // NEXT TIME: investigate this "rethink".
         // TODO: As with our previous Feature-based implementation, this allocates; but it reduces the size of the state for the
         // normal execution path of the pipeline. This was initially only used for OIDC redirects, but it now seems
         // to be affecting cookie rescoping, so we may need to rethink. (But changing it back to a struct makes

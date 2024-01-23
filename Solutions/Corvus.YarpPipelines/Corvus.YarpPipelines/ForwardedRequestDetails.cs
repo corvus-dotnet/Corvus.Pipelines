@@ -10,7 +10,7 @@ namespace Corvus.YarpPipelines;
 /// Describes how to proxy the request to the back end.
 /// </summary>
 /// <param name="ClusterId">The cluster that will handle the request.</param>
-/// <param name="RequestSignature">
+/// <param name="PathAndQueryOverride">
 /// If not null, this determines the signature of the request sent to the back end.
 /// If null, the request signature will be derived from nominal request signature.
 /// </param>
@@ -22,6 +22,6 @@ namespace Corvus.YarpPipelines;
 /// </param>
 public readonly record struct ForwardedRequestDetails(
     string ClusterId,
-    RequestSignature? RequestSignature,
+    (ReadOnlyMemory<char> Path, ReadOnlyMemory<char> QueryString)? PathAndQueryOverride,
     ImmutableList<string>? CookieHeaderValues,
     bool AtLeastOneCookieHeaderValueIsDifferent);
