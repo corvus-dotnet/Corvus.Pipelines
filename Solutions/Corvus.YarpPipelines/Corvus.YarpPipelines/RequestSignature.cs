@@ -49,13 +49,26 @@ public readonly struct RequestSignature
     /// <param name="path">The URL path.</param>
     /// <param name="queryString">The query string.</param>
     /// <param name="method">The HTTP method/verb.</param>
+    /// <remarks>
+    /// <para>
+    /// There are two cases where this gets used.
+    /// </para>
+    /// <para>
+    /// When a pipeline chooses a different path and/or query for the forwarded request, there
+    /// is no underlying <see cref="HttpRequest"/> to use, so we need something else to hold
+    /// onto the components. If this were the only scenario, we could move this into the
+    /// <see cref="YarpRequestPipelineState.ForwardedRequestDetails"/> to simplify this type.
+    /// </para>
+    /// <para>
+    /// The other scenario in which we can't defer to an <see cref="HttpRequest"/> is when
+    /// we need to set the nominal signature to something entirely different from the current
+    /// request. This happens in interactive login callbacks: the current request reflects the
+    /// callback endpoint, but we need the nominal signature to reflect the request that was
+    /// being processed when we redirected the user to the authentication provider.
+    /// </para>
+    /// </remarks>
     private RequestSignature(HostString host, ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString, string method)
     {
-        // NEXT TIME: investigate this "rethink".
-        // TODO: As with our previous Feature-based implementation, this allocates; but it reduces the size of the state for the
-        // normal execution path of the pipeline. This was initially only used for OIDC redirects, but it now seems
-        // to be affecting cookie rescoping, so we may need to rethink. (But changing it back to a struct makes
-        // cookie rescoping handling noticeably slower.)
         this.requestOrOverride = new RequestSignatureOverride(host, path, queryString, method);
     }
 
