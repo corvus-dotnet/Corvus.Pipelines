@@ -3,7 +3,9 @@
 // </copyright>
 
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Authentication;
@@ -206,7 +208,48 @@ public static class YarpRequestPipelineStateExtensions
     /// </summary>
     /// <param name="state">The state representing the request to be inspected.</param>
     /// <returns>The URL.</returns>
-    public static string GetEncodedUrl(this YarpRequestPipelineState state) => state.RequestTransformContext.HttpContext.Request.GetEncodedUrl();
+    // NOTE: this builds the URL up from scratch.
+    public static string GetIncomingRequestUrlUnencodedPathAndEncodedQueryString(this YarpRequestPipelineState state)
+    {
+        HttpRequest request = state.RequestTransformContext.HttpContext.Request;
+        Debug.Assert(!request.PathBase.HasValue, "Expected PathBase to be empty");
+
+        string scheme = request.Scheme;
+        string host = request.Host.Value;
+        string? path = request.Path.Value;
+        string queryString = request.QueryString.Value ?? string.Empty;
+
+        if (string.IsNullOrEmpty(path))
+        {
+            path = "/";
+        }
+
+        int length =
+            scheme.Length +
+            Uri.SchemeDelimiter.Length +
+            host.Length +
+            path.Length +
+            queryString.Length;
+
+        return string.Create(
+            length,
+            (scheme, host, path, queryString),
+            static (output, s) =>
+            {
+                int index = CopyTextToBuffer(output, 0, s.scheme);
+                index = CopyTextToBuffer(output, index, Uri.SchemeDelimiter);
+                index = CopyTextToBuffer(output, index, s.host);
+                index = CopyTextToBuffer(output, index, s.path);
+                CopyTextToBuffer(output, index, s.queryString);
+            });
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CopyTextToBuffer(Span<char> buffer, int index, ReadOnlySpan<char> text)
+        {
+            text.CopyTo(buffer.Slice(index, text.Length));
+            return index + text.Length;
+        }
+    }
 
     /// <summary>
     /// Builds an absolute URL by combining the base URL of the incoming request with a relative path.

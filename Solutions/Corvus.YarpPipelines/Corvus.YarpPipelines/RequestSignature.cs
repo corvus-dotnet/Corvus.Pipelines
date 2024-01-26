@@ -83,13 +83,18 @@ public readonly struct RequestSignature
     public HostString Host => this.Request?.Host ?? this.SignatureOverride?.Host ?? throw new InvalidOperationException();
 
     /// <summary>
-    /// Gets the URL path.
+    /// Gets the decoded URL path.
     /// </summary>
     public ReadOnlyMemory<char> Path => this.Request?.Path.Value?.AsMemory() ?? this.SignatureOverride?.Path ?? throw new InvalidOperationException();
 
     /// <summary>
-    /// Gets the query string.
+    /// Gets the encoded query string.
     /// </summary>
+    /// <remarks>
+    /// When the <see cref="RequestSignature"/> is a wrapper around an <see cref="HttpRequest"/>,
+    /// we return the <see cref="HttpRequest.QueryString"/>, which returns the query string in its
+    /// incoming form, including any encoding.
+    /// </remarks>
     public ReadOnlyMemory<char> QueryString => this.Request?.QueryString.Value?.AsMemory() ?? this.SignatureOverride?.QueryString ?? throw new InvalidOperationException();
 
     /// <summary>
@@ -117,8 +122,13 @@ public readonly struct RequestSignature
     /// <param name="url">The URL.</param>
     /// <param name="method">The <see cref="Method"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public static RequestSignature ForUrlAndMethod(string url, string method)
+    public static RequestSignature ForEncodedUrlAndMethod(string url, string method)
     {
+        // NEXT TIME:
+        // We just renamed this from ForUrlAndMethod to ForEncodedUrlAndMethod, but we need to
+        // clarify throughout whether we think URLS are encoded or not. It appears that the
+        // HttpRequest just reports the encoded version.
+
         // TODO: This could be done more efficient, because we could obtain ReadOnlyMemory<char>s for
         // the various parts, avoiding the need to allocate new strings. Currently this code path
         // is used only in a relatively unusual case (OIDC redirects), so it won't have a huge
