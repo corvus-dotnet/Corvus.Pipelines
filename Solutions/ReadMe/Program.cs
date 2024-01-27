@@ -1,4 +1,5 @@
-﻿using Corvus.Pipelines;
+﻿using System.Diagnostics;
+using Corvus.Pipelines;
 using Corvus.Pipelines.Handlers;
 using ReadMe;
 
@@ -336,4 +337,25 @@ canFailInt = count5Transient(CanFailState.For(0));
 
 Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
 
-    
+// ### Before-retry strategies
+
+Console.WriteLine();
+Console.WriteLine("### Before-retry strategies");
+
+var sw = Stopwatch.StartNew();
+
+PipelineStep<CanFailState<int>> count5TransientAndDelay =
+        retryingAlwaysTransientFailure.ToAsync().Retry(
+            shouldRetry: Retry.CountPolicy<CanFailState<int>>(5)
+                            .And(Retry.TransientPolicy<CanFailState<int>>()),
+            beforeRetry: Retry.LinearDelayStrategy<CanFailState<int>>(
+                baseDuration: TimeSpan.FromSeconds(1),
+                maximumDuration: TimeSpan.FromSeconds(3))
+            );
+
+canFailInt = await count5TransientAndDelay(CanFailState.For(0)).ConfigureAwait(false);
+
+sw.Stop();
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+Console.WriteLine($"Retried for {sw.ElapsedMilliseconds / 1000.0}s");
