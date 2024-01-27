@@ -199,7 +199,7 @@ Sometimes we show the input or result states inside the composed-step box, somet
 
 ## Sync and Async steps
 
-Although the individual steps passed to the `Build()` operator were all synchronous - but you can use async steps too.
+Although the individual steps passed to the `Build()` operator were all synchronous, you can use async steps too.
 
 In fact, async steps are the "natural" form in **Corvus.Pipelines**.
 
@@ -1137,7 +1137,7 @@ While it is easy to understand the "convenience" of the second choice, there's a
 
 Is it really exceptional when a distributed resource is temporarily unavailable and asking you to back off before retrying? Or, perhaps even more obviously, is it exceptional when you ask to write a resource only if its ETag matches the one you read, and it has been updated?
 
-Both of those cases seem more like "ordinary flow control" in your application; they represent an "error" but not necessarily an "exception". And you are paying a high price.
+Both of those cases seem more like "ordinary flow control" in your application; they represent a "failure" but not necessarily an "exception". And you are paying a high price.
 
 Take a look at the benchmarks here that compare an exception-handling pipeline with an error-handling pipeline:
 
@@ -1158,7 +1158,7 @@ We've mentioned capabilities before, but this is the first time we get to explor
 
 As usual, we'll start with a definition. What is a capability?
 
-A _capability_ is a well-known pattern or semantic model implemented by some [state](#state), which an [operator](#operator) can rely on in its implementation.
+**A _capability_ is a well-known pattern or semantic model implemented by some [state](#state), which an [operator](#operator) can rely on in its implementation.**
 
 In **Corvus.Pipelines**, capabilities are defined by interfaces implemented by state types.
 
@@ -1213,7 +1213,7 @@ public readonly struct StateWithValue<T> :
 
 > Notice that the `IValueProvider` interface requires the implementing type as its first parameter. This is common to all capabilities.
 
-Conventionally, we don't expose our primary constructor directly - we make it private, and expose a `For(...)` method that only includes publicly visible elements of the state. You'll see why we do this later, but for now, let's make those changes.
+Conventionally, we don't expose our constructor directly - we make it private, and expose a `For(...)` method that only includes publicly visible elements of the state. You'll see why we do this later, but for now, let's make those changes.
 
 ```csharp
 public readonly struct StateWithValue<T> :
@@ -1248,7 +1248,7 @@ public static class StateWithValue
 }
 ```
 
-With that, we pick up with ability to set the value and return an updated state, through the extension methods for the capability.
+With that, we pick up the ability to set the value and return an updated state, through the extension methods for the capability.
 
 ```csharp
 var stateWithValue = StateWithValue.For(12m);
@@ -1415,11 +1415,11 @@ SyncPipelineStep<CanFailState<int>> stepCanFail =
             : CanFailState.For(state.Value + 1);
 ```
 
-This looks at the `Value` of our state, and, under normal circumstance, just returns a state with the value incremented by one.
+This looks at the `Value` of our state, and, under normal circumstance, just returns a state with its value incremented by one.
 
 However, *if* the current `Value` is `0`, *and* the `ExecutionStatus` indicates a success state, then it will produce a `TransientFailure()`.
 
-Essentially, this gives us a means of conditionally failing exactly once (if the value of the state is `0`).
+Essentially, this contrives a way of conditionally failing exactly once (if the value of the state is `0`).
 
 Why is that? Well, once the step has failed, its `ExecutionStatus` will no longer be `PipelineStepState.Success` and so on a second call to the step with the updated state, it will produce the incremented value with the default (`Success`) execution status.
 
@@ -1506,10 +1506,13 @@ The `Retry()` method takes a `Predicate<RetryContext<TState>>` called `shouldRet
 
 When a retry operation occurs, this predicate is passed an instance of the `RetryContext<TState>`. If it returns `true`, then the operation will be retried; if it returns `false` then it will not be retried.
 
-The retry context is a readonly struct that provides some useful information about the retry operation - the current `State`, the total elapsed time spent trying to execute the operation (`RetryDuration`), the total number of times the operation has failed (`FailureCount`) and a value called `CorrelationBase` which is typically used to pass information to help decorellate things like delays between runs in retry operations (We'll see how this is used in a moment.)
+The `RetryContext` is a `readonly struct` that provides some useful information about the retry operation - the current `State`, the total elapsed time spent trying to execute the operation (`RetryDuration`), the total number of times the operation has failed (`FailureCount`) and a value called `CorrelationBase` which is typically used to pass information to help decorrelate things like delays between runs in retry operations (We'll see how this is used in a moment.)
 
 ```csharp
-public readonly record struct RetryContext<TState>(TState State, TimeSpan RetryDuration, int FailureCount, double CorrelationBase)```
+public readonly record struct RetryContext<TState>(TState State, TimeSpan RetryDuration, int FailureCount, double CorrelationBase);
+```
+
+We call a particular `shouldRetry` predicate a _policy_.
 
 There are standard policies available on the `Retry` type.
 
@@ -1541,4 +1544,8 @@ canFailInt = count5Transient(CanFailState.For(0));
 ```
 
 ### Before-retry strategies
+
+In addition to determining whether to retry, you can also transform the retry context (including the value of the state) before you retry.
+
+Why might you want to do that?
 

@@ -13,24 +13,23 @@
       },
       "Corvus.Testing.SpecFlow.NUnit": {
         "type": "Direct",
-        "requested": "[2.0.1, )",
-        "resolved": "2.0.1",
-        "contentHash": "jRk9G0PMuotpgBJMpkp9wM+0Rd+QxG8Hs28nP+p3izctFPtaCNZfcWO1/0QdiQdeK1dTjQdHqWSB7n6oFsRuVQ==",
+        "requested": "[3.0.2, )",
+        "resolved": "3.0.2",
+        "contentHash": "VeOf/cVFGhWDlEouWYVUwIYOLovTD8dmdkPRMOPHz/2v+0XJwPJMjIzMHvc8BB8WQIGcmZtRWRGl1VaYl15pbA==",
         "dependencies": {
-          "Corvus.Testing.SpecFlow": "2.0.1",
-          "Microsoft.NET.Test.Sdk": "17.4.0",
-          "Moq": "4.18.4",
+          "Corvus.Testing.SpecFlow": "3.0.2",
+          "Microsoft.NET.Test.Sdk": "17.8.0",
           "SpecFlow.NUnit.Runners": "3.9.74",
-          "coverlet.msbuild": "3.2.0"
+          "coverlet.msbuild": "6.0.0"
         }
       },
       "Endjin.RecommendedPractices.GitHub": {
         "type": "Direct",
-        "requested": "[2.1.8, )",
-        "resolved": "2.1.8",
-        "contentHash": "ljIclA2OT9Xbakm/suu9KPiij7BmQAGWiwdgoBrwcOg46HcXjWwZ5hFG57uTvmaS/wlqsVjiOUN1EkJB+nTg+A==",
+        "requested": "[2.1.9, )",
+        "resolved": "2.1.9",
+        "contentHash": "gFCDZOu96fU+TfsAkZ7zLUzm8NX1/k3hWt7lbyf5HOn95+hYJQZ+g4bjs/Awx7JODsvNZpON8QlstZQVjPnRxg==",
         "dependencies": {
-          "Endjin.RecommendedPractices": "2.1.8",
+          "Endjin.RecommendedPractices": "2.1.9",
           "Microsoft.SourceLink.GitHub": "1.1.1"
         }
       },
@@ -70,9 +69,9 @@
       },
       "Roslynator.Analyzers": {
         "type": "Direct",
-        "requested": "[4.7.0, )",
-        "resolved": "4.7.0",
-        "contentHash": "JUYZ44OTe1KuMLViZpuU+fj+q19ZXWmMd/pACTyVOSOGanvitnVflyuqsC/j1fQZlhsm3tBM3UuyrqVLHfe3+g=="
+        "requested": "[4.9.0, )",
+        "resolved": "4.9.0",
+        "contentHash": "lFd4MmkllYR0dKlPWDokRwAvQnjNoPJztlncyzvnCG/wvGr5FzHAencngcJna/wkyDE0xIv7AnUccgCLsoIXTw=="
       },
       "SpecFlow.NUnit": {
         "type": "Direct",
@@ -99,36 +98,28 @@
         "resolved": "1.5.0",
         "contentHash": "CzIPzdIAFSd2zuLxI+0K9s48Qv3HQDbWiApn9h96j284rHs2bSPrn/PMca3mi4q3xLSEqOp+GUJ6+mXDD9prKg=="
       },
-      "Castle.Core": {
-        "type": "Transitive",
-        "resolved": "5.1.1",
-        "contentHash": "rpYtIczkzGpf+EkZgDr9CClTdemhsrwA/W5hMoPjLkRFnXzH44zDLoovXeKtmxb1ykXK9aJVODSpiJml8CTw2g==",
-        "dependencies": {
-          "System.Diagnostics.EventLog": "6.0.0"
-        }
-      },
       "Corvus.Testing.SpecFlow": {
         "type": "Transitive",
-        "resolved": "2.0.1",
-        "contentHash": "sVHvG/Zl7NLIYu02FM9yFbiCb6n4NKY8KjuApR1l21ZQ28UZfsRpgrNR/nKGM6zOWURqNKf/fI610P1EoP6pzQ==",
+        "resolved": "3.0.2",
+        "contentHash": "KA3t220Z1sEqlrm6XafMZNg1oYyQSitZm30pTarJu+j8qQKCfamVoeIdSKy1FXVbq7IxQU6LVmy4wkUV57GG9g==",
         "dependencies": {
           "Microsoft.Extensions.Configuration.Abstractions": "6.0.0",
           "Microsoft.Extensions.DependencyInjection": "6.0.1",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "6.0.0",
-          "NUnit": "3.13.3",
+          "NUnit": "3.14.0",
           "SpecFlow": "3.9.74",
           "System.Management": "4.7.0"
         }
       },
       "coverlet.msbuild": {
         "type": "Transitive",
-        "resolved": "3.2.0",
-        "contentHash": "lu/eJJpqJb4qy3BGPtDD/LI5RSOwXYYyRErTyaG0OTP69llzVK3FEe74hBQx0JtLUTLEVBfERV4uGYcE1Br2sg=="
+        "resolved": "6.0.0",
+        "contentHash": "cUKI50VSVBqDQDFIdBnjN0Jk5JYhjtD0geP2BZZv71/ZrKORJXcLRswFsojI+cHdV+rFUL2XDJEpuhK3x1YqLA=="
       },
       "Endjin.RecommendedPractices": {
         "type": "Transitive",
-        "resolved": "2.1.8",
-        "contentHash": "sQLINlRR0tYyVfAz92ihAUOUc/5jRqzhE0V7Oe+ZLkkSneLpo9Cv4I0TTcbwerWiiiQScgv0MkoKcSXN3eC8Hg==",
+        "resolved": "2.1.9",
+        "contentHash": "LzppiBrlPBj5TmVsQVxWoGv/MWfq+sAz0qkdB/ozUDS2hq31Pu8j2Cvk+BVlhvrb9eDUQxxHaLL4gbE7LiSAfQ==",
         "dependencies": {
           "Microsoft.Build.Tasks.Git": "1.1.1"
         }
@@ -269,14 +260,6 @@
         "dependencies": {
           "System.Security.AccessControl": "4.7.0",
           "System.Security.Principal.Windows": "4.7.0"
-        }
-      },
-      "Moq": {
-        "type": "Transitive",
-        "resolved": "4.18.4",
-        "contentHash": "IOo+W51+7Afnb0noltJrKxPBSfsgMzTKCw+Re5AMx8l/vBbAbMDOynLik4+lBYIWDJSO0uV7Zdqt7cNb6RZZ+A==",
-        "dependencies": {
-          "Castle.Core": "5.1.1"
         }
       },
       "NETStandard.Library": {
@@ -558,11 +541,6 @@
           "System.Runtime": "4.3.0",
           "System.Threading": "4.3.0"
         }
-      },
-      "System.Diagnostics.EventLog": {
-        "type": "Transitive",
-        "resolved": "6.0.0",
-        "contentHash": "lcyUiXTsETK2ALsZrX+nWuHSIQeazhqPphLfaRxzdGaG93+0kELqpgEHtwWOlQe7+jSFnKwaCAgL4kjeZCQJnw=="
       },
       "System.Diagnostics.Tracing": {
         "type": "Transitive",
