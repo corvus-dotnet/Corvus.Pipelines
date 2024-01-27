@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Corvus.Pipelines;
 
 /// <summary>
-/// Common retry policies.
+/// Common retry policies and strategies.
 /// </summary>
 public static class Retry
 {
