@@ -71,7 +71,10 @@ public static class YarpRequestPipelineStateExtensions
     /// <param name="authenticationProperties">
     /// Authentication properties to associate with the login.
     /// </param>
-    /// <param name="returnUrl">The URL to which to redirect the user.</param>
+    /// <param name="returnUrl">
+    /// The URL to which to redirect the user. This must be properly encoded for use in the HTTP
+    /// Location header.
+    /// </param>
     /// <param name="cookiePath">
     /// The cookie path, typically limited to work only for the login call-back URL.
     /// </param>
@@ -86,7 +89,7 @@ public static class YarpRequestPipelineStateExtensions
         this YarpRequestPipelineState state,
         ClaimsIdentity identity,
         AuthenticationProperties authenticationProperties,
-        ReadOnlyMemory<char> returnUrl,
+        string returnUrl,
         string cookiePath,
         string cookieName)
     {

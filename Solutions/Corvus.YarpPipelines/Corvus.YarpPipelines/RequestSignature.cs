@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using Corvus.YarpPipelines.Internal;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 
@@ -151,6 +153,22 @@ public readonly struct RequestSignature
     public static RequestSignature From(HttpRequest request)
     {
         return new RequestSignature(request);
+    }
+
+    /// <summary>
+    /// Gets the path and query in a form suitable for use in an HTTP Location header.
+    /// </summary>
+    /// <returns>
+    /// The suitably-encoded path and query. This is a string, because the ASP.NET Core Redirect
+    /// method this will eventually be passed to requires a string, so there's nothing to be gained
+    /// in clever pooling at this stage.
+    /// </returns>
+    public string GetEncodedPathAndQuery()
+    {
+        return LowAllocUriUtilities.EncodePathAndAppendEncodedQueryString(
+            string.Empty,
+            this.Path.Span,
+            this.QueryString.Span);
     }
 
     /// <summary>
