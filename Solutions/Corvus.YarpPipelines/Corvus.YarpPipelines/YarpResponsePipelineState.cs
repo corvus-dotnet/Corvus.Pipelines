@@ -174,13 +174,15 @@ public readonly struct YarpResponsePipelineState :
         /// </returns>
         public readonly bool ShouldReplace(string headerValue, out string? newHeaderValue)
         {
-            ReadOnlySpan<(string SetCookieHeaderValueToReplace, string ReplacementHeaderValue)> replacements = this.replacements;
-            foreach ((string SetCookieHeaderValueToReplace, string ReplacementHeaderValue) replacement in replacements)
+            if (this.replacements is not null)
             {
-                if (replacement.SetCookieHeaderValueToReplace == headerValue)
+                foreach ((string setCookieHeaderValueToReplace, string replacementHeaderValue) in this.replacements)
                 {
-                    newHeaderValue = replacement.ReplacementHeaderValue;
-                    return true;
+                    if (setCookieHeaderValueToReplace == headerValue)
+                    {
+                        newHeaderValue = replacementHeaderValue;
+                        return true;
+                    }
                 }
             }
 

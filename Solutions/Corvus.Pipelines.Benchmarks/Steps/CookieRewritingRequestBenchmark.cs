@@ -113,7 +113,7 @@ public class CookieRewritingRequestBenchmark
     {
         YarpRequestPipelineState state = RequestStep(this.noIncomingCookiesState.PipelineState);
         state = state.TerminateWithClusterIdAndPathAndQuery("c1", "/test".AsMemory(), ReadOnlyMemory<char>.Empty);
-        if (!state.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out _))
+        if (!state.ShouldForward(out _, out _))
         {
             throw new InvalidOperationException("Should have forwarded.");
         }
