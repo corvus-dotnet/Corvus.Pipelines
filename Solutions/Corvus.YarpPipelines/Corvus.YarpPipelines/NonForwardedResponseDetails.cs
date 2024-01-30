@@ -57,21 +57,12 @@ public readonly struct NonForwardedResponseDetails
     /// <summary>
     /// Creates a <see cref="NonForwardedResponseDetails"/> indicating that a redirect response should be
     /// produced with a status code suitable for scenarios where we are redirecting the
-    /// user to a login UI (302).
-    /// </summary>
-    /// <param name="location">The redirection location.</param>
-    /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
-    public static NonForwardedResponseDetails ForAuthenticationRedirect(string location)
-    {
-        return new(location, preserveMethod: false);
-    }
-
-    /// <summary>
-    /// Creates a <see cref="NonForwardedResponseDetails"/> indicating that a redirect response should be
-    /// produced with a status code suitable for scenarios where we are redirecting the
     /// user to a login UI (302), and that this response should also set a cookie.
     /// </summary>
-    /// <param name="location">The redirection location.</param>
+    /// <param name="location">
+    /// The redirection location, in a fully escaped form suitable for use in HTTP headers and
+    /// other HTTP operations.
+    /// </param>
     /// <param name="cookiePath">The path for the cookie.</param>
     /// <param name="cookieName">The cookie name.</param>
     /// <param name="cookieValue">The cookie value.</param>
@@ -92,7 +83,10 @@ public readonly struct NonForwardedResponseDetails
     /// produced with a status code suitable for scenarios where we are redirecting the
     /// user to a login UI (302), and that this response should also set a cookie.
     /// </summary>
-    /// <param name="location">The redirection location.</param>
+    /// <param name="location">
+    /// The redirection location, in a fully escaped form suitable for use in HTTP headers and
+    /// other HTTP operations.
+    /// </param>
     /// <param name="cookiePath">The path for the cookie.</param>
     /// <param name="cookieName">The cookie name.</param>
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
@@ -111,18 +105,37 @@ public readonly struct NonForwardedResponseDetails
     /// Set to the redirect details if this value represents a redirect.
     /// </param>
     /// <returns><see langword="true"/> if this was a redirect.</returns>
-    public bool TryGetRedirect(out (string Location, bool Permanent, bool PreserveMethod, ImmutableArray<CookieDetails>? CookieDetails) result)
+    public bool TryGetRedirect(out RedirectDetails result)
     {
         if (!string.IsNullOrEmpty(this.redirectLocation))
         {
             // This redirect location will be handed directly to ASP.NET Core's Response.Redirect,
             // and as the docs say:
             // "This must be properly encoded for use in http headers where only ASCII characters are allowed."
-            result = (this.redirectLocation, false, this.redirectShouldPreserveMethod, this.cookieDetails);
+            result = new(this.redirectLocation, false, this.redirectShouldPreserveMethod, this.cookieDetails);
             return true;
         }
 
         result = default;
         return false;
     }
+
+    /// <summary>
+    /// Details returned  from <see cref="TryGetRedirect(out RedirectDetails)"/>.
+    /// </summary>
+    /// <param name="Location">
+    /// The redirection location, in a fully escaped form suitable for use in HTTP headers and
+    /// other HTTP operations.
+    /// </param>
+    /// <param name="Permanent">
+    /// Indicates whether the HTTP response should report this as a permanent redirect.
+    /// </param>
+    /// <param name="PreserveMethod">
+    /// If false, the redirect will be a GET. If true, the redirect will be the same method as the
+    /// incoming request.
+    /// </param>
+    /// <param name="CookieDetails">
+    /// A list of changes to make to the cookies in the response, or null if no changes are required.
+    /// </param>
+    public readonly record struct RedirectDetails(string Location, bool Permanent, bool PreserveMethod, ImmutableArray<CookieDetails>? CookieDetails);
 }
