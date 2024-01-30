@@ -33,7 +33,7 @@ public class UriEncodingSteps
         this.result = LowAllocUriUtilities.EncodePathAndAppendEncodedQueryString(this.prefix, this.path, this.queryString);
     }
 
-    [Then(@"the result URL should be '([^']*)'")]
+    [Then("the result URL should be '([^']*)'")]
     public void ThenTheResultURLShouldBe(string expectedResult)
     {
         Assert.AreEqual(expectedResult, this.result);
