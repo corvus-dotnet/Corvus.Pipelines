@@ -121,22 +121,21 @@ public readonly struct RequestSignature
     /// <summary>
     /// Creates a <see cref="RequestSignature"/> representing a particular URL and method.
     /// </summary>
-    /// <param name="url">The URL.</param>
+    /// <param name="urlUnencodedPathAndEncodedQueryString">
+    /// The URL, with the path in unencoded form but everything else encoded.
+    /// </param>
     /// <param name="method">The <see cref="Method"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
-    public static RequestSignature ForEncodedUrlAndMethod(string url, string method)
+    public static RequestSignature ForUrlWithUnencodedPathAndEncodedQueryStringAndMethod(
+        string urlUnencodedPathAndEncodedQueryString,
+        string method)
     {
-        // NEXT TIME:
-        // We just renamed this from ForUrlAndMethod to ForEncodedUrlAndMethod, but we need to
-        // clarify throughout whether we think URLS are encoded or not. It appears that the
-        // HttpRequest just reports the encoded version.
-
         // TODO: This could be done more efficient, because we could obtain ReadOnlyMemory<char>s for
         // the various parts, avoiding the need to allocate new strings. Currently this code path
         // is used only in a relatively unusual case (OIDC redirects), so it won't have a huge
         // impact, but we should do it at some point.
         UriHelper.FromAbsolute(
-            url,
+            urlUnencodedPathAndEncodedQueryString,
             out _,
             out HostString host,
             out PathString path,
