@@ -41,6 +41,7 @@ public static class LowAllocUriUtilities
     public static string EncodePathAndAppendEncodedQueryString(
         ReadOnlySpan<char> prefix, ReadOnlySpan<char> path, ReadOnlySpan<char> query)
     {
+        Debug.Assert(!path.IsEmpty, "Path should not be empty");
         Debug.Assert(path[0] == '/', "Path should begin with '/'");
 
         if (!path.IsEmpty && !prefix.IsEmpty && prefix[^1] == '/')

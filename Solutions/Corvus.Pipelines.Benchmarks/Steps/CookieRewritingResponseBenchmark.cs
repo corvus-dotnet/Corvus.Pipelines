@@ -74,6 +74,12 @@ public class CookieRewritingResponseBenchmark
         return ResponseStep(this.singleMatchingSetCookieState);
     }
 
+    // TODO:
+    // The Request benchmarks come in two forms:
+    //  1) those that exercise just the step (like the above)
+    //  2) those that also exercise ApplyToRequest
+    // We should consider adding benchmarks that also exercise ApplyToResponse.
+
     private static ResponseTransformContext CreateResponseTransformContext(
         params KeyValuePair<string, string>[] cookies)
     {
@@ -84,18 +90,6 @@ public class CookieRewritingResponseBenchmark
         {
             string setCookieHeaderValue = new SetCookieHeaderValue(cookieName, cookieValue).ToString();
 
-            // NEXT TIME:
-            // Because CookieRewriting currently works by modifying the
-            // backEndHttpContext.Response.Headers, these benchmarks don't measure
-            // what we meant them to - the first iteration changes this collection
-            // and then all subsequent iterations think they have no work to do.
-            // We suspect this is typical of the kinds of problems we will have if
-            // we continue to rely on mutation in the pipeline steps. So we suspect
-            // that we want to move over to the approach used for status codes, in
-            // which the pipeline essentially produces a description of the side
-            // effects required, and then the Yarp Request/Response transforms can
-            // effect those changes.
-            // But we want to sleep on it because this is a non-trivial change.
             backEndHttpContext.Response.Headers.Append(
                 HeaderNames.SetCookie,
                 setCookieHeaderValue);
