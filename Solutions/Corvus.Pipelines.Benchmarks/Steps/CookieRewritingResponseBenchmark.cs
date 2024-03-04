@@ -78,7 +78,7 @@ public class CookieRewritingResponseBenchmark
     // The Request benchmarks come in two forms:
     //  1) those that exercise just the step (like the above)
     //  2) those that also exercise ApplyToRequest
-    // We should consider adding benchmarks that also exercise ApplyToResponse.
+    //// We should consider adding benchmarks that also exercise ApplyToResponse.
 
     private static ResponseTransformContext CreateResponseTransformContext(
         params KeyValuePair<string, string>[] cookies)

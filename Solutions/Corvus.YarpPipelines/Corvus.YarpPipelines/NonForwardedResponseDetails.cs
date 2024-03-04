@@ -22,13 +22,6 @@ public readonly struct NonForwardedResponseDetails
     }
 
     private NonForwardedResponseDetails(
-        string redirectLocation, bool preserveMethod)
-    {
-        this.redirectLocation = redirectLocation;
-        this.redirectShouldPreserveMethod = preserveMethod;
-    }
-
-    private NonForwardedResponseDetails(
         string redirectLocation,
         CookieDetails cookieDetails,
         bool preserveMethod)

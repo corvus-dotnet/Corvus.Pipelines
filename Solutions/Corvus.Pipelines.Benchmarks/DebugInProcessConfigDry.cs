@@ -15,12 +15,12 @@ public class DebugInProcessConfigDry : DebugConfig
 {
     /// <inheritdoc/>
     public override IEnumerable<Job> GetJobs()
-        => new[]
-        {
+        =>
+        [
         Job.Dry // Job.Dry instead of Job.Default
             .WithToolchain(
                 new InProcessEmitToolchain(
                     TimeSpan.FromHours(1), // 1h should be enough to debug the benchmark
                     true)),
-        };
+        ];
 }

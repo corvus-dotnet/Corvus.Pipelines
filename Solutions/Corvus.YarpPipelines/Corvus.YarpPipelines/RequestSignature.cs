@@ -47,6 +47,7 @@ public readonly struct RequestSignature
     /// <summary>
     /// Create an instance of a request signature from its components.
     /// </summary>
+    /// <param name="scheme">The URL scheme.</param>
     /// <param name="host">The host and, if present, port.</param>
     /// <param name="path">The URL path.</param>
     /// <param name="queryString">The query string.</param>
@@ -69,15 +70,26 @@ public readonly struct RequestSignature
     /// being processed when we redirected the user to the authentication provider.
     /// </para>
     /// </remarks>
-    private RequestSignature(HostString host, ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString, string method)
+    private RequestSignature(
+        ReadOnlyMemory<char> scheme,
+        HostString host,
+        ReadOnlyMemory<char> path,
+        ReadOnlyMemory<char> queryString,
+        string method)
     {
-        this.requestOrOverride = new RequestSignatureOverride(host, path, queryString, method);
+        this.requestOrOverride = new RequestSignatureOverride(scheme, host, path, queryString, method);
     }
 
     private RequestSignature(HttpRequest request)
     {
         this.requestOrOverride = request;
     }
+
+    /// <summary>
+    /// Gets the URL scheme.
+    /// </summary>
+    public ReadOnlyMemory<char> Scheme => this.Request?.Scheme.AsMemory() ??
+        this.SignatureOverride?.Scheme ?? throw new InvalidOperationException();
 
     /// <summary>
     /// Gets the host.
@@ -87,6 +99,9 @@ public readonly struct RequestSignature
     /// <summary>
     /// Gets the decoded URL path.
     /// </summary>
+    /// <remarks>
+    /// Always starts with /.
+    /// </remarks>
     public ReadOnlyMemory<char> Path => this.Request?.Path.Value?.AsMemory() ?? this.SignatureOverride?.Path ?? throw new InvalidOperationException();
 
     /// <summary>
@@ -95,7 +110,8 @@ public readonly struct RequestSignature
     /// <remarks>
     /// When the <see cref="RequestSignature"/> is a wrapper around an <see cref="HttpRequest"/>,
     /// we return the <see cref="HttpRequest.QueryString"/>, which returns the query string in its
-    /// incoming form, including any encoding.
+    /// incoming form, including any encoding. The leading ? will be present (unless there
+    /// is no query string, in which case this will be empty).
     /// </remarks>
     public ReadOnlyMemory<char> QueryString => this.Request?.QueryString.Value?.AsMemory() ?? this.SignatureOverride?.QueryString ?? throw new InvalidOperationException();
 
@@ -116,7 +132,7 @@ public readonly struct RequestSignature
     /// <param name="queryString">The <see cref="QueryString"/>.</param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
     public static RequestSignature ForPathAndQueryString(ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString)
-        => new(default, path, queryString, string.Empty);
+        => new(default, default, path, queryString, string.Empty);
 
     /// <summary>
     /// Creates a <see cref="RequestSignature"/> representing a particular URL and method.
@@ -136,12 +152,12 @@ public readonly struct RequestSignature
         // impact, but we should do it at some point.
         UriHelper.FromAbsolute(
             urlUnencodedPathAndEncodedQueryString,
-            out _,
+            out string scheme,
             out HostString host,
             out PathString path,
             out QueryString queryString,
             out _);
-        return new(host, path.Value.AsMemory(), queryString.Value.AsMemory(), method);
+        return new(scheme.AsMemory(), host, path.Value.AsMemory(), queryString.Value.AsMemory(), method);
     }
 
     /// <summary>
@@ -171,6 +187,33 @@ public readonly struct RequestSignature
     }
 
     /// <summary>
+    /// Enables inspection of the full URL as a <see cref="ReadOnlySpan{Char}"/>.
+    /// </summary>
+    /// <typeparam name="TResult">The type the inspector returns.</typeparam>
+    /// <typeparam name="TState">The state type required by the inspector.</typeparam>
+    /// <param name="inspector">The inspector callback.</param>
+    /// <param name="state">The state to pass to the inspector callback.</param>
+    /// <returns>The value returned by the inspector callback.</returns>
+    public TResult InspectFullUrl<TResult, TState>(
+        CharSpanInspector<TResult, TState> inspector,
+        TState state)
+    {
+        ValueStringBuilder sb = new(
+            this.Scheme.Length + Uri.SchemeDelimiter.Length +
+            this.Host.Value.Length + // TODO: are we causing an allocation here?
+            this.Path.Length +
+            this.QueryString.Length);
+
+        sb.Append(this.Scheme.Span);
+        sb.Append(Uri.SchemeDelimiter);
+        sb.Append(this.Host.Value);
+        sb.Append(this.Path.Span);
+        sb.Append(this.QueryString.Span);
+
+        return inspector(sb.AsSpan(), state);
+    }
+
+    /// <summary>
     /// Holds the elements of a request signature that are not derived from
     /// an <see cref="HttpRequest"/>.
     /// </summary>
@@ -179,5 +222,10 @@ public readonly struct RequestSignature
     /// in here to every single <see cref="RequestSignature"/> had a significant
     /// impact on performance, because these things are copied all over the place.
     /// </remarks>
-    private record RequestSignatureOverride(HostString Host, ReadOnlyMemory<char> Path, ReadOnlyMemory<char> QueryString, string Method);
+    private record RequestSignatureOverride(
+        ReadOnlyMemory<char> Scheme,
+        HostString Host,
+        ReadOnlyMemory<char> Path,
+        ReadOnlyMemory<char> QueryString,
+        string Method);
 }
