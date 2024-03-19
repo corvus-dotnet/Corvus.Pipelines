@@ -81,7 +81,7 @@ public readonly struct HandlerState<TInput, TResult>
     public HandlerState<TInput, TResult> NotHandled()
     {
         this.Logger.LogInformation(Pipeline.EventIds.Result, "not-handled");
-        return this;
+        return this with { HandledIndicated = false };
     }
 
     /// <summary>
