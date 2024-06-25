@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 using Corvus.Pipelines;
+using Corvus.UriTemplates;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -28,7 +29,7 @@ namespace Corvus.YarpPipelines;
 public readonly struct YarpRequestPipelineState :
     ICancellable<YarpRequestPipelineState>,
     ILoggable<YarpRequestPipelineState>,
-    IErrorProvider<YarpRequestPipelineState, YarpPipelineError>
+    IErrorProvider<YarpRequestPipelineState, YarpPipelineError?>
 {
     private enum TransformState
     {
@@ -67,7 +68,12 @@ public readonly struct YarpRequestPipelineState :
     public ILogger Logger { get; init; }
 
     /// <inheritdoc/>
-    public YarpPipelineError ErrorDetails { get; init; }
+    public YarpPipelineError? ErrorDetails { get; init; }
+
+    /// <summary>
+    /// Gets the labeled URI template parameters.
+    /// </summary>
+    public LabeledUriTemplateParameters LabeledUriTemplateParameters { get; init; }
 
     /// <summary>
     /// Gets the YARP <see cref="RequestTransformContext"/>.
@@ -254,6 +260,23 @@ public readonly struct YarpRequestPipelineState :
             {
                 CookieHeaderValues = cookieHeaderValues,
             },
+        };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance with a labeled set of URI template
+    /// parameters.
+    /// </summary>
+    /// <param name="label">The label by which future steps may refer to these parameters.</param>
+    /// <param name="uriTemplateParameters">The parameters.</param>
+    /// <returns>The updated state.</returns>
+    public YarpRequestPipelineState WithLabeledUriTemplateParameters(
+        string label,
+        UriTemplateParameters uriTemplateParameters)
+    {
+        return this with
+        {
+            LabeledUriTemplateParameters = this.LabeledUriTemplateParameters.With(label, uriTemplateParameters),
         };
     }
 

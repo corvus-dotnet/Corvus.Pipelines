@@ -22,7 +22,15 @@ public static class HandlerPipeline
     /// <typeparam name="TInput">The type of the input to the handler pipeline.</typeparam>
     /// <typeparam name="TResult">The type of the result of handling the input.</typeparam>
     /// <returns>A <see cref="PipelineStep{THandlerState}"/> which, when executed, produces the current state of the pipeline.</returns>
-    public static PipelineStep<HandlerState<TInput, TResult>> GetCurrent<TInput, TResult>() => Pipeline.Current<HandlerState<TInput, TResult>>();
+    public static PipelineStep<HandlerState<TInput, TResult>> Current<TInput, TResult>() => Pipeline.Current<HandlerState<TInput, TResult>>();
+
+    /// <summary>
+    /// The identity operator. This returns a <see cref="PipelineStep{THandlerState}"/> which, when executed, produces the current state of the pipeline.
+    /// </summary>
+    /// <typeparam name="TInput">The type of the input to the handler pipeline.</typeparam>
+    /// <typeparam name="TResult">The type of the result of handling the input.</typeparam>
+    /// <returns>A <see cref="PipelineStep{THandlerState}"/> which, when executed, produces the current state of the pipeline.</returns>
+    public static SyncPipelineStep<HandlerState<TInput, TResult>> CurrentSync<TInput, TResult>() => Pipeline.CurrentSync<HandlerState<TInput, TResult>>();
 
     /// <summary>
     /// Builds a handler pipeline from an ordered array of handlers.

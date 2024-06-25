@@ -9,4 +9,4 @@ namespace Corvus.YarpPipelines;
 /// </summary>
 /// <param name="Message">The error message given human-readable information about the error.</param>
 /// <param name="InnerException">The exception that occurred, if any.</param>
-public readonly record struct YarpPipelineError(string Message, Exception? InnerException = null);
+public record YarpPipelineError(string Message, Exception? InnerException = null);
