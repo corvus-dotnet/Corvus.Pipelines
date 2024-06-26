@@ -22,13 +22,20 @@ public readonly struct LabeledUriTemplateParameters
     /// <param name="parameters">The parameters.</param>
     private LabeledUriTemplateParameters(string label, UriTemplateParameters parameters)
     {
-        this.entryOrCollection = (label, parameters);
+        this.entryOrCollection = new Entry(label, parameters);
     }
 
     private LabeledUriTemplateParameters(Entry[] entries)
     {
         this.entryOrCollection = entries;
     }
+
+    /// <summary>
+    /// Reports whether a parameter set with the specified label is present.
+    /// </summary>
+    /// <param name="label">The parameter set label.</param>
+    /// <returns><see langword="true"/> if parameters for the specified label were found.</returns>
+    public bool Has(string label) => this.TryGet(label, out _);
 
     /// <summary>
     /// Tries to get the parameters for the specified label.
