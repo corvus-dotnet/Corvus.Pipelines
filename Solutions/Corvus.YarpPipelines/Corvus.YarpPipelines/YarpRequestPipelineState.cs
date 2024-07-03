@@ -269,14 +269,19 @@ public readonly struct YarpRequestPipelineState :
     /// </summary>
     /// <param name="label">The label by which future steps may refer to these parameters.</param>
     /// <param name="uriTemplateParameters">The parameters.</param>
+    /// <param name="sourceUri">
+    /// The URI that was passed when parsing the URI, and which should be used when extracting
+    /// parameter values later.
+    /// </param>
     /// <returns>The updated state.</returns>
     public YarpRequestPipelineState WithLabeledUriTemplateParameters(
         string label,
-        UriTemplateParameters uriTemplateParameters)
+        UriTemplateParameters uriTemplateParameters,
+        ReadOnlyMemory<char> sourceUri)
     {
         return this with
         {
-            LabeledUriTemplateParameters = this.LabeledUriTemplateParameters.With(label, uriTemplateParameters),
+            LabeledUriTemplateParameters = this.LabeledUriTemplateParameters.With(label, uriTemplateParameters, sourceUri),
         };
     }
 

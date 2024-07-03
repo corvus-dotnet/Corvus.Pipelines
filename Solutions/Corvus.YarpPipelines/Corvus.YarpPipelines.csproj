@@ -13,7 +13,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Corvus.UriTemplates" Version="1.3.0-PullRequest0154.12" />
+		<PackageReference Include="Corvus.UriTemplates" Version="1.3.0-PullRequest0154.20" />
 		<PackageReference Include="Endjin.RecommendedPractices.GitHub" Version="2.1.9">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
