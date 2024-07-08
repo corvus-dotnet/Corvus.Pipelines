@@ -146,10 +146,11 @@ public readonly struct RequestSignature
         string urlUnencodedPathAndEncodedQueryString,
         string method)
     {
-        // TODO: This could be done more efficient, because we could obtain ReadOnlyMemory<char>s for
+        // TODO[optimization]: This could be done more efficiently, because we could obtain ReadOnlyMemory<char>s for
         // the various parts, avoiding the need to allocate new strings. Currently this code path
         // is used only in a relatively unusual case (OIDC redirects), so it won't have a huge
         // impact, but we should do it at some point.
+        // We can probably repurpose code in JsonSchema's JsonReference handling.
         UriHelper.FromAbsolute(
             urlUnencodedPathAndEncodedQueryString,
             out string scheme,
@@ -200,7 +201,7 @@ public readonly struct RequestSignature
     {
         ValueStringBuilder sb = new(
             this.Scheme.Length + Uri.SchemeDelimiter.Length +
-            this.Host.Value.Length + // TODO: are we causing an allocation here?
+            this.Host.Value.Length + // TODO[optimization]: are we causing an allocation here?
             this.Path.Length +
             this.QueryString.Length);
 

@@ -86,7 +86,7 @@ public readonly struct YarpRequestPipelineState :
     /// </summary>
     internal bool ShouldTerminatePipeline => this.PipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
 
-    // TODO: an experiment. We are wondering whether changing YarpRequestPipelineState
+    // TODO[optimization]: an experiment. We are wondering whether changing YarpRequestPipelineState
     // to contain a small number of reference type fields, and pooling the memory
     // that those fields point to. If we partition the information carefully,
     // this might minimize the number of times we need to copy data to enable

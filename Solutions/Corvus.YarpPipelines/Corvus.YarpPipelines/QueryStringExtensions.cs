@@ -134,7 +134,7 @@ public static class QueryStringExtensions
     /// <returns>True if the parameter was found, false if not.</returns>
     public static bool TryGetSingleValue(this ReadOnlyMemory<char> queryString, string parameterName, out ReadOnlyMemory<char> result, StringComparison parameterNameComparison)
     {
-        // TODO: if key doesn't need to be encoded, we could compare against the encoded name
+        // TODO[optimization]: if key doesn't need to be encoded, we could compare against the encoded name
         foreach (QueryStringEnumerable.EncodedNameValuePair x in new QueryStringEnumerable(queryString))
         {
             if (x.DecodeName().Span.Equals(parameterName, parameterNameComparison))
