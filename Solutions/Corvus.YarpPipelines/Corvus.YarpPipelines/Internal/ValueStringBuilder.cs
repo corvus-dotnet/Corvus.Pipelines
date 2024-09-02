@@ -18,7 +18,7 @@ using System.Runtime.InteropServices;
 
 namespace Corvus.YarpPipelines.Internal
 {
-    internal ref partial struct ValueStringBuilder
+    public ref partial struct ValueStringBuilder
     {
         private char[]? _arrayToReturnToPool;
         private Span<char> _chars;
