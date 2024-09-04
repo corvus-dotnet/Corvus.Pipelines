@@ -13,6 +13,8 @@ using System.Buffers;
 using System.Diagnostics;
 using System.Text;
 
+using Corvus.HighPerformance;
+
 namespace Corvus.YarpPipelines.Internal;
 
 /// <summary>

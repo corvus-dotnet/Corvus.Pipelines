@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using Corvus.HighPerformance;
 using Corvus.YarpPipelines.Internal;
 
 using Microsoft.AspNetCore.Http;
