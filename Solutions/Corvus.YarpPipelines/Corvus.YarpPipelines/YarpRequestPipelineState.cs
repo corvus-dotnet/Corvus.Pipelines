@@ -29,7 +29,7 @@ namespace Corvus.YarpPipelines;
 public readonly struct YarpRequestPipelineState :
     ICancellable<YarpRequestPipelineState>,
     ILoggable<YarpRequestPipelineState>,
-    IErrorProvider<YarpRequestPipelineState, YarpPipelineError?>
+    IErrorProvider<YarpRequestPipelineState, YarpPipelineError>
 {
     private enum TransformState
     {

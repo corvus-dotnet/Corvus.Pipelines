@@ -21,7 +21,7 @@ public static class ErrorDetailsExtensions
     /// <param name="errorDetails">The error details, if any.</param>
     /// <returns><see langword="true"/> if error details were available, otherwise false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetErrorDetails<TState, TErrorDetails>(this TState capability, [NotNullWhen(true)] out TErrorDetails errorDetails)
+    public static bool TryGetErrorDetails<TState, TErrorDetails>(this TState capability, [NotNullWhen(true)] out TErrorDetails? errorDetails)
         where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
@@ -40,8 +40,9 @@ public static class ErrorDetailsExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TState TransientFailure<TState, TErrorDetails>(
         this TState capability,
-        [DisallowNull] in TErrorDetails errorDetails)
+        in TErrorDetails errorDetails)
         where TState : struct, IErrorProvider<TState, TErrorDetails>
+        where TErrorDetails : notnull
     {
         return capability with { ErrorDetails = errorDetails, ExecutionStatus = PipelineStepStatus.TransientFailure };
     }
@@ -57,8 +58,9 @@ public static class ErrorDetailsExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static TState PermanentFailure<TState, TErrorDetails>(
         this TState capability,
-        [DisallowNull] in TErrorDetails errorDetails)
+        in TErrorDetails errorDetails)
         where TState : struct, IErrorProvider<TState, TErrorDetails>
+        where TErrorDetails : notnull
     {
         return capability with { ErrorDetails = errorDetails, ExecutionStatus = PipelineStepStatus.PermanentFailure };
     }
