@@ -33,7 +33,7 @@ public readonly struct YarpResponsePipelineState :
     public ILogger Logger { get; init; }
 
     /// <inheritdoc/>
-    public YarpPipelineError ErrorDetails { get; init; }
+    public YarpPipelineError? ErrorDetails { get; init; }
 
     /// <summary>
     /// Gets the <see cref="IFeatureCollection"/> for the current request.

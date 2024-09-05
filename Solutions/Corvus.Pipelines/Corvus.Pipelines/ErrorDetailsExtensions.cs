@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
@@ -25,6 +26,9 @@ public static class ErrorDetailsExtensions
         where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
+        Debug.Assert(
+            capability.ExecutionStatus == PipelineStepStatus.Success || errorDetails is not null,
+            "Error provider should not be in a failed state with null error details");
         errorDetails = capability.ErrorDetails;
         return capability.ExecutionStatus != PipelineStepStatus.Success;
     }
@@ -44,6 +48,17 @@ public static class ErrorDetailsExtensions
         where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
+        // TErrorDetails might be a struct, but in those cases, the JIT does not generate
+        // either a box or code that compares this with default(TErrorDetails). Instead, in
+        // Tier 0 JIT, it generates code that always skips past this (but at Tier 0 it
+        // hasn't optimized it away entirely - oddly, it zeros out a register and then
+        // compares it with 1).
+        // We're not using ArgumentNullException.ThrowIfNull because that would box.
+        if (errorDetails is null)
+        {
+            throw new ArgumentNullException(nameof(errorDetails));
+        }
+
         return capability with { ErrorDetails = errorDetails, ExecutionStatus = PipelineStepStatus.TransientFailure };
     }
 
@@ -62,6 +77,11 @@ public static class ErrorDetailsExtensions
         where TState : struct, IErrorProvider<TState, TErrorDetails>
         where TErrorDetails : notnull
     {
+        if (errorDetails is null)
+        {
+            throw new ArgumentNullException(nameof(errorDetails));
+        }
+
         return capability with { ErrorDetails = errorDetails, ExecutionStatus = PipelineStepStatus.PermanentFailure };
     }
 }
