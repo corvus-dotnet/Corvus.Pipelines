@@ -27,7 +27,7 @@ public static class ErrorDetailsExtensions
         where TErrorDetails : notnull
     {
         Debug.Assert(
-            capability.ExecutionStatus == PipelineStepStatus.Success || errorDetails is not null,
+            capability.ExecutionStatus == PipelineStepStatus.Success || capability.ErrorDetails is not null,
             "Error provider should not be in a failed state with null error details");
         errorDetails = capability.ErrorDetails;
         return capability.ExecutionStatus != PipelineStepStatus.Success;

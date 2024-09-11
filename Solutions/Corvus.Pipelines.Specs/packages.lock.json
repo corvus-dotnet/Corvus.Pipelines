@@ -103,13 +103,13 @@
       },
       "CommunityToolkit.HighPerformance": {
         "type": "Transitive",
-        "resolved": "8.2.2",
-        "contentHash": "+zIp8d3sbtYaRbM6hqDs4Ui/z34j7DcUmleruZlYLE4CVxXq+MO8XJyIs42vzeTYFX+k0Iq1dEbBUnQ4z/Gnrw=="
+        "resolved": "8.3.0",
+        "contentHash": "2zc0Wfr9OtEbLqm6J1Jycim/nKmYv+v12CytJ3tZGNzw7n3yjh1vNCMX0kIBaFBk3sw8g0pMR86QJGXGlArC+A=="
       },
       "Corvus.HighPerformance": {
         "type": "Transitive",
-        "resolved": "0.2.0",
-        "contentHash": "ZYYx9P1cCMBazWkUqr5YDfZZPJ89ZBqeNEkQBxOjRZjRA5YGK2IVbEEXhC+go+5ffjl2zrT5C+B+BLaL5IYkrQ==",
+        "resolved": "1.0.0",
+        "contentHash": "ymxAkH0mhLXEggpIfbMDegA/wg4Q6PjOr2uUkHQX2HubqHD3hcOe2nf0yc3Y5GS9WHkSlc4asjTkP0rHsScDgg==",
         "dependencies": {
           "System.Buffers": "4.5.1",
           "System.Memory": "4.5.5"
@@ -130,12 +130,12 @@
       },
       "Corvus.UriTemplates": {
         "type": "Transitive",
-        "resolved": "2.0.2",
-        "contentHash": "hdMplbK6roXXfNiGRs0Ej+oFykIZ/kBhBC/UKiSKlO/03ShsS+Uy1o0nyIC0Sa2lWwuz1E8qAwNAsoSIcxSOhA==",
+        "resolved": "2.1.0",
+        "contentHash": "/ZQIatVE21Xb6eeWjXRID69Do1Lz+X0tYpXLXrfo7AWawvWsMPGvFpzHcBD/meY0bzBgb2/7pT4iwtsEeHwL5g==",
         "dependencies": {
-          "CommunityToolkit.HighPerformance": "8.2.2",
-          "Corvus.HighPerformance": "0.2.0",
-          "Microsoft.Extensions.ObjectPool": "8.0.0",
+          "CommunityToolkit.HighPerformance": "8.3.0",
+          "Corvus.HighPerformance": "1.0.0",
+          "Microsoft.Extensions.ObjectPool": "8.0.8",
           "System.Buffers": "4.5.1",
           "System.Collections.Immutable": "8.0.0"
         }
@@ -234,8 +234,8 @@
       },
       "Microsoft.Extensions.ObjectPool": {
         "type": "Transitive",
-        "resolved": "8.0.0",
-        "contentHash": "4pm+XgxSukskwjzDDfSjG4KNUIOdFF2VaqZZDtTzoyQMOVSnlV6ZM8a9aVu5dg9LVZTB//utzSc8fOi0b0Mb2Q=="
+        "resolved": "8.0.8",
+        "contentHash": "wnjTFjEvvSbOs3iMfl6CeJcUgPHZMYUB9uAQbGQGxGwVRl4GydNpMSkVntTzoi7AqQeYumU9yDSNeVbpq+ebow=="
       },
       "Microsoft.Extensions.Primitives": {
         "type": "Transitive",
@@ -1188,7 +1188,7 @@
         "type": "Project",
         "dependencies": {
           "Corvus.Pipelines": "[1.0.0, )",
-          "Corvus.UriTemplates": "[2.0.2, )",
+          "Corvus.UriTemplates": "[2.1.0, )",
           "Yarp.ReverseProxy": "[2.2.0, )"
         }
       }

@@ -74,7 +74,7 @@ public static class LowAllocUriUtilities
         }
 
         builder.Append(query);
-        return builder.ToString();
+        return builder.CreateStringAndDispose();
     }
 
     // Copied from .NET runtime libraries because they don't make their ValueStringBuilder
