@@ -123,7 +123,8 @@ public static class YarpRequestPipelineStateExtensions
     public static bool TryGetAuthenticatedUser(this YarpRequestPipelineState state, [NotNullWhen(true)] out ClaimsPrincipal? user)
     {
         user = state.RequestTransformContext.HttpContext.User;
-        return user is not null && user.Identity?.IsAuthenticated == true;
+
+        return user is not null && user.GetPrimaryIdentity()?.IsAuthenticated == true;
     }
 
     /// <summary>
