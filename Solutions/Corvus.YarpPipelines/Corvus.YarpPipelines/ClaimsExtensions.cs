@@ -24,7 +24,7 @@ internal static class ClaimsExtensions
     /// it executes a foreach over the identities. In most cases, these identities
     /// are in an IList, making zero-allocation enumeration possible, and since
     /// the .NET runtime implementation doesn't do that (at least, not in .NET 8.0)
-    /// we have to do it ourselves. (See https://github.com/dotnet/runtime/issues/107861)
+    /// we have to do it ourselves. (See https://github.com/dotnet/runtime/issues/107861).
     /// </remarks>
     public static IIdentity? GetPrimaryIdentity(this ClaimsPrincipal claimsPrincipal)
     {
