@@ -71,11 +71,6 @@ public readonly struct YarpRequestPipelineState :
     public YarpPipelineError? ErrorDetails { get; init; }
 
     /// <summary>
-    /// Gets the labeled URI template parameters.
-    /// </summary>
-    public LabeledUriTemplateParameters LabeledUriTemplateParameters { get; init; }
-
-    /// <summary>
     /// Gets the YARP <see cref="RequestTransformContext"/>.
     /// </summary>
     internal RequestTransformContext RequestTransformContext { get; init; }
@@ -131,6 +126,16 @@ public readonly struct YarpRequestPipelineState :
             Logger = logger ?? requestTransformContext.HttpContext.RequestServices?.GetService<ILogger>() ?? NullLogger.Instance,
             CancellationToken = cancellationToken,
         };
+    }
+
+    public void RegisterForDispose(IDisposable disposable)
+    {
+        this.RequestTransformContext.HttpContext.Response.RegisterForDispose(disposable);
+    }
+
+    public void RegisterForDispose(IAsyncDisposable disposable)
+    {
+        this.RequestTransformContext.HttpContext.Response.RegisterForDisposeAsync(disposable);
     }
 
     /// <summary>
@@ -260,28 +265,6 @@ public readonly struct YarpRequestPipelineState :
             {
                 CookieHeaderValues = cookieHeaderValues,
             },
-        };
-    }
-
-    /// <summary>
-    /// Returns a <see cref="YarpRequestPipelineState"/> instance with a labeled set of URI template
-    /// parameters.
-    /// </summary>
-    /// <param name="label">The label by which future steps may refer to these parameters.</param>
-    /// <param name="uriTemplateParameters">The parameters.</param>
-    /// <param name="sourceUri">
-    /// The URI that was passed when parsing the URI, and which should be used when extracting
-    /// parameter values later.
-    /// </param>
-    /// <returns>The updated state.</returns>
-    public YarpRequestPipelineState WithLabeledUriTemplateParameters(
-        string label,
-        UriTemplateParameters uriTemplateParameters,
-        ReadOnlyMemory<char> sourceUri)
-    {
-        return this with
-        {
-            LabeledUriTemplateParameters = this.LabeledUriTemplateParameters.With(label, uriTemplateParameters, sourceUri),
         };
     }
 
