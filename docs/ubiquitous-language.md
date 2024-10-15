@@ -116,8 +116,6 @@ Any synchronous step can _always_ be converted to an asynchronous step by using 
 
 Alternatively, you can make your otherwise-synchronous implementation function async by wrapping your return value with `ValueTask.FromResult()`.
 
-This is a common operation to when composing mixed sets of sync and async steps.
-
 Most [operators](#operator) offer both sync and async overloads so you can avoid having to think too hard about this in real code.
 
 ## Terminating pipeline
