@@ -1550,3 +1550,54 @@ In addition to determining whether to retry, you can also transform the retry co
 
 Why might you want to do that?
 
+Based on the error condition, you may be able to modify the state to ensure that the failure succeeds on retry.
+
+For example, imagine you have a step that calls an endpoint that allows you to specify a batch size for a paged result set. If you ask for a batch that is too large for it to process at this time it returns a failure status code, and suggests a smaller batch size to use that might succeed. You might store this batch size in your state, and lower it if you get one of these "too busy" responses, as a before-retry strategy.   
+
+Or the step calls an API that supports the standard [429 - Too Many Requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429) status code with a [Retry-After](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After). You could introduce a delay before retrying that respected the value in the header.
+
+In fact, this latter is so common that we provide an assortment of delaying strategies, including `ContextualDelayStrategy()` which allows you to determine the delay time from the `RetryContext` (and therefore the current state), and what are probably the more familiar `FixedDelayStrategy()`, `LinearDelayStrategy()` and `ExponentialDelayStrategy()`.
+
+Let's look at an example that uses a linear back-off strategy. This takes a `baseDuration`, and increments by that base duration with each retry, up to some `maximumDuration`. 
+
+```csharp
+var sw = Stopwatch.StartNew();
+
+PipelineStep<CanFailState<int>> count5TransientAndDelay =
+        retryingAlwaysTransientFailure.ToAsync().Retry(
+            shouldRetry: Retry
+                            .CountPolicy<CanFailState<int>>(5)
+                            .And(Retry.TransientPolicy<CanFailState<int>>()),
+            beforeRetry: Retry.LinearDelayStrategy<CanFailState<int>>(
+                baseDuration: TimeSpan.FromSeconds(1),
+                maximumDuration: TimeSpan.FromSeconds(3))
+            );
+
+canFailInt = await count5TransientAndDelay(CanFailState.For(0)).ConfigureAwait(false);
+
+Console.WriteLine($"{canFailInt.Value} : {canFailInt.ExecutionStatus}");
+Console.WriteLine($"Retried for {sw.ElapsedMilliseconds / 1000.0}s");
+```
+
+This will produce the output:
+
+```
+0 : TransientFailure
+Retried for 9.048s
+```
+
+Notice that we retry for `~9s`.
+
+Our `CountPolicy()` is set to `5` attempts. 
+
+There is no delay before the 1st try. (Total `0s`)
+
+Before the 2nd try, we have a retry delay of `1s` (Total `1s`)
+
+Before the 3rd try, we have a retry delay of `1 + 1 = 2s` (Total `3s`)
+
+Before the 4th try, we have a retry delay of `2 + 1 = 3s` (Total `6s`)
+
+Before the 5th try, we our retry delay would be `3 + 1 = 4s`, but this is capepd to the maximum of `3s` (Total `9s`)
+
+> Our delay-based retry strategies support techniques like decorrelation, jitter, custom random number generation, and cancellation. They are also capable of taking a [`TimeProvider`](https://learn.microsoft.com/en-us/dotnet/api/system.timeprovider?view=net-8.0) instance to support virtual time for e.g. testing purposes.
