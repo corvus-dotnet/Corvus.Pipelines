@@ -883,8 +883,8 @@ SyncPipelineStep<ProductPrice> lookupProductPrice =
             HandlerState<string, decimal>.For(state.ProductId),
         (outerState, innerState) =>
             new ProductPrice(
-                innerState.Input,
-                innerState.WasHandled(out decimal result)
+                ProductId: innerState.Input,
+                Price: innerState.WasHandled(out decimal result)
                     ? result : null));
 ```
 
