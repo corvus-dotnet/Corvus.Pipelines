@@ -833,7 +833,7 @@ So, when the step produced by the `Bind()` operator is executed, it:
 - Executes the initial step
 - Calls `wrap()`, passing it the result of the initial step.
 - It then executes the bound step with the result from `wrap()`.
-- The result of that is passed to the `unwrap()` function.
+- The result of that (an `TInnerState` instance), along with the _result_ of the initial step (a `TState` instance), is passed to the `unwrap()` function.
 - The result of that is returned from the step.
 
 ### Example: binding to a handler pipeline
