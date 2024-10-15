@@ -81,6 +81,45 @@ public static class Retry
         };
 
     /// <summary>
+    /// Gets a pipeline step that delays for a period determined from the retry context.
+    /// </summary>
+    /// <typeparam name="TState">The type of the state.</typeparam>
+    /// <param name="getDelay">A function that provides the delay before retrying, based on the retry context.</param>
+    /// <param name="jitter">Include jitter.</param>
+    /// <param name="randomGenerator">An optional random number generator for random elements to the delay strategy.</param>
+    /// <param name="timeProvider">An optional time provider.</param>
+    /// <returns>A <see cref="PipelineStep{RetryContext}"/> that will delay before retrying the operation.</returns>
+    public static PipelineStep<RetryContext<TState>> ContextualDelayStrategy<TState>(Func<RetryContext<TState>, TimeSpan> getDelay, bool jitter = false, Func<double>? randomGenerator = null, TimeProvider? timeProvider = null)
+        where TState : struct, ICanFail<TState>, ICancellable<TState>
+    {
+        Func<double> rg = randomGenerator ?? (static () => Random.Shared.NextDouble());
+
+        return async retryContext =>
+        {
+            double basis = retryContext.CorrelationBase;
+            TimeSpan retryDelay = RetryDelayHelper.GetRetryDelay(
+                RetryDelayHelper.DelayBackoffType.Constant,
+                jitter,
+                retryContext.FailureCount,
+                getDelay(retryContext),
+                null,
+                ref basis,
+                rg);
+
+            if (timeProvider is TimeProvider tp)
+            {
+                await Task.Delay(retryDelay, tp, retryContext.State.CancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await Task.Delay(retryDelay, retryContext.State.CancellationToken).ConfigureAwait(false);
+            }
+
+            return retryContext with { CorrelationBase = basis };
+        };
+    }
+
+    /// <summary>
     /// Gets a pipeline step that delays for a fixed period.
     /// </summary>
     /// <typeparam name="TState">The type of the state.</typeparam>

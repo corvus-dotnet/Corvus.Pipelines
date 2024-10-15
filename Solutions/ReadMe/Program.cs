@@ -346,7 +346,8 @@ var sw = Stopwatch.StartNew();
 
 PipelineStep<CanFailState<int>> count5TransientAndDelay =
         retryingAlwaysTransientFailure.ToAsync().Retry(
-            shouldRetry: Retry.CountPolicy<CanFailState<int>>(5)
+            shouldRetry: Retry
+                            .CountPolicy<CanFailState<int>>(5)
                             .And(Retry.TransientPolicy<CanFailState<int>>()),
             beforeRetry: Retry.LinearDelayStrategy<CanFailState<int>>(
                 baseDuration: TimeSpan.FromSeconds(1),
