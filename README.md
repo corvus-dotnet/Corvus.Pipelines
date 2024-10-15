@@ -55,7 +55,9 @@ This is so useful, we include it in the **Corvus.Pipelines** library itself.
 
 The idea of **Corvus.Pipelines** is to _constrain_ what you can do to make the programming model simpler, and enable some common patterns like retries, cancellation, logging and `Exception`-free error handling.
 
-At the end of the day, it is just built on top of dotnet delegates/`Func<,>`, and you can bring in as much LINQ to objects as you like, around that! There's no special magic going on.
+At the end of the day, it is just built on top of .NET delegates/`Func<,>`, and you can bring in as much LINQ to objects as you like, around that! There's no special magic going on.
+
+Notice that we don't call it a "framework". It isn't. At its heart, it is just a library of functions that work well together - and with other functions that you bring to the party. 
 
 The workload that inspired the creation of this library started out just using LINQ-to-objects, but we rapidly discovered that we were having to write a lot of boiler plate around the code we really needed; and so this project was born.
 
@@ -1113,7 +1115,7 @@ One such thing you can do in `Catch()` is to adapt the exception into the `Error
 
 ## Handling Errors
 
-One of the (arguably best) design choices in the dotnet runtime is that exceptions are *extremely cheap* if you don't use them. Essentially, you don't pay any penalty at all for the *ability* to use exceptions.
+One of the (arguably best) design choices in the .NET runtime is that exceptions are *extremely cheap* if you don't use them. Essentially, you don't pay any penalty at all for the *ability* to use exceptions.
 
 The trade off for that is that they are quite expensive when you *do* need to use them.
 
@@ -1133,7 +1135,7 @@ There are two ways libraries commonly deal with those kinds of failures - and Mi
 
     Others (e.g. Azure Storage SDK) give you APIs that throw Exceptions corresponding to non-success scenarios, and status codes for success.
 
-While it is easy to understand the "convenience" of the second choice, there's a philosophical mismatch. The whole design concept behind dotnet exceptions is that they should be for *exceptional* circumstances.
+While it is easy to understand the "convenience" of the second choice, there's a philosophical mismatch. The whole design concept behind .NET exceptions is that they should be for *exceptional* circumstances.
 
 Is it really exceptional when a distributed resource is temporarily unavailable and asking you to back off before retrying? Or, perhaps even more obviously, is it exceptional when you ask to write a resource only if its ETag matches the one you read, and it has been updated?
 
