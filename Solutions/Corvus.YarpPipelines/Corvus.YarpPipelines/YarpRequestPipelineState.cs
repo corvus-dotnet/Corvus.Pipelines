@@ -128,11 +128,19 @@ public readonly struct YarpRequestPipelineState :
         };
     }
 
+    /// <summary>
+    /// Add an <see cref="IDisposable"/> to the list of things to dispose when processing is complete.
+    /// </summary>
+    /// <param name="disposable">The object to dispose.</param>
     public void RegisterForDispose(IDisposable disposable)
     {
         this.RequestTransformContext.HttpContext.Response.RegisterForDispose(disposable);
     }
 
+    /// <summary>
+    /// Add an <see cref="IAsyncDisposable"/> to the list of things to dispose when processing is complete.
+    /// </summary>
+    /// <param name="disposable">The object to dispose.</param>
     public void RegisterForDispose(IAsyncDisposable disposable)
     {
         this.RequestTransformContext.HttpContext.Response.RegisterForDisposeAsync(disposable);
