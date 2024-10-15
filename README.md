@@ -1537,7 +1537,8 @@ You can also combine these predicates. There are `Retry.And()`, `Retry.Or()` and
 ```csharp
 SyncPipelineStep<CanFailState<int>> count5Transient =
         retryingAlwaysTransientFailure.Retry(
-            Retry.CountPolicy<CanFailState<int>>(5)
+            Retry
+                .CountPolicy<CanFailState<int>>(5)
                 .And(Retry.TransientPolicy<CanFailState<int>>()));
 
 canFailInt = count5Transient(CanFailState.For(0));
