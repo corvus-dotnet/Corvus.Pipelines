@@ -68,6 +68,8 @@ A _non-terminating pipeline_ is a [pipeline](#pipeline) that executes each step 
 
 An operator is a _function_ that takes a [step](#step) (and potentially other parameters, including other steps), and returns a [step](#step).
 
+Operators are used when building a pipeline to compose or transform other steps, without needing to know how those other steps actually work. For example, the [Bind](#binding) operator composes two steps, passing the output of one as the input of another, without needing to know what those steps actually do.
+
 > For the mathematically minded, this somewhat akin to the mathematical definition of an operator as a function that maps from one function space to another.
 
 ## Pipeline
