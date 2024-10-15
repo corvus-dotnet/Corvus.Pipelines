@@ -1552,7 +1552,9 @@ Why might you want to do that?
 
 Based on the error condition, you may be able to modify the state to ensure that the failure succeeds on retry.
 
-For example, imagine you have a step that calls an endpoint that allows you to specify a batch size for a paged result set. If you ask for a batch that is too large for it to process at this time it returns a failure status code, and suggests a smaller batch size to use that might succeed. You might store this batch size in your state, and lower it if you get one of these "too busy" responses, as a before-retry strategy.   
+For example, imagine you have a step that calls an endpoint that allows you to specify a batch size for a paged result set. If you ask for a batch that is too large for it to process at this time it returns a failure status code, and suggests a smaller batch size to use that might succeed. You might store this batch size in your state, and lower it if you get one of these "too busy" responses, as a before-retry strategy.
+
+Or maybe your failed pipeline causes side effects. You may wish to execute compensation logic before retrying.
 
 Or the step calls an API that supports the standard [429 - Too Many Requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429) status code with a [Retry-After](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After). You could introduce a delay before retrying that respected the value in the header.
 
