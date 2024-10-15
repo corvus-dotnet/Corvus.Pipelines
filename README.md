@@ -233,7 +233,7 @@ Pipelines can be [terminating](./docs/ubiquitous-language.md#terminating-pipelin
 
 We have already seen examples of non-terminating pipelines (they just run each step in turn, from the first to the last).
 
-A terminating pipeline takes a _predicate_ to determine if it should terminate, along with the usual array of steps.
+A terminating pipeline takes a [predicate](./docs/ubiquitous-language.md#predicate) to determine if it should terminate, along with the usual array of steps.
 
 A predicate is a function that takes a value (in this case the current state), and returns `true` or `false`. We will use the lozenge symbol to indicate a predicate in our diagrams, and dotted lines for the possible results.
 
