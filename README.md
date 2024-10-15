@@ -279,7 +279,7 @@ First, let's pull out a common step we can reuse.
 static class CommonSteps
 {
     public static SyncPipelineStep<int> MultiplyBy5 =
-        state => state * 5;
+        static state => state * 5;
 }
 ```
 
@@ -291,7 +291,7 @@ Then, we use the `Build()` operator overload that takes a _termination predicate
 
 ```csharp
 PipelineStep<int> terminatingPipeline = Pipeline.Build(
-    shouldTerminate: state => state > 25,
+    shouldTerminate: state => static state > 25,
     CommonSteps.MultiplyBy5,
     CommonSteps.MultiplyBy5
 );
