@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Diagnostics;
+
 using Corvus.HighPerformance;
 using Corvus.YarpPipelines.Internal;
 
@@ -200,19 +202,35 @@ public readonly struct RequestSignature
         CharSpanInspector<TResult, TState> inspector,
         TState state)
     {
-        ValueStringBuilder sb = new(
-            this.Scheme.Length + Uri.SchemeDelimiter.Length +
+        int expectedLength = this.Scheme.Length + Uri.SchemeDelimiter.Length +
             this.Host.Value.Length + // TODO[optimization]: are we causing an allocation here?
             this.Path.Length +
-            this.QueryString.Length);
+            this.QueryString.Length;
 
-        sb.Append(this.Scheme.Span);
-        sb.Append(Uri.SchemeDelimiter);
-        sb.Append(this.Host.Value);
-        sb.Append(this.Path.Span);
-        sb.Append(this.QueryString.Span);
+        Debug.Assert(expectedLength < 4096, "Unexpectedly large URL (> 4096)");
+        ValueStringBuilder sb = expectedLength < 4096
+            ? new(stackalloc char[expectedLength])
+            : new(expectedLength);
 
-        return inspector(sb.AsSpan(), state);
+        try
+        {
+            sb.Append(this.Scheme.Span);
+            sb.Append(Uri.SchemeDelimiter);
+            sb.Append(this.Host.Value);
+            sb.Append(this.Path.Span);
+            sb.Append(this.QueryString.Span);
+
+            return inspector(sb.AsSpan(), state);
+        }
+        finally
+        {
+            // We're surprised that we need to put this in a finally, because normally
+            // using works. But apparently our use of a conditional expression in the
+            // using declaration's initializer is preventing the compiler from
+            // recognizing the non-IDisposable Dispose. (And we can't implement IDisposable
+            // because ValueStringBuilder is a ref struct.)
+            sb.Dispose();
+        }
     }
 
     /// <summary>
