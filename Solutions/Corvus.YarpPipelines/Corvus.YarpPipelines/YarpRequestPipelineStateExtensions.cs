@@ -52,13 +52,29 @@ public static class YarpRequestPipelineStateExtensions
         string headerName,
         string value)
     {
-        if (!state.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
+        if (!state.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value.ToString()))
         {
             throw new ArgumentException($"Unable to add header '{headerName}' to proxy request");
         }
 
         return state.Continue();
     }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance that will continue processing the pipeline,
+    /// ensuring that the proxied request includes the specified header. The header must not already
+    /// be present.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="headerName">The header to add.</param>
+    /// <param name="value">The value for the header.</param>
+    /// <returns>The non-terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    /// <exception cref="ArgumentException">Thrown if the header is already present.</exception>
+    public static YarpRequestPipelineState AddHeaderAndContinue(
+        this YarpRequestPipelineState state,
+        string headerName,
+        ReadOnlyMemory<char> value)
+        => state.AddHeaderAndContinue(headerName, value.ToString());
 
     /// <summary>
     /// Performs an ASP.NET Core sign in for interactive login (using

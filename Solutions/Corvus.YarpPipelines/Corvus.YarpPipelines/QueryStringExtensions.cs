@@ -2,6 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Runtime.CompilerServices;
+
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Corvus.YarpPipelines;
@@ -130,9 +132,30 @@ public static class QueryStringExtensions
     /// <param name="queryString">The query string to inspect.</param>
     /// <param name="parameterName">The name of the parameter to look for.</param>
     /// <param name="result">The parameter's value, or null if not found.</param>
+    /// <returns>True if the parameter was found, false if not.</returns>
+    public static bool TryGetSingleValue(this ReadOnlyMemory<char> queryString, ReadOnlySpan<char> parameterName, out ReadOnlyMemory<char> result)
+        => queryString.TryGetSingleValue(parameterName, out result, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Determines whether the query string contains the specified parameter, and if so, returns its value.
+    /// </summary>
+    /// <param name="queryString">The query string to inspect.</param>
+    /// <param name="parameterName">The name of the parameter to look for.</param>
+    /// <param name="result">The parameter's value, or null if not found.</param>
     /// <param name="parameterNameComparison">The string comparison type to use.</param>
     /// <returns>True if the parameter was found, false if not.</returns>
     public static bool TryGetSingleValue(this ReadOnlyMemory<char> queryString, string parameterName, out ReadOnlyMemory<char> result, StringComparison parameterNameComparison)
+        => queryString.TryGetSingleValue(parameterName.AsSpan(), out result, parameterNameComparison);
+
+    /// <summary>
+    /// Determines whether the query string contains the specified parameter, and if so, returns its value.
+    /// </summary>
+    /// <param name="queryString">The query string to inspect.</param>
+    /// <param name="parameterName">The name of the parameter to look for.</param>
+    /// <param name="result">The parameter's value, or null if not found.</param>
+    /// <param name="parameterNameComparison">The string comparison type to use.</param>
+    /// <returns>True if the parameter was found, false if not.</returns>
+    public static bool TryGetSingleValue(this ReadOnlyMemory<char> queryString, ReadOnlySpan<char> parameterName, out ReadOnlyMemory<char> result, StringComparison parameterNameComparison)
     {
         // TODO[optimization]: if key doesn't need to be encoded, we could compare against the encoded name
         foreach (QueryStringEnumerable.EncodedNameValuePair x in new QueryStringEnumerable(queryString))
@@ -154,7 +177,18 @@ public static class QueryStringExtensions
     /// <param name="queryString">The query string to inspect.</param>
     /// <param name="parameterName">The name of the parameter to look for.</param>
     /// <returns>True if the parameter was found, false if not.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool HasKey(this ReadOnlyMemory<char> queryString, string parameterName)
+        => queryString.HasKey(parameterName, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Determines whether the query string contains the specified parameter.
+    /// </summary>
+    /// <param name="queryString">The query string to inspect.</param>
+    /// <param name="parameterName">The name of the parameter to look for.</param>
+    /// <returns>True if the parameter was found, false if not.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool HasKey(this ReadOnlyMemory<char> queryString, ReadOnlyMemory<char> parameterName)
         => queryString.HasKey(parameterName, StringComparison.Ordinal);
 
     /// <summary>
@@ -164,11 +198,29 @@ public static class QueryStringExtensions
     /// <param name="parameterName">The name of the parameter to look for.</param>
     /// <param name="keyComparison">The string comparison type to use.</param>
     /// <returns>True if the parameter was found, false if not.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool HasKey(this ReadOnlyMemory<char> queryString, string parameterName, StringComparison keyComparison)
+        => queryString.HasKey(parameterName.AsMemory(), keyComparison);
+
+    /// <summary>
+    /// Determines whether the query string contains the specified parameter.
+    /// </summary>
+    /// <param name="queryString">The query string to inspect.</param>
+    /// <param name="parameterName">The name of the parameter to look for.</param>
+    /// <param name="keyComparison">The string comparison type to use.</param>
+    /// <returns>True if the parameter was found, false if not.</returns>
+    public static bool HasKey(this ReadOnlyMemory<char> queryString, ReadOnlyMemory<char> parameterName, StringComparison keyComparison)
     {
         foreach (QueryStringEnumerable.EncodedNameValuePair x in new QueryStringEnumerable(queryString))
         {
-            if (x.DecodeName().Span.Equals(parameterName, keyComparison))
+            // TODO: we would write this:
+            //  x.NameEquals(parameterName)
+            // but Microsoft has not seen fit to supply such a thing.
+            // And in cases where the parameter name is not encoded, DecodeName just
+            // returns a slice of the input, so it does not allocate. Since encoded key names
+            // are relatively unusual (unlike encoded key *values*), we don't think it's worth
+            // writing our own version.
+            if (x.DecodeName().Span.Equals(parameterName.Span, keyComparison))
             {
                 return true;
             }
