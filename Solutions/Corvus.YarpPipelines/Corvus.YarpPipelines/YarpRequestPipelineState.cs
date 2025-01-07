@@ -166,21 +166,18 @@ public readonly struct YarpRequestPipelineState :
     /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
     /// with the given request forwarding details. The request will be forwarded to the endpoint.
     /// </summary>
-    /// <param name="clusterId">Identifies the cluster that should handle the request.</param>
     /// <param name="path">The path to put in the proxied request.</param>
     /// <param name="queryString">The query string to put in the proxied request.</param>
     /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
-    public YarpRequestPipelineState TerminateWithClusterIdAndPathAndQuery(
-        string clusterId, ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString)
+    public YarpRequestPipelineState WithPathAndQuery(
+        ReadOnlyMemory<char>? path, ReadOnlyMemory<char>? queryString)
     {
-        this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-forward");
         return this with
         {
-            PipelineState = TransformState.TerminateAndForward,
             ForwardedRequestDetails = this.ForwardedRequestDetails with
             {
-                ClusterId = clusterId,
-                PathAndQueryOverride = (path, queryString),
+                PathOverride = path,
+                QueryStringOverride = queryString,
             },
         };
     }

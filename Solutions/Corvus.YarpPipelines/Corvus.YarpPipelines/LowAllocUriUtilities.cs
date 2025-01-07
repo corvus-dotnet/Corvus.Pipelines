@@ -25,6 +25,9 @@ public static class LowAllocUriUtilities
     private static readonly SearchValues<char> ValidPathChars =
         SearchValues.Create("!$&'()*+,-./0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~");
 
+    private static readonly SearchValues<char> ValidQueryChars =
+        SearchValues.Create("!$'()*+,-./0123456789:;@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~");
+
     /// <summary>
     /// Appends the given path and encoded query to the encoded prefix while avoiding duplicate '/'.
     /// </summary>
@@ -75,6 +78,21 @@ public static class LowAllocUriUtilities
 
         builder.Append(query);
         return builder.CreateStringAndDispose();
+    }
+
+    /// <summary>
+    /// Encodes a query key or value.
+    /// </summary>
+    /// <param name="vsb">
+    /// The target <see cref="HighPerformance.ValueStringBuilder"/> for the encoded value.
+    /// </param>
+    /// <param name="queryElement">
+    /// The key or value to encode.
+    /// </param>
+    public static void EncodeQueryStringElement(
+        ref ValueStringBuilder vsb, ReadOnlySpan<char> queryElement)
+    {
+        EscapeStringToBuilder(queryElement, ref vsb, ValidQueryChars, true);
     }
 
     // Copied from .NET runtime libraries because they don't make their ValueStringBuilder
