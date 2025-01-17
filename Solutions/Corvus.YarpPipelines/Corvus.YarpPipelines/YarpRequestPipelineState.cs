@@ -184,6 +184,42 @@ public readonly struct YarpRequestPipelineState :
 
     /// <summary>
     /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
+    /// with the given request forwarding details. The request will be forwarded to the endpoint.
+    /// </summary>
+    /// <param name="path">The path to put in the proxied request.</param>
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState WithPath(
+        ReadOnlyMemory<char> path)
+    {
+        return this with
+        {
+            ForwardedRequestDetails = this.ForwardedRequestDetails with
+            {
+                PathOverride = path,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
+    /// with the given request forwarding details. The request will be forwarded to the endpoint.
+    /// </summary>
+    /// <param name="queryString">The query string to put in the proxied request.</param>
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState WithQuery(
+        ReadOnlyMemory<char> queryString)
+    {
+        return this with
+        {
+            ForwardedRequestDetails = this.ForwardedRequestDetails with
+            {
+                QueryStringOverride = queryString,
+            },
+        };
+    }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
     /// with the given response details. The request will not be forwarded to the endpoint.
     /// </summary>
     /// <param name="responseDetails">The details of the response to return.</param>
