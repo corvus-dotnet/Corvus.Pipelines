@@ -188,6 +188,14 @@ public readonly struct YarpRequestPipelineState :
     /// </summary>
     /// <param name="path">The path to put in the proxied request.</param>
     /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState WithPath(string path) => this.WithPath(path.AsMemory());
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
+    /// with the given request forwarding details. The request will be forwarded to the endpoint.
+    /// </summary>
+    /// <param name="path">The path to put in the proxied request.</param>
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
     public YarpRequestPipelineState WithPath(
         ReadOnlyMemory<char> path)
     {
@@ -199,6 +207,14 @@ public readonly struct YarpRequestPipelineState :
             },
         };
     }
+
+    /// <summary>
+    /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
+    /// with the given request forwarding details. The request will be forwarded to the endpoint.
+    /// </summary>
+    /// <param name="queryString">The query string to put in the proxied request.</param>
+    /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
+    public YarpRequestPipelineState WithQuery(string queryString) => this.WithQuery(queryString.AsMemory());
 
     /// <summary>
     /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
