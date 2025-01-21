@@ -2,17 +2,16 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 using Corvus.Pipelines;
-using Corvus.UriTemplates;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Yarp.ReverseProxy.Transforms;
 
 namespace Corvus.YarpPipelines;
@@ -31,6 +30,10 @@ public readonly struct YarpRequestPipelineState :
     ILoggable<YarpRequestPipelineState>,
     IErrorProvider<YarpRequestPipelineState, YarpPipelineError>
 {
+    private const int TransformStateBitMask = 3;
+    private const int ExplicitlyAuthenticatedBitMask = 4;
+    private readonly int transformStateAndIsExplicitlyAuthenticated;
+
     private enum TransformState
     {
         Continue,
@@ -51,7 +54,15 @@ public readonly struct YarpRequestPipelineState :
     /// <summary>
     /// Gets a value indicating whether the current request is authenticated.
     /// </summary>
-    public bool IsAuthenticated => this.RequestTransformContext.HttpContext.User.Identity?.IsAuthenticated == true;
+    public bool IsExplicitlyAuthenticated
+    {
+        get => (this.transformStateAndIsExplicitlyAuthenticated & ExplicitlyAuthenticatedBitMask) != 0;
+        init
+        {
+            this.transformStateAndIsExplicitlyAuthenticated =
+                ((int)this.PipelineState) | (value ? ExplicitlyAuthenticatedBitMask : 0);
+        }
+    }
 
     /// <summary>
     /// Gets a value indicating whether the current request's content is a form.
@@ -98,7 +109,15 @@ public readonly struct YarpRequestPipelineState :
     // signature.)
     private RequestSignature NominalRequestSignature { get; init; }
 
-    private TransformState PipelineState { get; init; }
+    private TransformState PipelineState
+    {
+        get => (TransformState)(this.transformStateAndIsExplicitlyAuthenticated & TransformStateBitMask);
+        init
+        {
+            this.transformStateAndIsExplicitlyAuthenticated =
+                ((int)value) | (this.IsExplicitlyAuthenticated ? ExplicitlyAuthenticatedBitMask : 0);
+        }
+    }
 
     private ForwardedRequestDetails ForwardedRequestDetails { get; init; }
 
@@ -337,4 +356,10 @@ public readonly struct YarpRequestPipelineState :
     {
         return this.NominalRequestSignature;
     }
+
+    /// <summary>
+    /// Gets the authentication type, or null if the request is not authenticated.
+    /// </summary>
+    /// <returns>The authentication type string, or null.</returns>
+    public string? GetAuthenticationType() => this.RequestTransformContext.HttpContext.User.Identity?.AuthenticationType;
 }
