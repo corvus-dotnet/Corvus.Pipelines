@@ -23,12 +23,11 @@ public readonly struct NonForwardedResponseDetails
 
     private NonForwardedResponseDetails(
         string redirectLocation,
-        CookieDetails cookieDetails,
+        ImmutableArray<CookieDetails> cookieDetails,
         bool preserveMethod)
     {
         this.redirectLocation = redirectLocation;
-        this.cookieDetails =
-            [cookieDetails];
+        this.cookieDetails = cookieDetails;
         this.redirectShouldPreserveMethod = preserveMethod;
     }
 
@@ -50,25 +49,23 @@ public readonly struct NonForwardedResponseDetails
     /// <summary>
     /// Creates a <see cref="NonForwardedResponseDetails"/> indicating that a redirect response should be
     /// produced with a status code suitable for scenarios where we are redirecting the
-    /// user to a login UI (302), and that this response should also set a cookie.
+    /// user to a login UI (302), and that this response should also set a cookie, and may need to
+    /// remove existing cookies.
     /// </summary>
     /// <param name="location">
     /// The redirection location, in a fully escaped form suitable for use in HTTP headers and
     /// other HTTP operations.
     /// </param>
-    /// <param name="cookiePath">The path for the cookie.</param>
-    /// <param name="cookieName">The cookie name.</param>
-    /// <param name="cookieValue">The cookie value.</param>
-    /// <param name="cookieExpiresFrom">The time after which the cookie expires.</param>
+    /// <param name="cookieDetails">The cookies to add and/or remove.</param>
     /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
-    public static NonForwardedResponseDetails ForAuthenticationRedirectSettingCookie(
+    public static NonForwardedResponseDetails ForAuthenticationRedirectAdjustingCookies(
         string location,
-        string cookiePath,
-        string cookieName,
-        string cookieValue,
-        DateTimeOffset cookieExpiresFrom)
+        IEnumerable<CookieDetails> cookieDetails)
     {
-        return new(location, new(cookiePath, cookieName, cookieValue, cookieExpiresFrom, CookieAction.Add), preserveMethod: false);
+        return new(
+            location,
+            cookieDetails.ToImmutableArray(),
+            preserveMethod: false);
     }
 
     /// <summary>
@@ -88,7 +85,35 @@ public readonly struct NonForwardedResponseDetails
         string cookiePath,
         string cookieName)
     {
-        return new(location, new(cookiePath, cookieName, default!, DateTimeOffset.UtcNow, CookieAction.EnsureRemoved), preserveMethod: false);
+        return new(
+            location,
+            [new(cookiePath, cookieName, default!, DateTimeOffset.UtcNow, CookieAction.EnsureRemoved)],
+            preserveMethod: false);
+    }
+
+    /// <summary>
+    /// Creates a <see cref="NonForwardedResponseDetails"/> indicating that a redirect response should be
+    /// produced with a status code suitable for scenarios where we are redirecting the
+    /// user to a login UI (302), and that this response should also set a cookie.
+    /// </summary>
+    /// <param name="location">
+    /// The redirection location, in a fully escaped form suitable for use in HTTP headers and
+    /// other HTTP operations.
+    /// </param>
+    /// <param name="cookiePath">The path for the cookie.</param>
+    /// <param name="cookieNames">The names of the cookies to remove.</param>
+    /// <returns>A <see cref="NonForwardedResponseDetails"/>.</returns>
+    public static NonForwardedResponseDetails ForAuthenticationRedirectRemovingCookies(
+        string location,
+        string cookiePath,
+        IEnumerable<string> cookieNames)
+    {
+        return new(
+            location,
+            cookieNames
+                .Select(cookieName => new CookieDetails(cookiePath, cookieName, default!, DateTimeOffset.UtcNow, CookieAction.EnsureRemoved))
+                .ToImmutableArray(),
+            preserveMethod: false);
     }
 
     /// <summary>

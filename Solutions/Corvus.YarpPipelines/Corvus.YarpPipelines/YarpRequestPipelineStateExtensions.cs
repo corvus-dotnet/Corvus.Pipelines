@@ -9,7 +9,6 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Primitives;
@@ -77,16 +76,11 @@ public static class YarpRequestPipelineStateExtensions
         => state.AddHeaderAndContinue(headerName, value.ToString());
 
     /// <summary>
-    /// Performs an ASP.NET Core sign in for interactive login (using
-    /// <see cref="CookieAuthenticationDefaults.AuthenticationScheme"/>) and returns
-    /// a state directing the pipeline executor to redirect to the original URL the
-    /// user was trying to access when they were redirected to log in.
+    /// Returns a state directing the pipeline executor to redirect to the original URL the
+    /// user was trying to access when they were redirected to log in, and also to remove
+    /// the temporary cookie that was set to validate the login.
     /// </summary>
     /// <param name="state">The YARP pipeline state.</param>
-    /// <param name="identity">The user details with which to complete the login.</param>
-    /// <param name="authenticationProperties">
-    /// Authentication properties to associate with the login.
-    /// </param>
     /// <param name="returnUrl">
     /// The URL to which to redirect the user. This must be properly encoded for use in the HTTP
     /// Location header.
@@ -101,23 +95,34 @@ public static class YarpRequestPipelineStateExtensions
     /// <returns>
     /// A task producing the pipeline state to terminate the pipeline with.
     /// </returns>
-    public static async ValueTask<YarpRequestPipelineState> CompleteInteractiveSignInAndTerminateAsync(
+    public static YarpRequestPipelineState TerminateForAuthenticationRedirectAndRemoveInteractiveSignInTemporaryCookie(
         this YarpRequestPipelineState state,
-        ClaimsIdentity identity,
-        AuthenticationProperties authenticationProperties,
         string returnUrl,
         string cookiePath,
         string cookieName)
     {
-        await state.RequestTransformContext.HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity),
-            authenticationProperties);
-
         return state.TerminateWith(NonForwardedResponseDetails.ForAuthenticationRedirectRemovingCookie(
             returnUrl,
             cookiePath,
             cookieName));
+    }
+
+    /// <summary>
+    /// Calls <c>HttpContext.SignInAsync</c> on the request associated with the state, and returns the state.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="authenticationScheme">The authentication scheme.</param>
+    /// <param name="principal">The principal to set with this signin.</param>
+    /// <param name="properties">Optional additional authentication properties.</param>
+    /// <returns>A task producing the pipeline state.</returns>
+    public static async Task<YarpRequestPipelineState> CompleteSignInAsSideEffectAsync(
+        this YarpRequestPipelineState state,
+        string authenticationScheme,
+        ClaimsPrincipal principal,
+        AuthenticationProperties? properties)
+    {
+        await state.RequestTransformContext.HttpContext.SignInAsync(authenticationScheme, principal, properties).ConfigureAwait(false);
+        return state;
     }
 
     /// <summary>
@@ -150,6 +155,7 @@ public static class YarpRequestPipelineStateExtensions
     /// <param name="predicate">Determines the criteria.</param>
     /// <param name="cookie">The matching cookie, if found.</param>
     /// <returns><see langword="true"/> if a match was found.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if more than one cookie matches the predicate.</exception>
     public static bool TryFindCookie(
         this YarpRequestPipelineState state,
         Func<KeyValuePair<string, string>, bool> predicate,
@@ -158,6 +164,20 @@ public static class YarpRequestPipelineStateExtensions
         cookie = state.RequestTransformContext.HttpContext.Request.Cookies.SingleOrDefault(predicate);
         return cookie.Key is not null;
     }
+
+    /// <summary>
+    /// Finds all cookies from the incoming request that match a predicate.
+    /// </summary>
+    /// <param name="state">The YARP pipeline state.</param>
+    /// <param name="predicate">Determines the criteria.</param>
+    /// <returns>
+    /// A collection of the cookies that match the predicate. If no cookies match, this will be an
+    /// empty collection.
+    /// </returns>
+    public static IEnumerable<KeyValuePair<string, string>> GetCookies(
+        this YarpRequestPipelineState state,
+        Func<KeyValuePair<string, string>, bool> predicate)
+        => state.RequestTransformContext.HttpContext.Request.Cookies.Where(predicate);
 
     /// <summary>
     /// Retrieves the body of the request as an <see cref="IFormCollection"/>.

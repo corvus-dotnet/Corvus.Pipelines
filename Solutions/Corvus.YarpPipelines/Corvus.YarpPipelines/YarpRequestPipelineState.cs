@@ -65,6 +65,13 @@ public readonly struct YarpRequestPipelineState :
     }
 
     /// <summary>
+    /// Gets a value indicating whether the pipeline has been terminated with a call to
+    /// <see cref="TerminateWithClusterId(string)"/> or <see cref="TerminateWith(NonForwardedResponseDetails)"/>, or
+    /// the pipeline has been cancelled through <see cref="CancellationToken"/>.
+    /// </summary>
+    public bool IsTerminated => this.ShouldTerminatePipeline;
+
+    /// <summary>
     /// Gets a value indicating whether the current request's content is a form.
     /// </summary>
     public bool RequestHasFormContentType => this.RequestTransformContext.HttpContext.Request.HasFormContentType;
@@ -261,6 +268,11 @@ public readonly struct YarpRequestPipelineState :
     /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
     public YarpRequestPipelineState TerminateWith(NonForwardedResponseDetails responseDetails)
     {
+        if (this.IsTerminated)
+        {
+            throw new InvalidOperationException("The pipeline has already been terminated.");
+        }
+
         this.Logger.LogInformation(Pipeline.EventIds.Result, "terminate-with-nonforward");
         return this with { PipelineState = TransformState.Terminate, NonForwardedResponseDetails = responseDetails };
     }
