@@ -12,7 +12,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for
 		| Step name | State type | Sync or async | Step definition                         |
 		| TestStep  | int        | async         | Pipeline.Choose(Selectors.TestSelector) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -34,7 +34,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for
 		| Step name | State type | Sync or async | Step definition                         |
 		| TestStep  | int        | sync          | Pipeline.Choose(Selectors.TestSelector) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -58,7 +58,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for
 		| RootStep  | int        | async          | state => ValueTask.FromResult(state + 1)      |
 		| TestStep  | int        | async         | Steps.RootStep.Choose(Selectors.TestSelector) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -81,7 +81,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Choose() operator for
 		| RootStep  | int        | sync          | state => state + 1                            |
 		| TestStep  | int        | sync          | Steps.RootStep.Choose(Selectors.TestSelector) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |

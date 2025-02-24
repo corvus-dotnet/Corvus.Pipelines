@@ -7,7 +7,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Step1     | CanFailInt32State | async         | state => ValueTask.FromResult(state == 0 && state.ExecutionStatus == PipelineStepStatus.Success ? state.<Failure type>() : CanFailInt32State.For(state + 1)) |
 		| TestStep  | CanFailInt32State | async         | Steps.Step1.Retry(context => context.State.ExecutionStatus == PipelineStepStatus.TransientFailure)                                                           |
 	When I execute the async step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                    | Expected output                             | Failure type     |
@@ -22,7 +22,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Step1     | CanFailInt32State | sync          | state => state == 0 && state.ExecutionStatus == PipelineStepStatus.Success ? state.<Failure type>() : CanFailInt32State.For(state + 1) |
 		| TestStep  | CanFailInt32State | sync          | Steps.Step1.Retry(context => context.State.ExecutionStatus == PipelineStepStatus.TransientFailure)                                     |
 	When I execute the sync step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                    | Expected output                             | Failure type     |
@@ -39,7 +39,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Step1       | CanFailState<(int Computed, int RetryCount)>               | async         | state => ValueTask.FromResult(state.Value.Computed == 0 && state.ExecutionStatus == PipelineStepStatus.Success ? state.<Failure type>() : CanFailState<(int Computed, int RetryCount)>.For((state.Value.Computed + 1, state.Value.RetryCount))) |
 		| TestStep    | CanFailState<(int Computed, int RetryCount)>               | async         | Steps.Step1.Retry(context => context.State.ExecutionStatus == PipelineStepStatus.TransientFailure, BeforeRetry)                                                                                                                                 |
 	When I execute the async step "TestStep" with the input of type "CanFailState<(int Computed, int RetryCount)>" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                                                    | Expected output                                                             | Failure type     |
@@ -55,7 +55,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Step1       | CanFailState<(int Computed, int RetryCount)>               | sync          | state => state.Value.Computed == 0 && state.ExecutionStatus == PipelineStepStatus.Success ? state.<Failure type>() : CanFailState<(int Computed, int RetryCount)>.For((state.Value.Computed + 1, state.Value.RetryCount)) |
 		| TestStep    | CanFailState<(int Computed, int RetryCount)>               | sync          | Steps.Step1.Retry(context => context.State.ExecutionStatus == PipelineStepStatus.TransientFailure, BeforeRetry)                                                                                                           |
 	When I execute the sync step "TestStep" with the input of type "CanFailState<(int Computed, int RetryCount)>" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                                                    | Expected output                                                             | Failure type     |
@@ -70,7 +70,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Step1     | CanFailInt32State | async         | async state => { await Task.Delay(<Delay>).ConfigureAwait(false); return state.WithValue(state + 1).<Failure type>(); } |
 		| TestStep  | CanFailInt32State | async         | Steps.Step1.Retry(<Retry policy>)                                                                                       |
 	When I execute the async step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                    | Expected output                             | Failure type     | Delay                     | Retry policy                                                                                                                                                                              |
@@ -92,7 +92,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the async step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message               | Scope |
 		| Information | Retrying: 1 {anytime} |       |
@@ -114,7 +114,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the sync step "TestStep" with the input of type "LoggableCanFailInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message               | Scope |
 		| Information | Retrying: 1 {anytime} |       |
@@ -136,7 +136,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Retry() operator for 
 		| Service type | Instance name | Factory method  |
 		| TestTimer    | Timer         | new TestTimer() |
 	When I execute the async step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 	And the timer Services.Timer should show <Expected time> within <Timing delta>
 
 Examples:

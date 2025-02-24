@@ -10,7 +10,7 @@ Scenario Outline: Test the Corvus.Pipelines.PipelineExtensions.OnEntry() operato
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the async step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message            | Scope |
 		| <Log level> | Logged on entry: 1 |       |
@@ -33,7 +33,7 @@ Scenario Outline: Test the Corvus.Pipelines.PipelineExtensions.OnExit() operator
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the async step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message              | Scope |
 		| <Log level> | Logged on exit: 1, 2 |       |
@@ -56,7 +56,7 @@ Scenario Outline: Test the Corvus.Pipelines.PipelineExtensions.OnEntryAndExit() 
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the async step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message              | Scope |
 		| <Log level> | Logged on entry: 1   |       |
@@ -80,7 +80,7 @@ Scenario Outline: Test the Corvus.Pipelines.PipelineExtensions.OnEntry() operato
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the sync step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message            | Scope |
 		| <Log level> | Logged on entry: 1 |       |
@@ -103,7 +103,7 @@ Scenario Outline: Test the Corvus.Pipelines.PipelineExtensions.OnExit() operator
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the sync step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message              | Scope |
 		| <Log level> | Logged on exit: 1, 2 |       |
@@ -126,7 +126,7 @@ Scenario Outline: Test the Corvus.Pipelines.PipelineExtensions.OnEntryAndExit() 
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the sync step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message              | Scope |
 		| <Log level> | Logged on entry: 1   |       |

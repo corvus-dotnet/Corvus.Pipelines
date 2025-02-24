@@ -11,7 +11,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.If() operator for asy
 		| ElseStep  | int        | async         | state => ValueTask.FromResult(state + 2)              |
 		| TestStep  | int        | async         | Pipeline.If(Functions.IfThenElse, ThenStep, ElseStep) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -28,7 +28,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.If() operator for asy
 		| ThenStep  | int        | async         | state => ValueTask.FromResult(state + 1)          |
 		| TestStep  | int        | async         | Pipeline.If(Functions.IfThenElse, Steps.ThenStep) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -46,7 +46,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.If() operator for syn
 		| ElseStep  | int        | sync          | state => state + 2                                    |
 		| TestStep  | int        | sync          | Pipeline.If(Functions.IfThenElse, ThenStep, ElseStep) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -63,7 +63,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.If() operator for syn
 		| ThenStep  | int        | sync          | state => state + 1                                |
 		| TestStep  | int        | sync          | Pipeline.If(Functions.IfThenElse, Steps.ThenStep) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |

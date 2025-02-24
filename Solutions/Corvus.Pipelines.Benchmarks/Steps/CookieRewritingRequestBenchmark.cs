@@ -101,7 +101,9 @@ public class CookieRewritingRequestBenchmark
     public YarpRequestPipelineState RequestStepAndTerminate()
     {
         YarpRequestPipelineState state = RequestStep(this.noIncomingCookiesState.PipelineState);
-        return state.TerminateWithClusterIdAndPathAndQuery("c1", "/test".AsMemory(), ReadOnlyMemory<char>.Empty);
+        return state
+            .WithPathAndQuery("/test".AsMemory(), ReadOnlyMemory<char>.Empty)
+            .TerminateWithClusterId("c1");
     }
 
     /// <summary>
@@ -112,7 +114,9 @@ public class CookieRewritingRequestBenchmark
     public YarpRequestPipelineState RequestStepTerminateAndCallShouldForward()
     {
         YarpRequestPipelineState state = RequestStep(this.noIncomingCookiesState.PipelineState);
-        state = state.TerminateWithClusterIdAndPathAndQuery("c1", "/test".AsMemory(), ReadOnlyMemory<char>.Empty);
+        state = state
+            .WithPathAndQuery("/test".AsMemory(), ReadOnlyMemory<char>.Empty)
+            .TerminateWithClusterId("c1");
         if (!state.ShouldForward(out _, out _))
         {
             throw new InvalidOperationException("Should have forwarded.");
@@ -124,7 +128,9 @@ public class CookieRewritingRequestBenchmark
     private static YarpRequestPipelineState RunAndApply(PipelineAndCookies pipelineAndCookies)
     {
         YarpRequestPipelineState state = RequestStep(pipelineAndCookies.PipelineState);
-        state = state.TerminateWithClusterIdAndPathAndQuery("c1", "/test".AsMemory(), ReadOnlyMemory<char>.Empty);
+        state = state
+            .WithPathAndQuery("/test".AsMemory(), ReadOnlyMemory<char>.Empty)
+            .TerminateWithClusterId("c1");
         if (!state.ShouldForward(out ForwardedRequestDetails? forwardedRequestDetails, out _))
         {
             throw new InvalidOperationException("Should have forwarded.");

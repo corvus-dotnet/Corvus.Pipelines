@@ -3,7 +3,7 @@
 // </copyright>
 
 using NUnit.Framework;
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 namespace Corvus.Pipelines.Specs.Steps;
 
@@ -13,9 +13,9 @@ public class NonNullableStringSteps(ScenarioContext scenarioContext)
     private readonly ScenarioContext scenarioContext = scenarioContext;
 
     [Given("I create the non-nullable strings")]
-    public void ICreateTheNonNullableStrings(Table stringTable)
+    public void ICreateTheNonNullableStrings(DataTable stringTable)
     {
-        foreach (TableRow row in stringTable.Rows)
+        foreach (DataTableRow row in stringTable.Rows)
         {
             this.AddNonNullableString(row["Name"], row["Constructor parameter"]);
         }

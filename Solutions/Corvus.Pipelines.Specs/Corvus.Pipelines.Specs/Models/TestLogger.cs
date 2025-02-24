@@ -8,7 +8,7 @@ using NUnit.Framework;
 
 namespace Corvus.Pipelines.Specs.Models;
 
-public class TestLogger : ILogger, IDisposable
+public sealed class TestLogger : ILogger, IDisposable
 {
     public ConcurrentQueue<LogEntry> Entries { get; } = new();
 
@@ -21,17 +21,14 @@ public class TestLogger : ILogger, IDisposable
         return this;
     }
 
-#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
     public void Dispose()
     {
         this.Scopes.TryPop(out _);
     }
 
-#pragma warning restore CA1816 // Dispose methods should call SuppressFinalize
-
-    public void Validate(params (LogLevel LogLevel, string Message, string Scope)[] expectedEntries)
+    public void Validate(LogLevel minimumlogLevel, params (LogLevel LogLevel, string Message, string Scope)[] expectedEntries)
     {
-        var loggedItems = this.Entries.ToList();
+        var loggedItems = this.Entries.Where(log => log.LogLevel >= minimumlogLevel).ToList();
 
         Assert.AreEqual(expectedEntries.Length, loggedItems.Count);
 

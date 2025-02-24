@@ -10,7 +10,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                             |
 		| TestStep  | int        | async         | Functions.StepWithServices.BindServices(Functions.Service1) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -26,7 +26,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                             |
 		| TestStep  | int        | sync          | Functions.StepWithServices.BindServices(Functions.Service1) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -43,7 +43,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                 |
 		| TestStep  | int        | async         | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -60,7 +60,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                 |
 		| TestStep  | int        | sync          | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -78,7 +78,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                                     |
 		| TestStep  | int        | async         | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2, Functions.Service3) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -96,7 +96,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                                     |
 		| TestStep  | int        | sync          | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2, Functions.Service3) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -115,7 +115,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                                                         |
 		| TestStep  | int        | async         | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2, Functions.Service3, Functions.Service4) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -134,7 +134,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                                                         |
 		| TestStep  | int        | sync          | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2, Functions.Service3, Functions.Service4) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -154,7 +154,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                                                                             |
 		| TestStep  | int        | async         | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2, Functions.Service3, Functions.Service4, Functions.Service5) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -174,7 +174,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindServices() operat
 		| Step name | State type | Sync or async | Step definition                                                                                                                             |
 		| TestStep  | int        | sync          | Functions.StepWithServices.BindServices(Functions.Service1, Functions.Service2, Functions.Service3, Functions.Service4, Functions.Service5) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |

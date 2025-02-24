@@ -6,7 +6,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator for a
 		| Step name | State type | Sync or async | Step definition         |
 		| TestStep  | int        | async         | Pipeline.Current<int>() |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -18,7 +18,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.Bind() operator for s
 		| Step name | State type | Sync or async | Step definition             |
 		| TestStep  | int        | sync          | Pipeline.CurrentSync<int>() |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |

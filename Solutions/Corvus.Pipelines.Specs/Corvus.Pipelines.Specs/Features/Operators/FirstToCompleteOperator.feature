@@ -8,7 +8,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.FirstToComplete() ope
 		| Step2     | CancellableInt32State | async         | state => ValueTask.FromResult(state.WithValue(state + 2))                                         |
 		| TestStep  | CancellableInt32State | async         | Steps.<First step>.FirstToComplete(Steps.<Second step>)                                           |
 	When I execute the async step "TestStep" with the input of type "CancellableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output              | First step | Second step |
@@ -24,7 +24,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.FirstToComplete() ope
 		| Step3     | CancellableInt32State | async         | state => ValueTask.FromResult(state.WithValue(state + 3))                                         |
 		| TestStep  | CancellableInt32State | async         | Steps.<First step>.FirstToComplete(Steps.<Second step>, Steps.<Third step>)                       |
 	When I execute the async step "TestStep" with the input of type "CancellableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output              | First step | Second step | Third step |
@@ -46,7 +46,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.FirstToComplete() ope
 		| Step5     | CancellableInt32State | async         | async state => { await Task.Delay(20).ConfigureAwait(false); return state.WithValue(state + 5); }                    |
 		| TestStep  | CancellableInt32State | async         | Steps.<First step>.FirstToComplete(Steps.<Second step>, Steps.<Third step>, Steps.<Fourth step>, Steps.<Fifth step>) |
 	When I execute the async step "TestStep" with the input of type "CancellableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output              | First step | Second step | Third step | Fourth step | Fifth step |
@@ -80,7 +80,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.FirstToComplete() ope
 		| Step2     | CancellableInt32State | async         | async state => { await Task.Delay(10).ConfigureAwait(false); return state.WithValue(state + 2); } |
 		| TestStep  | CancellableInt32State | async         | Steps.<First step>.FirstToComplete(Steps.<Second step>)                                           |
 	When I execute the async step "TestStep" with the input of type "CancellableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output              | First step | Second step |
@@ -96,7 +96,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.FirstToComplete() ope
 		| Step3     | CancellableInt32State | async         | async state => { await Task.Delay(10).ConfigureAwait(false); return state.WithValue(state + 3); } |
 		| TestStep  | CancellableInt32State | async         | Steps.<First step>.FirstToComplete(Steps.<Second step>, Steps.<Third step>)                       |
 	When I execute the async step "TestStep" with the input of type "CancellableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output              | First step | Second step | Third step |
@@ -118,7 +118,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.FirstToComplete() ope
 		| Step5     | CancellableInt32State | async         | async state => { await Task.Delay(500).ConfigureAwait(false); return state.WithValue(state + 5); }                    |
 		| TestStep  | CancellableInt32State | async         | Steps.<First step>.FirstToComplete(Steps.<Second step>, Steps.<Third step>, Steps.<Fourth step>, Steps.<Fifth step>) |
 	When I execute the async step "TestStep" with the input of type "CancellableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output              | First step | Second step | Third step | Fourth step | Fifth step |

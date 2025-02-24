@@ -6,7 +6,7 @@ using Corvus.YarpPipelines.Internal;
 
 using NUnit.Framework;
 
-using TechTalk.SpecFlow;
+using Reqnroll;
 
 namespace Corvus.YarpPipelines.Specs.Steps;
 

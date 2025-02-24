@@ -8,7 +8,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.ParallelCombineSteps(
 		| Step2     | int        | async         | state => ValueTask.FromResult(state + 2) |
 		| TestStep  | (int, int) | async         | Steps.Step1.ParallelCombineSteps(Steps.Step2)    |
 	When I execute the async step "TestStep" with the input of type "(int, int)" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input  | Expected output |
@@ -23,7 +23,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.ParallelCombineSteps(
 		| Step3     | int             | async         | state => ValueTask.FromResult(state + 3)           |
 		| TestStep  | (int, int, int) | async         | Steps.Step1.ParallelCombineSteps(Steps.Step2, Steps.Step3) |
 	When I execute the async step "TestStep" with the input of type "(int, int, int)" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input     | Expected output |

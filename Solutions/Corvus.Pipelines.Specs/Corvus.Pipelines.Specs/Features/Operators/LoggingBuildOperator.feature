@@ -12,7 +12,7 @@ Scenario Outline: Test the logging overloads of Corvus.Pipelines.Pipeline.Build(
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the async step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message | Scope        |
 		| <Log level> | entered | TestPipeline |
@@ -46,7 +46,7 @@ Scenario Outline: Test the logging overloads of Corvus.Pipelines.Pipeline.Build(
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the sync step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 	And the log Services.Logger should contain the following entries
 		| Log level   | Message | Scope        |
 		| <Log level> | entered | TestPipeline |
@@ -79,7 +79,7 @@ Scenario Outline: Test the logging overloads of Corvus.Pipelines.Pipeline.Build(
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the async step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                                      | Expected output           | Log level   |
@@ -104,7 +104,7 @@ Scenario Outline: Test the logging overloads of Corvus.Pipelines.Pipeline.Build(
 		| Service type | Instance name | Factory method   |
 		| TestLogger   | Logger        | new TestLogger() |
 	When I execute the sync step "TestStep" with the input of type "LoggableInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                                      | Expected output           | Log level   |

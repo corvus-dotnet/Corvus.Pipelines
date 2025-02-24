@@ -4,102 +4,35 @@
 
 #pragma warning disable IDE0028 // Simplify collection initialization
 
-using System.Collections.Immutable;
 using System.Reflection;
-using System.Runtime.Loader;
-using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Text;
-using Microsoft.Extensions.DependencyModel;
-using TechTalk.SpecFlow;
+using Microsoft.Extensions.Logging;
+
+using Reqnroll;
 
 namespace Corvus.Pipelines.Specs.Steps;
 
 [Binding]
-public class PipelineSteps(ScenarioContext scenarioContext)
+public class PipelineSteps(ScenarioCodeGenerationBindings syntaxBindings)
 {
-    private const string SyntaxTreesKey = "SyntaxTrees";
-    private const string NamespaceKey = "Namespace";
-    private const string AssemblyMetadataReferenceKey = "AssemblyMetadataReference";
-
-    /// <summary>
-    /// Gets the syntax trees from the scenario context, creating it if it does not exist.
-    /// </summary>
-    /// <param name="context">The context from which to get the syntax trees.</param>
-    /// <returns>The list of syntax trees being built for the context.</returns>
-    public static IList<SyntaxTree> GetSyntaxTrees(ScenarioContext context)
-    {
-        if (!context.TryGetValue(SyntaxTreesKey, out List<SyntaxTree> syntaxTrees))
-        {
-            syntaxTrees = new();
-            context.Add(SyntaxTreesKey, syntaxTrees);
-        }
-
-        return syntaxTrees;
-    }
-
-    /// <summary>
-    /// Gets the string to be used as the assembly name and namespace.
-    /// </summary>
-    /// <param name="context">The context from which to get the assembly name and namespace.</param>
-    /// <returns>The string to use as the assembly name and namespace.</returns>
-    public static string GetNamespace(ScenarioContext context)
-    {
-        if (!context.TryGetValue(NamespaceKey, out string namespaceName))
-        {
-            namespaceName = $"GeneratedTest_{Guid.NewGuid().ToString().Replace('-', '_')}";
-            context.Add(NamespaceKey, namespaceName);
-        }
-
-        return namespaceName;
-    }
-
     [When("I execute the (.*) step \"(.*)\" with the input of type \"(.*)\" (.*)")]
     public void IExecuteTheStep(string syncOrAsync, string stepName, string type, string input)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
-        string namespaceName = GetNamespace(scenarioContext);
+        this.IExecuteTheStepOrHandler(syncOrAsync, stepName, type, input, "Steps");
+    }
 
-        string code =
-            $$"""
-            using System;
-            using System.Threading.Tasks;
-            
-            using Corvus.Pipelines;
-            using Corvus.Pipelines.Handlers;
-            using Corvus.Pipelines.Specs.Models;
-            
-            using Microsoft.Extensions.Logging;
-            
-            namespace {{namespaceName}}
-            {
-                public static partial class Executions
-                {
-                    {{SyncOrAsync(syncOrAsync, stepName, type, input)}}
-                }
-            }
-            """;
-
-        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: $"Executions.{stepName}.cs"));
-
-        static string SyncOrAsync(string syncOrAsync, string stepName, string type, string input)
-        {
-            if (syncOrAsync == "sync")
-            {
-                return $"public static Func<{type}> Execute{stepName} = () => Steps.{stepName}({input});";
-            }
-
-            return $"public static Func<ValueTask<{type}>> Execute{stepName} = () => Steps.{stepName}({input});";
-        }
+    [When("I execute the (.*) handler \"(.*)\" with the input of type \"(.*)\" (.*)")]
+    public void IExecuteTheHandler(string syncOrAsync, string stepName, string type, string input)
+    {
+        this.IExecuteTheStepOrHandler(syncOrAsync, stepName, type, input, "Handlers");
     }
 
     [Then("the timer (.*) should show (.*) within (.*)")]
     public void TheTimerShouldShow(string timerServiceName, string timeSpan, string deltaTimeSpan)
     {
-        this.BuildTestCode();
-        string namespaceName = GetNamespace(scenarioContext);
+        string namespaceName = syntaxBindings.Namespace;
 
         string code =
         $$"""
@@ -128,9 +61,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
                 CSharpSyntaxTree.ParseText(code, path: "TimerExpectations.cs"),
             ];
 
-        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
-
-        Assembly assembly = this.BuildAndLoadAssembly(syntaxTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
+        Assembly assembly = syntaxBindings.BuildAndLoadAssembly(syntaxTrees);
 
         Type? type = assembly.GetType($"{namespaceName}.TimerExpectations");
 
@@ -149,9 +80,12 @@ public class PipelineSteps(ScenarioContext scenarioContext)
     [Then("the log (.*) should contain the following entries")]
     public void TheLogShouldContainTheFollowingEntries(string logServiceName, Table entries)
     {
-        this.BuildTestCode();
-        string namespaceName = GetNamespace(scenarioContext);
+        this.TheLogShouldContainTheFollowingEntriesAtOrAboveLevel(logServiceName, LogLevel.Trace, entries);
+    }
 
+    [Then("the log (.*) should contain the following entries at level (.*) or above")]
+    public void TheLogShouldContainTheFollowingEntriesAtOrAboveLevel(string logServiceName, LogLevel minimumLogLevel, Table entries)
+    {
         string code =
         $$"""
             using System;
@@ -165,11 +99,11 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using NUnit.Framework;            
             
-            namespace {{namespaceName}}
+            namespace {{syntaxBindings.Namespace}}
             {
                 public static partial class LogExpectations
                 {
-                    public static Action Assert = () => {{logServiceName}}.Validate({{GetMessages(entries)}});
+                    public static Action Assert = () => {{logServiceName}}.Validate(LogLevel.{{minimumLogLevel}}, {{GetMessages(entries)}});
                 }
             }
             """;
@@ -179,11 +113,9 @@ public class PipelineSteps(ScenarioContext scenarioContext)
                 CSharpSyntaxTree.ParseText(code, path: "LogExpectations.cs"),
             ];
 
-        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
+        Assembly assembly = syntaxBindings.BuildAndLoadAssembly(syntaxTrees);
 
-        Assembly assembly = this.BuildAndLoadAssembly(syntaxTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
-
-        Type? type = assembly.GetType($"{namespaceName}.LogExpectations");
+        Type? type = assembly.GetType($"{syntaxBindings.Namespace}.LogExpectations");
 
         object? expectationObject = type?.GetField("Assert", BindingFlags.Static | BindingFlags.Public)?.GetValue(null);
 
@@ -210,13 +142,9 @@ public class PipelineSteps(ScenarioContext scenarioContext)
         }
     }
 
-    [Then("the (.*) output of \"(.*)\" should be (.*)")]
+    [Then("the (.*) output of \"(.*)\" should be \"([^\"]*)\"")]
     public async Task TheOutputShouldBe(string syncOrAsync, string stepName, string output)
     {
-        this.BuildTestCode();
-
-        string namespaceName = GetNamespace(scenarioContext);
-
         string code =
             $$"""
             using System;
@@ -230,7 +158,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using NUnit.Framework;            
             
-            namespace {{namespaceName}}
+            namespace {{syntaxBindings.Namespace}}
             {
                 public static partial class Expectations
                 {
@@ -244,18 +172,16 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
         syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: $"Expectations.{stepName}.cs"));
 
-        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
-
-        Assembly assembly = this.BuildAndLoadAssembly(syntaxTrees, assemblyName) ?? throw new InvalidOperationException("The assembly could not be built.");
+        Assembly assembly = syntaxBindings.BuildAndLoadAssembly(syntaxTrees);
 
         if (syncOrAsync == "sync")
         {
-            Action assert = GetSyncAssertion(namespaceName, assembly, stepName);
+            Action assert = GetSyncAssertion(syntaxBindings.Namespace, assembly, stepName);
             assert();
         }
         else
         {
-            Func<ValueTask> assert = GetAsyncAssertion(namespaceName, assembly, stepName);
+            Func<ValueTask> assert = GetAsyncAssertion(syntaxBindings.Namespace, assembly, stepName);
             await assert().ConfigureAwait(false);
         }
 
@@ -295,9 +221,6 @@ public class PipelineSteps(ScenarioContext scenarioContext)
     [Given("I create the service instances")]
     public void ICreateTheServiceInstances(Table table)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
-        string namespaceName = GetNamespace(scenarioContext);
-
         string codePrefix =
             $$"""
             using System;
@@ -309,7 +232,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
 
             using Microsoft.Extensions.Logging;
             
-            namespace {{namespaceName}}
+            namespace {{syntaxBindings.Namespace}}
             {
                 public static partial class Services
                 {
@@ -332,15 +255,12 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             """;
 
         string code = codePrefix + steps + codeSuffix;
-        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Services.cs"));
+        syntaxBindings.TestCodeSyntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Services.cs"));
     }
 
     [Given("I define the functions")]
     public void IDefineTheFunctions(Table table)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
-        string namespaceName = GetNamespace(scenarioContext);
-
         string codePrefix =
             $$"""
             using System;
@@ -352,7 +272,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Microsoft.Extensions.Logging;
             
-            namespace {{namespaceName}}
+            namespace {{syntaxBindings.Namespace}}
             {
                 public static partial class Functions
                 {
@@ -375,15 +295,12 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             """;
 
         string code = codePrefix + steps + codeSuffix;
-        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Functions.cs"));
+        syntaxBindings.TestCodeSyntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Functions.cs"));
     }
 
     [Given("I produce the steps")]
     public void IProduceTheSteps(Table table)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
-        string namespaceName = GetNamespace(scenarioContext);
-
         string codePrefix =
             $$"""
             using System;
@@ -395,7 +312,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Microsoft.Extensions.Logging;
             
-            namespace {{namespaceName}}
+            namespace {{syntaxBindings.Namespace}}
             {
                 public static partial class Steps
                 {
@@ -418,9 +335,9 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             """;
 
         string code = codePrefix + steps + codeSuffix;
-        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Steps.cs"));
+        syntaxBindings.TestCodeSyntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: "Steps.cs"));
 
-        static string SyncAsyncPrefix(TableRow row)
+        static string SyncAsyncPrefix(DataTableRow row)
         {
             return row["Sync or async"] == "sync" ? "Sync" : string.Empty;
         }
@@ -429,9 +346,6 @@ public class PipelineSteps(ScenarioContext scenarioContext)
     [Given("I create (.*) match selector called \"(.*)\" for state of type \"(.*)\" with the following configuration")]
     public void ICreateAMatchSelectorCalledForStateOfType(string selectorType, string selectorName, string stateType, Table table)
     {
-        IList<SyntaxTree> syntaxTrees = GetSyntaxTrees(scenarioContext);
-        string namespaceName = GetNamespace(scenarioContext);
-
         string pipelineStepType = selectorType == "a sync" ? $"SyncPipelineStep<{stateType}>>" : $"PipelineStep<{stateType}>>";
 
         string codePrefix =
@@ -445,7 +359,7 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             
             using Microsoft.Extensions.Logging;
             
-            namespace {{namespaceName}}
+            namespace {{syntaxBindings.Namespace}}
             {
                 public static partial class Selectors
                 {
@@ -476,97 +390,41 @@ public class PipelineSteps(ScenarioContext scenarioContext)
             """;
 
         string code = codePrefix + matchCases + codeSuffix;
-        syntaxTrees.Add(CSharpSyntaxTree.ParseText(code));
+        syntaxBindings.TestCodeSyntaxTrees.Add(CSharpSyntaxTree.ParseText(code));
     }
 
-    private static IEnumerable<MetadataReference> BuildMetadataReferences()
+    private void IExecuteTheStepOrHandler(string syncOrAsync, string stepName, string type, string input, string stepsType)
     {
-        return from l in DependencyContext.Default.CompileLibraries
-               from r in l.ResolveReferencePaths()
-               select MetadataReference.CreateFromFile(r);
-    }
-
-    private static string BuildError(ImmutableArray<Diagnostic> diagnostics)
-    {
-        StringBuilder builder = new();
-        builder.AppendLine();
-
-        foreach (Diagnostic diagnostic in diagnostics)
-        {
-            FileLinePositionSpan lineSpan = diagnostic.Location.GetLineSpan();
-            SourceText text = diagnostic.Location.SourceTree?.GetText() ?? throw new InvalidOperationException("No text available");
-
-            for (int i = Math.Max(0, lineSpan.StartLinePosition.Line - 2); i <= lineSpan.StartLinePosition.Line; ++i)
+        string code =
+            $$"""
+            using System;
+            using System.Threading.Tasks;
+            
+            using Corvus.Pipelines;
+            using Corvus.Pipelines.Handlers;
+            using Corvus.Pipelines.Specs.Models;
+            
+            using Microsoft.Extensions.Logging;
+            
+            namespace {{syntaxBindings.Namespace}}
             {
-                builder.AppendLine(text.Lines[i].ToString());
+                public static partial class Executions
+                {
+                    {{SyncOrAsync(syncOrAsync, stepName, type, input, stepsType)}}
+                }
+            }
+            """;
+
+        syntaxBindings.TestCodeSyntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: $"Executions.{stepName}.cs"));
+
+        static string SyncOrAsync(string syncOrAsync, string stepName, string type, string input, string stepsType)
+        {
+            if (syncOrAsync == "sync")
+            {
+                return $"public static Func<{type}> Execute{stepName} = () => {stepsType}.{stepName}({input});";
             }
 
-            // Append a number of spaces equal to the column number of the error
-            int indentAmount = Math.Max(0, lineSpan.StartLinePosition.Character - 1);
-            string indent = new('_', indentAmount);
-            builder.Append(indent);
-            builder.AppendLine("^");
-            builder.Append(diagnostic.GetMessage());
-            builder.Append(' ');
-            builder.Append(lineSpan.StartLinePosition.Line);
-            builder.Append(',');
-            builder.Append(lineSpan.StartLinePosition.Character);
-            builder.AppendLine();
-            builder.AppendLine();
+            return $"public static Func<ValueTask<{type}>> Execute{stepName} = () => {stepsType}.{stepName}({input});";
         }
-
-        builder.AppendLine();
-
-        return builder.ToString();
-    }
-
-    private void BuildTestCode()
-    {
-        if (scenarioContext.ContainsKey(AssemblyMetadataReferenceKey))
-        {
-            return;
-        }
-
-        string assemblyName = "GeneratedTestAssembly_" + Guid.NewGuid().ToString().Replace('-', '_');
-        _ = this.BuildAndLoadAssembly(GetSyntaxTrees(scenarioContext), assemblyName, true) ?? throw new InvalidOperationException("The assembly could not be built.");
-    }
-
-    private Assembly BuildAndLoadAssembly(IEnumerable<SyntaxTree> syntaxTrees, string assemblyName, bool isTestAssembly = false)
-    {
-        var compilation = CSharpCompilation.Create(
-            assemblyName,
-            syntaxTrees,
-            BuildMetadataReferences(),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-        if (!isTestAssembly && this.TryGetTestAssemblyMetadataReference(out MetadataReference testAssemblyMetadataReference))
-        {
-            compilation = compilation.AddReferences(testAssemblyMetadataReference);
-        }
-
-        var ms = new MemoryStream();
-        EmitResult result = compilation.Emit(ms);
-        ms.Flush();
-        ms.Seek(0, SeekOrigin.Begin);
-        if (!result.Success)
-        {
-            throw new InvalidOperationException(BuildError(result.Diagnostics));
-        }
-
-        Assembly assembly = AssemblyLoadContext.Default.LoadFromStream(ms);
-
-        ms.Seek(0, SeekOrigin.Begin);
-
-        if (isTestAssembly)
-        {
-            scenarioContext.Set(MetadataReference.CreateFromStream(ms), AssemblyMetadataReferenceKey);
-        }
-
-        return assembly;
-    }
-
-    private bool TryGetTestAssemblyMetadataReference(out MetadataReference testAssemblyMetadataReference)
-    {
-        return scenarioContext.TryGetValue(AssemblyMetadataReferenceKey, out testAssemblyMetadataReference);
     }
 }

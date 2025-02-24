@@ -7,7 +7,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString StringNumber) | sync          | state => (state.Number + int.Parse(state.StringNumber), state.StringNumber) |
 		| TestStep  | int                                          | sync          | Steps.Step1.BindWith((NonNullableString state) => "32")                     |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -20,7 +20,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString StringNumber) | async         | state => ValueTask.FromResult((state.Number + int.Parse(state.StringNumber), state.StringNumber)) |
 		| TestStep  | int                                          | async         | Steps.Step1.BindWith((NonNullableString state) => ValueTask.FromResult<NonNullableString>("32"))  |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -33,7 +33,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2) | sync          | state => (state.Number + int.Parse(state.SN1) + int.Parse(state.SN2), state.SN1, state.SN2) |
 		| TestStep  | int                                                        | sync          | Steps.Step1.BindWith((NonNullableString state) => "32", (NonNullableString state) => "100") |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -46,7 +46,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2) | async         | state => ValueTask.FromResult((state.Number + int.Parse(state.SN1) + int.Parse(state.SN2), state.SN1, state.SN2))                                                             |
 		| TestStep  | int                                                        | async         | Steps.Step1.BindWith((NonNullableString state) => ValueTask.FromResult<NonNullableString>("32"), (NonNullableString state) => ValueTask.FromResult<NonNullableString>("100")) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -59,7 +59,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2, NonNullableString SN3) | sync          | state => (state.Number + int.Parse(state.SN1) + int.Parse(state.SN2) + int.Parse(state.SN3), state.SN1, state.SN2, state.SN3)    |
 		| TestStep  | int                                                                               | sync          | Steps.Step1.BindWith((NonNullableString state) => "32", (NonNullableString state) => "100", (NonNullableString state) => "1000") |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -72,7 +72,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2, NonNullableString SN3) | async         | state => ValueTask.FromResult((state.Number + int.Parse(state.SN1) + int.Parse(state.SN2)+ int.Parse(state.SN3), state.SN1, state.SN2, state.SN3))                                                                                                          |
 		| TestStep  | int                                                                               | async         | Steps.Step1.BindWith((NonNullableString state) => ValueTask.FromResult<NonNullableString>("32"), (NonNullableString state) => ValueTask.FromResult<NonNullableString>("100"), (NonNullableString state) => ValueTask.FromResult<NonNullableString>("1000")) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -89,7 +89,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString StringNumber) | sync          | state => (state.Number + int.Parse(state.StringNumber), state.StringNumber) |
 		| TestStep  | int                                          | sync          | Steps.Step1.BindWith(Functions.Seed1, (NonNullableString state) => state)   |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -105,7 +105,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString StringNumber) | async         | state => ValueTask.FromResult((state.Number + int.Parse(state.StringNumber), state.StringNumber)) |
 		| TestStep  | int                                          | async         | Steps.Step1.BindWith(Functions.Seed1, (NonNullableString state) => ValueTask.FromResult(state))   |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -122,7 +122,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2) | sync          | state => (state.Number + int.Parse(state.SN1) + int.Parse(state.SN2), state.SN1, state.SN2)                                    |
 		| TestStep  | int                                                        | sync          | Steps.Step1.BindWith(Functions.Seed1, (NonNullableString state) => state, Functions.Seed2, (NonNullableString state) => state) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -139,7 +139,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2) | async         | state => ValueTask.FromResult((state.Number + int.Parse(state.SN1) + int.Parse(state.SN2), state.SN1, state.SN2))                                                          |
 		| TestStep  | int                                                        | async         | Steps.Step1.BindWith(Functions.Seed1, (NonNullableString state) => ValueTask.FromResult(state), Functions.Seed2, (NonNullableString state) => ValueTask.FromResult(state)) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -157,7 +157,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2, NonNullableString SN3) | sync          | state => (state.Number + int.Parse(state.SN1) + int.Parse(state.SN2) + int.Parse(state.SN3), state.SN1, state.SN2, state.SN3)                                                       |
 		| TestStep  | int                                                                               | sync          | Steps.Step1.BindWith(Functions.Seed1, (NonNullableString state) => state, Functions.Seed2, (NonNullableString state) => state, Functions.Seed3, (NonNullableString state) => state) |
 	When I execute the sync step "TestStep" with the input of type "int" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |
@@ -175,7 +175,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.BindWith() operator w
 		| Step1     | (int Number, NonNullableString SN1, NonNullableString SN2, NonNullableString SN3) | async         | state => ValueTask.FromResult((state.Number + int.Parse(state.SN1) + int.Parse(state.SN2)+ int.Parse(state.SN3), state.SN1, state.SN2, state.SN3))                                                                                                    |
 		| TestStep  | int                                                                               | async         | Steps.Step1.BindWith(Functions.Seed1, (NonNullableString state) => ValueTask.FromResult(state), Functions.Seed2, (NonNullableString state) => ValueTask.FromResult(state), Functions.Seed3, (NonNullableString state) => ValueTask.FromResult(state)) |
 	When I execute the async step "TestStep" with the input of type "int" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input | Expected output |

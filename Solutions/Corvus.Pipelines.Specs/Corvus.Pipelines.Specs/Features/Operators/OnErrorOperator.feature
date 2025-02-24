@@ -8,7 +8,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.OnError() operator fo
 		| ErrorHandler | CanFailInt32State | async         | state => ValueTask.FromResult(state.WithValue(10))                         |
 		| TestStep     | CanFailInt32State | async         | Steps.Step1.OnError(ErrorHandler)                                          |
 	When I execute the async step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                    | Expected output                              | Failure type     |
@@ -25,7 +25,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.OnError() operator fo
 		| ErrorHandler | CanFailInt32State | sync          | state => state.WithValue(10)                                               |
 		| TestStep     | CanFailInt32State | async         | Steps.Step1.OnError(ErrorHandler)                                          |
 	When I execute the async step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the async output of "TestStep" should be <Expected output>
+	Then the async output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                    | Expected output                              | Failure type     |
@@ -41,7 +41,7 @@ Scenario Outline: Test Corvus.Pipelines.PipelineExtensions.OnError() operator fo
 		| ErrorHandler | CanFailInt32State | sync          | state => state.WithValue(10)                         |
 		| TestStep     | CanFailInt32State | sync          | Steps.Step1.OnError(ErrorHandler)                    |
 	When I execute the sync step "TestStep" with the input of type "CanFailInt32State" <Input>
-	Then the sync output of "TestStep" should be <Expected output>
+	Then the sync output of "TestStep" should be "<Expected output>"
 
 Examples:
 	| Input                    | Expected output                              | Failure type     |
