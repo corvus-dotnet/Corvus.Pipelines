@@ -11,8 +11,22 @@ namespace Corvus.YarpPipelines;
 /// <summary>
 /// Extension methods for manipulating query strings.
 /// </summary>
+/// <remarks>
+/// TODO: this probably belongs in a project with broader scope, because this is specific neither to YARP, pipelines,
+/// nor ASP.NET Core.
+/// </remarks>
 public static class QueryStringExtensions
 {
+    /// <summary>
+    /// Gets an enumerator that iterates over the key/value pairs in a query string.
+    /// </summary>
+    /// <param name="queryStringIn">The query string.</param>
+    /// <returns>The enumerator.</returns>
+    public static FormUrlEncodingStringEnumerator EnumerateQueryNameValues(this ReadOnlyMemory<char> queryStringIn)
+    {
+        return new FormUrlEncodingStringEnumerator(queryStringIn);
+    }
+
     /// <summary>
     /// Returns a query string with all instances of the specified parameter removed.
     /// </summary>
@@ -46,7 +60,7 @@ public static class QueryStringExtensions
         int currentNameIndex = 1;
         Memory<char> mutableBuffer = default;
 
-        while (currentNameIndex < qss.Length)
+        while (currentNameIndex <= qss.Length)
         {
             int valueEnd = qss[currentNameIndex..].IndexOf('&');
             if (valueEnd == -1)
