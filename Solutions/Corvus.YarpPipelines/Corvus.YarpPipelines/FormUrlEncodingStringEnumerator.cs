@@ -15,8 +15,8 @@ namespace Corvus.YarpPipelines;
 /// <see href="https://url.spec.whatwg.org/#application/x-www-form-urlencoded"/>.
 /// </remarks>
 public struct FormUrlEncodingStringEnumerator :
-    IEnumerable<(ReadOnlyMemory<char> Key, ReadOnlyMemory<char> Value)>,
-    IEnumerator<(ReadOnlyMemory<char> Key, ReadOnlyMemory<char> Value)>
+    IEnumerable<(ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value)>,
+    IEnumerator<(ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value)>
 {
     private readonly ReadOnlyMemory<char> source;
     private int currentNameIndex;
@@ -36,7 +36,7 @@ public struct FormUrlEncodingStringEnumerator :
     }
 
     /// <inheritdoc/>
-    public readonly (ReadOnlyMemory<char> Key, ReadOnlyMemory<char> Value) Current =>
+    public readonly (ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value) Current =>
         (this.source[this.currentNameIndex..this.nameEnd], this.source[this.valueStart..this.valueEnd]);
 
     /// <inheritdoc/>
@@ -49,7 +49,7 @@ public struct FormUrlEncodingStringEnumerator :
     }
 
     /// <inheritdoc/>
-    readonly IEnumerator<(ReadOnlyMemory<char> Key, ReadOnlyMemory<char> Value)> IEnumerable<(ReadOnlyMemory<char> Key, ReadOnlyMemory<char> Value)>.GetEnumerator()
+    readonly IEnumerator<(ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value)> IEnumerable<(ReadOnlyMemory<char> Name, ReadOnlyMemory<char> Value)>.GetEnumerator()
         => this;
 
     /// <summary>

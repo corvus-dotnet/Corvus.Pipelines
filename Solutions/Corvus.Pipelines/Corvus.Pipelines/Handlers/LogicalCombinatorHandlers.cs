@@ -42,7 +42,7 @@ public static class LogicalCombinatorHandlers
     {
         // The reason this is public (and not just a thing that And does for you) is that it
         // avoids the creation of an extra array to hold the wrapped handlers passed to
-        // HandlerPipeline.Build. By making AndStep public, code gen can directly create the
+        // HandlerPipeline.Build. By making BindPredicateForAnd public, code gen can directly create the
         // array that the inner pipeline loop iterates over.
         return predicate.Bind(static state => state.WasHandled(out bool result)
             ? (result ? state.NotHandled() : state.Handled(false))
@@ -72,7 +72,7 @@ public static class LogicalCombinatorHandlers
             return static state => state.Handled(true);
         }
 
-        // As an implementation detail, the wrappers returned by AndStep return a NotHandled state
+        // As an implementation detail, the wrappers returned by BindPredicateForAnd return a NotHandled state
         // when their predicate returns true (to allow processing to continue), and a Handled(false)
         // state if a predicate returns false (to short-circuit evaluation).
         return HandlerPipeline.Build(andSteps).Bind(
