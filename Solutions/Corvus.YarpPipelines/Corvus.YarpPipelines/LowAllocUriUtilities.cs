@@ -11,6 +11,7 @@
 
 using System.Buffers;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 
 using Corvus.HighPerformance;
@@ -78,21 +79,6 @@ public static class LowAllocUriUtilities
 
         builder.Append(query);
         return builder.CreateStringAndDispose();
-    }
-
-    /// <summary>
-    /// Encodes a query key or value.
-    /// </summary>
-    /// <param name="vsb">
-    /// The target <see cref="HighPerformance.ValueStringBuilder"/> for the encoded value.
-    /// </param>
-    /// <param name="queryElement">
-    /// The key or value to encode.
-    /// </param>
-    public static void EncodeQueryStringElement(
-        ref ValueStringBuilder vsb, ReadOnlySpan<char> queryElement)
-    {
-        EscapeStringToBuilder(queryElement, ref vsb, ValidQueryChars, true);
     }
 
     // Copied from .NET runtime libraries because they don't make their ValueStringBuilder

@@ -108,13 +108,18 @@ public readonly struct RequestSignature
     public ReadOnlyMemory<char> Path => this.Request?.Path.Value?.AsMemory() ?? this.SignatureOverride?.Path ?? throw new InvalidOperationException();
 
     /// <summary>
-    /// Gets the encoded query string.
+    /// Gets the raw query string.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// When the <see cref="RequestSignature"/> is a wrapper around an <see cref="HttpRequest"/>,
     /// we return the <see cref="HttpRequest.QueryString"/>, which returns the query string in its
-    /// incoming form, including any encoding. The leading ? will be present (unless there
-    /// is no query string, in which case this will be empty).
+    /// incoming form. So if names or values use percent encoding, this makes no attempt to decode
+    /// (unlike <see cref="Uri"/>).
+    /// </para>
+    /// <para>
+    /// The leading ? will be present (unless there is no query string, in which case this will be empty).
+    /// </para>
     /// </remarks>
     public ReadOnlyMemory<char> QueryString => this.Request?.QueryString.Value?.AsMemory() ?? this.SignatureOverride?.QueryString ?? throw new InvalidOperationException();
 
@@ -132,7 +137,12 @@ public readonly struct RequestSignature
     /// host or method.
     /// </summary>
     /// <param name="path">The <see cref="Path"/>.</param>
-    /// <param name="queryString">The <see cref="QueryString"/>.</param>
+    /// <param name="queryString">
+    /// The <see cref="QueryString"/>. This is handled in exactly the same way as the raw query string from the
+    /// request, so if you require any encoding (e.g., percent-encoding), this will not handle that for you, and
+    /// you must perform that encoding before calling this method. <see cref="LowAllocUriUtilities"/> provides
+    /// methods for this.
+    /// </param>
     /// <returns>A <see cref="RequestSignature"/>.</returns>
     public static RequestSignature ForPathAndQueryString(ReadOnlyMemory<char> path, ReadOnlyMemory<char> queryString)
         => new(default, default, path, queryString, string.Empty);
