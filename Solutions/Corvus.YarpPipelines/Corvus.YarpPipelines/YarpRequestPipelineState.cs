@@ -36,8 +36,22 @@ public readonly struct YarpRequestPipelineState :
 
     private enum TransformState
     {
+        /// <summary>
+        /// The pipeline should continue processing. If we remain in this state when there are no more steps to run,
+        /// then the pipeline has failed to produce a result.
+        /// </summary>
         Continue,
+
+        /// <summary>
+        /// The pipeline has determined that the request should not be forwarded to the back end, and no more
+        /// steps should be run.
+        /// </summary>
         Terminate,
+
+        /// <summary>
+        /// The pipeline has determined that the request should be forwarded to the back end, and no more
+        /// steps should be run.
+        /// </summary>
         TerminateAndForward,
     }
 

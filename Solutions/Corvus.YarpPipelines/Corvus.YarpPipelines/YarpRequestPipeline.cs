@@ -8,7 +8,7 @@ using Corvus.Pipelines.Handlers;
 namespace Corvus.YarpPipelines;
 
 /// <summary>
-/// A <see cref="Pipeline"/> for handling YARP transforms.
+/// A <see cref="Pipeline"/> for handling YARP request transforms.
 /// </summary>
 public static class YarpRequestPipeline
 {

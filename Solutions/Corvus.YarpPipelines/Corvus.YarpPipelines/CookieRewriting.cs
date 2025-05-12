@@ -52,6 +52,13 @@ public static class CookieRewriting
             if (cookies.Count > 0)
             {
                 // This allocates 24 + 8*N bytes where N is the number of cookies.
+                // In the case where we do end up changing at least one cookie, this allocation is
+                // unavoidable, because we need to hand off the list of cookies to the state through
+                // state.WithCookieHeaders. This allocation would be unnecessary if we end up not
+                // changing any cookies, but that's not a scenario we normally expect: if you've
+                // configured cookie name rewriting, it will usually be because you need it in normal
+                // use, in which case, all successful requests will rewrite at least one cookie. So
+                // optimizing for the case where nothing gets rewritten is not useful.
                 string[] cookieHeaderValues = new string[cookies.Count];
 
                 bool atLeastOneCookieWasChanged = false;

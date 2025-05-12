@@ -23,6 +23,27 @@ public readonly struct YarpResponsePipelineState :
     ILoggable<YarpResponsePipelineState>,
     IErrorProvider<YarpResponsePipelineState, YarpPipelineError>
 {
+    private enum TransformState
+    {
+        /// <summary>
+        /// The pipeline should continue processing. If we remain in this state when there are no more steps to run,
+        /// then the pipeline has failed to produce a result.
+        /// </summary>
+        Continue,
+
+        /// <summary>
+        /// The pipeline has determined that the response should not be forwarded to the client, and no more
+        /// steps should be run.
+        /// </summary>
+        Terminate,
+
+        /// <summary>
+        /// The pipeline has determined that the response should be forwarded to the client, and no more
+        /// steps should be run.
+        /// </summary>
+        TerminateAndForward,
+    }
+
     /// <inheritdoc/>
     public CancellationToken CancellationToken { get; init; }
 
@@ -50,6 +71,17 @@ public readonly struct YarpResponsePipelineState :
     /// Gets the YARP <see cref="ResponseTransformContext"/>.
     /// </summary>
     internal ResponseTransformContext ResponseTransformContext { get; init; }
+
+    /// <summary>
+    /// Gets a value indicating whether the pipeline should be terminated. This is used by the
+    /// terminate predicate for the <see cref="YarpRequestPipeline"/>.
+    /// </summary>
+    internal bool ShouldTerminatePipeline => this.PipelineState != TransformState.Continue || this.CancellationToken.IsCancellationRequested;
+
+    /// <summary>
+    /// Gets the current pipeline state.
+    /// </summary>
+    private TransformState PipelineState { get; init; }
 
     private CookieHeaderChanges SetCookieHeaderReplacements { get; init; }
 
