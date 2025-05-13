@@ -213,7 +213,7 @@ public readonly struct RequestSignature
         TState state)
     {
         int expectedLength = this.Scheme.Length + Uri.SchemeDelimiter.Length +
-            this.Host.Value.Length + // TODO[optimization]: are we causing an allocation here?
+            this.Host.Value.Length +
             this.Path.Length +
             this.QueryString.Length;
 
