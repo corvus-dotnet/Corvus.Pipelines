@@ -2,6 +2,7 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using Corvus.Pipelines;
@@ -206,18 +207,26 @@ public readonly struct YarpRequestPipelineState :
     /// Returns a <see cref="YarpRequestPipelineState"/> instance which will terminate the pipeline
     /// with the given request forwarding details. The request will be forwarded to the endpoint.
     /// </summary>
-    /// <param name="path">The path to put in the proxied request.</param>
-    /// <param name="queryString">The query string to put in the proxied request.</param>
+    /// <param name="path">
+    /// The path to put in the proxied request, or null to leave the existing
+    /// <see cref="ForwardedRequestDetails.PathOverride"/> unmodified.
+    /// </param>
+    /// <param name="queryString">
+    /// The query string to put in the proxied request, or null to leave the existing
+    /// <see cref="ForwardedRequestDetails.QueryStringOverride"/> unmodified.
+    /// </param>
     /// <returns>The terminating <see cref="YarpRequestPipelineState"/>.</returns>
     public YarpRequestPipelineState WithPathAndQuery(
         ReadOnlyMemory<char>? path, ReadOnlyMemory<char>? queryString)
     {
+        Debug.Assert(path is null || path.Value.Length > 0, "Path must be non-empty if specified.");
+
         return this with
         {
             ForwardedRequestDetails = this.ForwardedRequestDetails with
             {
-                PathOverride = path,
-                QueryStringOverride = queryString,
+                PathOverride = path ?? this.ForwardedRequestDetails.PathOverride,
+                QueryStringOverride = queryString ?? this.ForwardedRequestDetails.QueryStringOverride,
             },
         };
     }
