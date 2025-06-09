@@ -2,7 +2,6 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace Corvus.Pipelines.Handlers;
@@ -110,7 +109,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers)
             .Bind(
-                (TState state) => HandlerState<THandlerInput, PipelineStep<TState>>.For(getInput(state)),
+                state => HandlerState<THandlerInput, PipelineStep<TState>>.For(getInput(state)),
                 (TState state, HandlerState<THandlerInput, PipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out PipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -136,7 +135,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers).ToAsync()
             .Bind(
-                (TState state) => HandlerState<THandlerInput, PipelineStep<TState>>.For(getInput(state)),
+                state => HandlerState<THandlerInput, PipelineStep<TState>>.For(getInput(state)),
                 (TState state, HandlerState<THandlerInput, PipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out PipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -162,7 +161,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers)
             .Bind(
-                (TState state) => HandlerState<THandlerInput, SyncPipelineStep<TState>>.For(getInput(state)),
+                state => HandlerState<THandlerInput, SyncPipelineStep<TState>>.For(getInput(state)),
                 (TState state, HandlerState<THandlerInput, SyncPipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out SyncPipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -188,7 +187,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers)
             .Bind(
-                (TState state) => HandlerState<THandlerInput, SyncPipelineStep<TState>>.For(getInput(state)),
+                state => HandlerState<THandlerInput, SyncPipelineStep<TState>>.For(getInput(state)),
                 (TState state, HandlerState<THandlerInput, SyncPipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out SyncPipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -209,7 +208,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers)
             .Bind(
-                (TState state) => HandlerState<TState, PipelineStep<TState>>.For(state),
+                state => HandlerState<TState, PipelineStep<TState>>.For(state),
                 (TState state, HandlerState<TState, PipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out PipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -230,7 +229,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers).ToAsync()
             .Bind(
-                (TState state) => HandlerState<TState, PipelineStep<TState>>.For(state),
+                state => HandlerState<TState, PipelineStep<TState>>.For(state),
                 (TState state, HandlerState<TState, PipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out PipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -251,7 +250,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers)
             .Bind(
-                (TState state) => HandlerState<TState, SyncPipelineStep<TState>>.For(state),
+                state => HandlerState<TState, SyncPipelineStep<TState>>.For(state),
                 (TState state, HandlerState<TState, SyncPipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out SyncPipelineStep<TState>? result) ? result(state) : notHandled(state));
 
@@ -272,7 +271,7 @@ public static class HandlerPipeline
         where TState : struct
         => Build(handlers)
             .Bind(
-                (TState state) => HandlerState<TState, SyncPipelineStep<TState>>.For(state),
+                state => HandlerState<TState, SyncPipelineStep<TState>>.For(state),
                 (TState state, HandlerState<TState, SyncPipelineStep<TState>> handlerState) =>
                     handlerState.WasHandled(out SyncPipelineStep<TState>? result) ? result(state) : notHandled(state));
 }

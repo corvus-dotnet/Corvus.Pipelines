@@ -106,8 +106,8 @@ public static class LoggableExtensions
                 state.Logger.LogCritical(eventId, message);
                 break;
         }
-    }
 #pragma warning restore CA2254 // Template should be a static expression
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void LogEntry<TState>(LogLevel level, in TState state)

@@ -2,7 +2,6 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
 namespace Corvus.Pipelines;

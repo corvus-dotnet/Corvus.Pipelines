@@ -10,7 +10,6 @@ using Corvus.Pipelines;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
-using Microsoft.Net.Http.Headers;
 
 namespace Corvus.YarpPipelines;
 
@@ -46,7 +45,7 @@ public static class CookieRewriting
     public static SyncPipelineStep<YarpRequestPipelineState> RescopeForRequestSync(
         string[] cookieNamePrefixes,
         string scopePrefix)
-        => (YarpRequestPipelineState state) =>
+        => state =>
         {
             IRequestCookieCollection cookies = state.RequestTransformContext.HttpContext.Request.Cookies;
             if (cookies.Count > 0)
@@ -169,7 +168,7 @@ public static class CookieRewriting
     public static SyncPipelineStep<YarpResponsePipelineState> RescopeForResponseSync(
         string[] cookieNamePrefixes,
         string scopePrefix)
-        => (YarpResponsePipelineState state) =>
+        => state =>
         {
             // On entry to this method, the ProxyResponse has any Set-Cookie headers
             // from the back end (because it just represents the back end's response

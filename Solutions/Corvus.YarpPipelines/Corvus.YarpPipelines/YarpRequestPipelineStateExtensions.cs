@@ -51,7 +51,7 @@ public static class YarpRequestPipelineStateExtensions
         string headerName,
         string value)
     {
-        if (!state.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value.ToString()))
+        if (!state.RequestTransformContext.ProxyRequest.Headers.TryAddWithoutValidation(headerName, value))
         {
             throw new ArgumentException($"Unable to add header '{headerName}' to proxy request");
         }

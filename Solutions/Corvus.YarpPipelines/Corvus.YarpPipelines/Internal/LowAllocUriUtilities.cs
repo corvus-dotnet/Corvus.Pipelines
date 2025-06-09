@@ -11,7 +11,6 @@
 
 using System.Buffers;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 
 using Corvus.HighPerformance;
@@ -25,9 +24,6 @@ public static class LowAllocUriUtilities
 {
     private static readonly SearchValues<char> ValidPathChars =
         SearchValues.Create("!$&'()*+,-./0123456789:;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~");
-
-    private static readonly SearchValues<char> ValidQueryChars =
-        SearchValues.Create("!$'()*+,-./0123456789:;@ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~");
 
     /// <summary>
     /// Appends the given path and encoded query to the encoded prefix while avoiding duplicate '/'.

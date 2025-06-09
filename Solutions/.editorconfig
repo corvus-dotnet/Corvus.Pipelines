@@ -113,5 +113,14 @@ dotnet_diagnostic.CA1303.severity = None
 # RCS1089: Use --/++ operator instead of assignment
 dotnet_diagnostic.RCS1089.severity = silent
 
-# IDE0028: Simplify collection initialization
+# IDE0028 and IDE0305: Simplify collection initialization
+# We would prefer not to disable these, but there's no way to tell them we don't want the
+# weird use of spread syntax which does not really look 'simple'.
 dotnet_diagnostic.IDE0028.severity = silent
+dotnet_diagnostic.IDE0305.severity = silent
+
+# RCS1163 Roslynator's unused parameter names rule is less smart than the one built into the SDK, so we disable it.
+dotnet_diagnostic.RCS1163.severity = None
+
+# Until https://github.com/dotnet/roslyn/issues/75858 is fixed
+dotnet_diagnostic.IDE0079.severity = None

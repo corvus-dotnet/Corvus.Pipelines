@@ -2,10 +2,8 @@
 // Copyright (c) Endjin Limited. All rights reserved.
 // </copyright>
 
-using System;
 using System.Buffers;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 
 namespace Corvus.Pipelines;
 
@@ -465,7 +463,7 @@ public static class PipelineStepExtensions
         PipelineStep<TState> attempt2)
         where TState : struct, ICancellable<TState>
     {
-        return async (TState input) =>
+        return async input =>
         {
             // Create a linked cancellation token source with whatever the current cancellation token might be
             var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(input.CancellationToken);
@@ -515,7 +513,7 @@ public static class PipelineStepExtensions
         params PipelineStep<TState>[] attempts)
         where TState : struct, ICancellable<TState>
     {
-        return async (TState input) =>
+        return async input =>
         {
             // Create a linked cancellation token source with whatever the current cancellation token might be
             var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(input.CancellationToken);
@@ -585,7 +583,7 @@ public static class PipelineStepExtensions
         where TState1 : struct
         where TState2 : struct
     {
-        return async ((TState1 State1, TState2 State2) input) =>
+        return async input =>
         {
             ValueTask<TState1> task1 = step1(input.State1);
             ValueTask<TState2> task2 = step2(input.State2);
@@ -615,7 +613,7 @@ public static class PipelineStepExtensions
         where TState2 : struct
         where TState3 : struct
     {
-        return async ((TState1 State1, TState2 State2, TState3 State3) input) =>
+        return async input =>
         {
             ValueTask<TState1> task1 = step1(input.State1);
             ValueTask<TState2> task2 = step2(input.State2);
@@ -646,7 +644,7 @@ public static class PipelineStepExtensions
         where TState1 : struct
         where TState2 : struct
     {
-        return async ((TState1 State1, TState2 State2) input) =>
+        return async input =>
         {
             TState1 value1 = await step1(input.State1).ConfigureAwait(false);
             TState2 value2 = await step2(input.State2).ConfigureAwait(false);
@@ -680,7 +678,7 @@ public static class PipelineStepExtensions
         where TState2 : struct
         where TState3 : struct
     {
-        return async ((TState1 State1, TState2 State2, TState3 State3) input) =>
+        return async input =>
         {
             TState1 value1 = await step1(input.State1).ConfigureAwait(false);
             TState2 value2 = await step2(input.State2).ConfigureAwait(false);
@@ -705,7 +703,7 @@ public static class PipelineStepExtensions
         where TState1 : struct
         where TState2 : struct
     {
-        return ((TState1 State1, TState2 State2) input) =>
+        return input =>
         {
             TState1 value1 = step1(input.State1);
             TState2 value2 = step2(input.State2);
@@ -733,7 +731,7 @@ public static class PipelineStepExtensions
         where TState2 : struct
         where TState3 : struct
     {
-        return ((TState1 State1, TState2 State2, TState3 State3) input) =>
+        return input =>
         {
             TState1 value1 = step1(input.State1);
             TState2 value2 = step2(input.State2);
@@ -786,7 +784,7 @@ public static class PipelineStepExtensions
         where TValue1 : struct
     {
         return stepWith.Bind(
-            (TState state) => (state, value1ProviderStep(GetValueOrDefault(state, initialValue1FromState))),
+            state => (state, value1ProviderStep(GetValueOrDefault(state, initialValue1FromState))),
             (TState _, (TState State, TValue1 Value1) result) => result.State);
     }
 
@@ -845,8 +843,7 @@ public static class PipelineStepExtensions
         where TValue2 : struct
     {
         return stepWith.Bind(
-            (TState state) =>
-                (state,
+            state => (state,
                  value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
                  value2ProviderStep(GetValueOrDefault(state, initialValue2FromState))),
             (TState _, (TState State, TValue1 Value1, TValue2 Value2) result) => result.State);
@@ -920,8 +917,7 @@ public static class PipelineStepExtensions
         where TValue3 : struct
     {
         return stepWith.Bind(
-            (TState state) =>
-                (state,
+            state => (state,
                  value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)),
                  value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)),
                  value3ProviderStep(GetValueOrDefault(state, initialValue3FromState))),
@@ -972,7 +968,7 @@ public static class PipelineStepExtensions
         where TValue1 : struct
     {
         return stepWith.Bind(
-            async (TState state) => (state, await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false)),
+            async state => (state, await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false)),
             (TState _, (TState State, TValue1 Value1) result) => result.State);
     }
 
@@ -1031,8 +1027,7 @@ public static class PipelineStepExtensions
         where TValue2 : struct
     {
         return stepWith.Bind(
-            async (TState state) =>
-                (state,
+            async state => (state,
                  await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false),
                  await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)).ConfigureAwait(false)),
             (TState _, (TState State, TValue1 Value1, TValue2 Value2) result) => result.State);
@@ -1106,8 +1101,7 @@ public static class PipelineStepExtensions
         where TValue3 : struct
     {
         return stepWith.Bind(
-            async (TState state) =>
-                (state,
+            async state => (state,
                  await value1ProviderStep(GetValueOrDefault(state, initialValue1FromState)).ConfigureAwait(false),
                  await value2ProviderStep(GetValueOrDefault(state, initialValue2FromState)).ConfigureAwait(false),
                  await value3ProviderStep(GetValueOrDefault(state, initialValue3FromState)).ConfigureAwait(false)),
