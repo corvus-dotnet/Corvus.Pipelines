@@ -26,4 +26,22 @@ public static class HandlerPipelineStepExtensions
         return handler(HandlerState<TInput, bool>.For(input))
             .WasHandled(out bool matched) && matched;
     }
+
+    /// <summary>
+    /// Evaluates a handler pipeline whose result type is <see langword="bool" />.
+    /// </summary>
+    /// <typeparam name="TInput">Input type.</typeparam>
+    /// <param name="handler">The handler to evaluate.</param>
+    /// <param name="input">The input to pass to the handler.</param>
+    /// <returns>
+    /// <see langword="true"/> if the handler handled the input and returned <see langword="true"/>;
+    /// <see langword="false"/> otherwise.
+    /// </returns>
+    public static async ValueTask<bool> Evaluate<TInput>(
+        this PipelineStep<HandlerState<TInput, bool>> handler,
+        TInput input)
+    {
+        return (await handler(HandlerState<TInput, bool>.For(input)))
+            .WasHandled(out bool matched) && matched;
+    }
 }
